@@ -1,0 +1,37 @@
+origen,regimen,modelo_1,modelo_2,dm_stat,p_valor,conclusion
+Origen 1,La Nina (inicio),N-BEATSx,ARX+GARCH,-7.753516385592646,8.938225089044477e-15,N-BEATSx GANA (sig.)
+Origen 1,La Nina (inicio),N-BEATSx,Persistencia,1.6984729565749648,0.0894185326045779,sin diferencia significativa
+Origen 1,La Nina (inicio),N-HiTS,ARX+GARCH,-6.558674595387594,5.42881199945547e-11,N-HiTS GANA (sig.)
+Origen 1,La Nina (inicio),N-HiTS,Persistencia,3.4720713747602856,0.0005164590060393676,N-HiTS PIERDE (sig.)
+Origen 1,La Nina (inicio),ARX+GARCH,Persistencia,9.1710620915626,4.6838119589121787e-20,ARX+GARCH PIERDE (sig.)
+Origen 1,La Nina (inicio),XGBoost,Persistencia,0.6430933314098928,0.5201635413225498,sin diferencia significativa
+Origen 2,La Nina (continuacion),N-BEATSx,ARX+GARCH,-4.7509266906477885,2.0248653774709185e-06,N-BEATSx GANA (sig.)
+Origen 2,La Nina (continuacion),N-BEATSx,Persistencia,-0.7278784372941084,0.46668800379195885,sin diferencia significativa
+Origen 2,La Nina (continuacion),N-HiTS,ARX+GARCH,-3.339206639140554,0.000840180405088849,N-HiTS GANA (sig.)
+Origen 2,La Nina (continuacion),N-HiTS,Persistencia,0.41544562461434137,0.6778157129473127,sin diferencia significativa
+Origen 2,La Nina (continuacion),ARX+GARCH,Persistencia,4.988957787240691,6.070590902511498e-07,ARX+GARCH PIERDE (sig.)
+Origen 2,La Nina (continuacion),XGBoost,Persistencia,4.56913599661956,4.897389348758665e-06,XGBoost PIERDE (sig.)
+Origen 3,La Nina (triple-dip),N-BEATSx,ARX+GARCH,-2.9079903900740276,0.003637595157150977,N-BEATSx GANA (sig.)
+Origen 3,La Nina (triple-dip),N-BEATSx,Persistencia,0.8172952507611609,0.41375972019046225,sin diferencia significativa
+Origen 3,La Nina (triple-dip),N-HiTS,ARX+GARCH,-2.0700409681173255,0.03844850814727397,N-HiTS GANA (sig.)
+Origen 3,La Nina (triple-dip),N-HiTS,Persistencia,1.0654482927465105,0.28667311279733443,sin diferencia significativa
+Origen 3,La Nina (triple-dip),ARX+GARCH,Persistencia,6.236572488580482,4.472621092865252e-10,ARX+GARCH PIERDE (sig.)
+Origen 3,La Nina (triple-dip),XGBoost,Persistencia,3.679488179502704,0.0002337025209359975,XGBoost PIERDE (sig.)
+Origen 4,El Nino (fuerte),N-BEATSx,ARX+GARCH,-3.596251909375103,0.0003228351828960357,N-BEATSx GANA (sig.)
+Origen 4,El Nino (fuerte),N-BEATSx,Persistencia,-3.530151183000238,0.00041532226894604906,N-BEATSx GANA (sig.)
+Origen 4,El Nino (fuerte),N-HiTS,ARX+GARCH,-2.6609754427822057,0.0077914639512473545,N-HiTS GANA (sig.)
+Origen 4,El Nino (fuerte),N-HiTS,Persistencia,-2.6527383273769662,0.007984174055997058,N-HiTS GANA (sig.)
+Origen 4,El Nino (fuerte),ARX+GARCH,Persistencia,-0.5415839405157754,0.5881051575040577,sin diferencia significativa
+Origen 4,El Nino (fuerte),XGBoost,Persistencia,5.084538647720573,3.6852072737940163e-07,XGBoost PIERDE (sig.)
+Origen 5,El Nino (pico),N-BEATSx,ARX+GARCH,-3.324779849107132,0.0008848837772861491,N-BEATSx GANA (sig.)
+Origen 5,El Nino (pico),N-BEATSx,Persistencia,-2.7263284650507567,0.006404323117752736,N-BEATSx GANA (sig.)
+Origen 5,El Nino (pico),N-HiTS,ARX+GARCH,-5.93213074186584,2.990283521888428e-09,N-HiTS GANA (sig.)
+Origen 5,El Nino (pico),N-HiTS,Persistencia,-5.282822040764248,1.2720894804719655e-07,N-HiTS GANA (sig.)
+Origen 5,El Nino (pico),ARX+GARCH,Persistencia,1.6420428303608319,0.1005811281924207,sin diferencia significativa
+Origen 5,El Nino (pico),XGBoost,Persistencia,2.3467578364350556,0.01893755850271576,XGBoost PIERDE (sig.)
+Origen 6,El Nino 2026 (neutral->fuerte),N-BEATSx,ARX+GARCH,-2.81692017500402,0.004848657487874171,N-BEATSx GANA (sig.)
+Origen 6,El Nino 2026 (neutral->fuerte),N-BEATSx,Persistencia,-2.987544467182819,0.00281228380252473,N-BEATSx GANA (sig.)
+Origen 6,El Nino 2026 (neutral->fuerte),N-HiTS,ARX+GARCH,-4.33800636599425,1.437809914288006e-05,N-HiTS GANA (sig.)
+Origen 6,El Nino 2026 (neutral->fuerte),N-HiTS,Persistencia,-4.449180686994805,8.619847805854036e-06,N-HiTS GANA (sig.)
+Origen 6,El Nino 2026 (neutral->fuerte),ARX+GARCH,Persistencia,-1.4258587685359356,0.15390911307426125,sin diferencia significativa
+Origen 6,El Nino 2026 (neutral->fuerte),XGBoost,Persistencia,2.9304505378122605,0.003384708728814353,XGBoost PIERDE (sig.)
