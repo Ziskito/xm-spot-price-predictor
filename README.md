@@ -34,6 +34,7 @@ notebooks/
   08_modelo_arima_garch_juan.ipynb           # ARX+GARCH, grid search de 27 configs, bandas de incertidumbre nativas
   09_modelos_deep_learning_juan.ipynb        # N-BEATSx y N-HiTS (neuralforecast), grid search, N-BEATSx "pesado", ensamble de 5 semillas
   10_diebold_mariano_juan.ipynb              # prueba de significancia estadística sobre el walk-forward -- decide el modelo final
+  11_modelo_lightgbm_Rafa.ipynb              # modelo LightGBM (mismo pipeline/features/horizonte 24h que 06), grid search, feature importance nativa
   05_modelo_xgboost_Rafa.ipynb               # variante de XGBoost de Rafael (en desarrollo, pipeline de features propio)
 
 src/         # (pendiente) módulos reutilizables fuera de notebooks
@@ -86,6 +87,7 @@ Entrenamiento: 2019–2025 (60,625 filas). Prueba: 2026, enero–5 de agosto (5,
 | Naive estacional (t-168h) | 124.53 | 180.60 | 36.75% |
 | Prophet (regresores: hidrología, ONI, pandemia, precio t-24h; log-transform) | 95.84 | 150.22 | 19.93% |
 | XGBoost (depth=3, lr=0.01, 33 features; log-transform) | 61.15 | 107.32 | 15.89% |
+| LightGBM (depth=4, num_leaves=15, lr=0.01, mismas 33 features; log-transform) | 62.16 | 108.06 | 15.90% |
 | N-HiTS (Challu et al. 2023, `neuralforecast`, input_size=168h) | 57.08 | 101.35 | 16.36% |
 | N-BEATSx (Olivares et al. 2023, `neuralforecast`, input_size=168h) | 56.11 | **100.92** | 15.93% |
 | **ARX+GARCH(1,1)** (mismos regresores que Prophet + armónicos de calendario; log-transform; confirmado por grid search de 27 configuraciones) | **55.76** | 109.97 | **15.43%** |
@@ -191,6 +193,15 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 ## Bitácora de avances
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
+
+### 2026-09-04 15:05 — Modelo LightGBM (`11`)
+
+- **Nuevo notebook `11_modelo_lightgbm_Rafa.ipynb`**, cuarto modelo de árboles/ensamble evaluado, con el mismo pipeline de datos, las mismas 33 features y el mismo horizonte de 24h que `06` (XGBoost): mismo `dataset_features_2019_2025.csv`/`dataset_features_2026.csv`, mismas columnas excluidas (demanda/generación contemporáneas, versiones crudas de calendario), mismo log-transform del target y misma persistencia de referencia.
+- Mismo protocolo de grid search que `06` (validación con 2025, sin tocar 2026): `max_depth` × `learning_rate`, luego refinamiento de `max_depth`. Ganador: `max_depth=4`, `num_leaves=15`, `learning_rate=0.01`.
+- **Resultado en el holdout de 2026: MAE 62.16, RMSE 108.06, MAPE 15.90%** — muy cerca de XGBoost (61.15/107.32/15.89%) pero sin superarlo en ninguna métrica, y por detrás de ARX+GARCH y N-BEATSx/N-HiTS. Razón de error ONI alto/bajo: 3.27x (entre la de XGBoost, 3.66x, y la de ARX+GARCH, 3.43x).
+- Feature importance nativa (ganancia total) coincide con el top de SHAP/permutation importance de XGBoost: `precio_lag24h` domina de forma clara, seguido de `precio_media_24h` y `precio_media_7d`.
+- **Conclusión preliminar**: LightGBM no aporta una mejora sobre XGBoost en este dataset (tamaño moderado, 33 features tabulares) — el crecimiento leaf-wise no se tradujo en ventaja real aquí. No se justifica todavía incluirlo en el walk-forward (`07`) ni en Diebold-Mariano (`10`) a menos que el equipo decida evaluarlo formalmente igual; queda documentado como referencia adicional en la tabla de resultados.
+- Nota de entorno: `lightgbm` no estaba en `requirements.txt` — falta agregarlo formalmente (se usó `lightgbm==4.7.0` en esta sesión).
 
 ### 2026-09-03 22:00 — cierre de la sesión
 
