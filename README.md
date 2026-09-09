@@ -192,6 +192,32 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
 
+### 2026-09-09 16:18 — experimento reversible: variable relación H/T y extensión 2017-2025
+
+Experimento hecho en rama aparte `experimento-2017-hidrotermica` (main intacto en `4b01570`), a partir del paper de la propia referencia [1] del Anexo 1 (Agudelo, López-Lezama, Velilla, 2015 — NARX con 4 entradas exógenas: demanda, probabilidad El Niño, **relación generación hidráulica/térmica**, volumen útil diario). De las 4, la relación H/T era la única que el proyecto no tenía representada — la restricción de no desglosar generación por tipo de recurso está en el Alcance del Anexo 1 (no en Identificación/Objetivos/Cumplimiento ABET, que son las 3 secciones formalmente bloqueadas), así que se probó bajo el criterio de reversibilidad total: todo en archivos nuevos, ninguno del pipeline existente tocado, borrable sin dejar rastro.
+
+**Construcción de la variable**: reconstruida desde cero porque XM no publica "generación térmica del sistema" como métrica directa — se descargó `Gene` por `Entity=Recurso` (por planta, hora a hora, 2017-2026) y se cruzó con el catálogo `ListadoRecursos` (`Type`: HIDRAULICA/TERMICA/...) para agregar. Validada contra la Figura 3 del propio paper (rango 0-15): en enero 2017 dio media 9.92, rango 6.29-13.69 — coincide bien. Rezagada 24h igual que el resto de variables hidrológicas para no filtrar información futura.
+
+**También se descargaron 2017-2018** (precio, demanda, generación, embalses, aportes) para poder probar, además de la variable, si ampliar la ventana de entrenamiento de 2019-2025 a 2017-2025 ayuda.
+
+**Diseño**: factorial 2×2 (con/sin variable H/T × ventana 2019-2025/2017-2025) sobre los 3 mejores modelos del proyecto (ARX+GARCH, N-BEATSx, N-HiTS), holdout fijo en 2026. BASELINE recalculado desde cero (no comparado contra números viejos cacheados) como control de consistencia del dataset reconstruido — salió casi idéntico al pipeline actual (N-BEATSx 55.46 vs 56.11, ARX+GARCH 55.78 vs 55.76), confirmando que el dataset del experimento es equivalente.
+
+**Resultado (MAE, holdout 2026):**
+
+| Modelo | BASELINE (2019-2025, sin H/T) | A_HT (2019-2025, con H/T) | B_2017 (2017-2025, sin H/T) | C_2017_HT (2017-2025, con H/T) |
+|---|---|---|---|---|
+| ARX+GARCH | 55.78 | 55.68 | 55.84 | 57.10 |
+| N-BEATSx | **55.46** | 57.66 | 57.75 | 57.19 |
+| N-HiTS | **57.56** | 58.45 | 57.96 | 57.91 |
+
+**Ninguna de las tres variantes mejora al BASELINE actual** en los modelos de deep learning; en ARX+GARCH la variable sola da una mejora marginal (-0.10) que desaparece al combinarla con la ventana 2017-2025 (empeora +1.32). Nota: la fila C_2017_HT de ARX+GARCH salió con `convergencia=0`, distinto del `convergencia=8` de las demás — no se investigó más a fondo por no cambiar la conclusión.
+
+**Por qué se descartó la extensión a 2017**: la caracterización del precio por año (`notebooks_experimento/caracterizacion_2017_2026_juan.ipynb`, réplica de las Celdas I/J de `03` sobre 2017-2026) muestra que 2017 (media 106.1, CV 0.357) y 2018 (media 116.2, CV 0.427) son un régimen de precio estructuralmente más bajo y comprimido que todo lo demás desde 2019 (228.3 en adelante) — meterlos diluye el aprendizaje de N-BEATSx en vez de aportarle historia útil.
+
+**Por qué se descartó la variable H/T (diagnóstico adicional, `scripts_experimento/diagnostico_variable_ht.py`)**: la correlación cruda de `gen_termica` con el precio es +0.744 (la más fuerte de toda la sesión, coincide con lo que encuentra el paper), pero un XGBoost con el set completo de features le da a las 6 variables H/T los puestos 22-38 de 39 en importancia por ganancia — casi al fondo. La señal es real pero redundante: en datos horarios, `precio_lag24h`/`precio_media_24h`/`precio_media_7d` ya capturan esa misma dinámica de forma más directa e inmediata que la generación térmica rezagada. El paper trabajaba con datos mensuales sin ese nivel de autorregresión de precio disponible, por eso a su modelo NARX sí le aportaba.
+
+**Veredicto**: se mantiene el pipeline actual (2019-2025, sin variable H/T) sin cambios. Todo el experimento queda en la rama `experimento-2017-hidrotermica` (carpetas `scripts_experimento/`, `notebooks_experimento/`, archivos `*_EXP.csv`, `*_2017_2018.csv`, `generacion_por_tipo_2017_2026.csv`, `oni_index_2017_2026.csv`) — pendiente decidir si se archiva o se borra la rama.
+
 ### 2026-09-03 22:00 — cierre de la sesión
 
 Resumen del día para retomar mañana sin tener que releer todo:
