@@ -1,0 +1,14 @@
+# Tema del dashboard del motor de decision.
+# La vista "Operador" esta disenada sobre fondo claro (ver dashboard/app.py,
+# diccionario T de tokens de diseno). Fijamos el tema para que no dependa de
+# la preferencia clara/oscura del navegador de quien lo abra.
+[theme]
+base = "light"
+primaryColor = "#15803D"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F1F5F9"
+textColor = "#0F172A"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false

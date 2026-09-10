@@ -92,19 +92,40 @@ pip install -r requirements.txt   # incluye streamlit y plotly
 streamlit run dashboard/app.py
 ```
 
-Se abre en el navegador (`http://localhost:8501` por defecto). Controles del panel lateral:
+Se abre en el navegador (`http://localhost:8501` por defecto). El tema (fondo claro, colores de
+estado verde/rojo/ámbar) está fijado en `.streamlit/config.toml` y los tokens de color viven en el
+diccionario `T` al inicio de `app.py` — esos nombres/valores son el puente con Figma: si el diseño
+cambia allá, se editan ahí y toda la interfaz se mueve con ellos.
 
+Panel lateral común a las dos vistas:
+
+- **Vista**: `Operador` (por defecto) o `Analista` — ver abajo.
 - **Rol**: generador o comercializador — cambia qué acción se resalta y cómo se lee la ventaja económica.
-- **Horizonte**: 24h o 72h — cambia qué archivo de `fuentes_pronostico.json` se usa. El dashboard
+- **Horizonte**: 24h o 72h — cambia qué archivo de `fuentes_pronostico.json` se usa. El panel
   muestra si el modelo activo está calibrado (verde) o no (amarillo, con su cobertura medida).
-- **Método de umbral**: el dashboard sugiere automáticamente el método ganador del backtest
-  económico para el rol/horizonte elegidos (recalculado en vivo, no leído de un CSV viejo) — se
-  puede cambiar manualmente para comparar. Hay un expander con la tabla comparativa completa.
-- **Percentiles bajo/alto** y **rango de fechas**: para explorar sensibilidad sin editar código.
 
-La gráfica principal muestra precio real, banda [q10,q90], y las horas donde la señal dice actuar
-(verde = comprar/vender, rojo = evitar\_compra/retener). Los KPIs arriba son la ventaja económica,
-frecuencia de acción y horas de acción del `evaluar_backtest()` sobre el período filtrado.
+### Vista "Operador" — responde "¿qué hago ahora?"
+
+Sin perillas de método ni percentiles: el método de umbral lo elige solo `elegir_mejor_metodo()`
+sobre el backtest en vivo. El operador solo elige **día** y **hora**. Muestra:
+
+- Una **tarjeta grande** con la acción recomendada (COMPRAR / VENDER / ESPERAR…), una frase en
+  lenguaje llano, una barra que ubica el precio esperado (`q50`) entre los umbrales barato/caro, y
+  un chip de **confianza** (alta/media/baja) según qué tan ancha es la banda `[q10,q90]` de esa hora
+  frente al histórico. Si `banda` fuerza `esperar` pese a un precio extremo, la frase lo explica.
+- La **franja del día hora por hora** (24 celdas de color), con la hora elegida recuadrada.
+- Tres indicadores: horas para actuar hoy, ventaja histórica de la regla (backtest 2026) y con qué
+  frecuencia actúa.
+- Un mini-gráfico de la semana alrededor del día elegido y una nota de qué regla quedó activa y por qué.
+
+### Vista "Analista" — controles finos (lo de antes)
+
+- **Método de umbral**: sugiere el ganador del backtest para el rol/horizonte (recalculado en vivo)
+  y se puede cambiar a mano. Expander con la tabla comparativa completa.
+- **Percentiles bajo/alto** y **rango de fechas**: para explorar sensibilidad sin editar código.
+- Gráfica de precio real, banda `[q10,q90]` y horas de acción (verde = comprar/vender, rojo =
+  evitar\_compra/retener), más los KPIs de `evaluar_backtest()` sobre el período filtrado y un
+  expander con los datos crudos.
 
 **Nota práctica de caché**: el dashboard usa `st.cache_data` para no releer CSVs en cada interacción.
 Si actualizas un archivo de datos (ej. regeneras `pronostico_con_bandas_2026_72h.csv`) con el
