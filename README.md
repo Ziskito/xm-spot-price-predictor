@@ -127,6 +127,24 @@ bitácora 2026-09-10). Si OE3 va a operar distinto en El Niño, probablemente co
 explícita basada en el régimen (ONI observado, no una variable que el modelo de precio tenga que
 aprender) en vez de esperar que el pronóstico de precio ya lo resuelva.
 
+**Bandas de incertidumbre — versión completa 24-72h (2026-09-10).** El Anexo 1 (OE2.2) exige
+comparar los modelos en todo el rango 24-72h, no solo en el extremo. N-BEATSx es nativamente
+multi-horizonte, así que se reentrenó con `h=72` (MQLoss, con festivos) en vez de `h=24`, y se
+extrajeron cuantiles en cada paso de 1 a 72h. Hallazgo importante: **las bandas crudas pierden
+cobertura rápido con el horizonte** (60.7% en 1-24h → 50.5% en 25-48h → 45.0% en 49-72h, contra
+80% objetivo) porque su ancho casi no crece (136.6 → 144.1 → 148.8) pese a que el error real sí
+crece fuerte (58.7 → 76.2 → 98.6 COP/kWh). La calibración conforme **estática** (un solo ajuste)
+solo llegó a 67-72% de cobertura, mismo problema de siempre (2026 cambia de régimen a mitad de
+año). La **adaptativa** (margen recalculado con ventana móvil de 30 días, igual criterio que la
+versión de 24h) sí funcionó bien: **79.0% / 77.2% / 77.3%** de cobertura en los tres tramos, con
+el ancho de banda creciendo correctamente con el horizonte (195 → 269 → 318 COP/kWh).
+
+**Contrato para OE3, horizonte completo**: `data/processed/resultados/pronostico_con_bandas_72h_2026_adaptativo.csv`
+(columnas `fecha_hora, cutoff, paso_horas, real, q50, q10, q90` — `paso_horas` indica cuántas
+horas adelante del `cutoff` es esa fila, de 1 a 72). Usar esta versión para reglas que dependan
+del horizonte completo; la versión de solo 24h (`pronostico_con_bandas_2026_adaptativo.csv`,
+documentada arriba) sigue siendo válida si OE3 solo necesita el punto de 24h.
+
 ## Modelo recomendado (actualizado 2026-09-03, con respaldo estadístico)
 
 **N-BEATSx** (o su ensamble de 5 semillas) — no ARX+GARCH. Ver la sección "Modelos de deep learning" más abajo y la bitácora del final del día para el detalle completo de por qué cambió la recomendación a lo largo de la sesión.
