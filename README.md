@@ -69,6 +69,64 @@ dashboard/   # (pendiente) dashboard de integración de pronósticos, recomendac
 - [ ] Bandas de incertidumbre para N-BEATSx (el modelo recomendado ahora) — todavía no tiene, solo ARX+GARCH y XGBoost las tienen construidas
 - [ ] Informe comparativo de modelos (documento formal, Fase 3) — resultados existen pero no están consolidados en un documento aparte de este README
 
+## Nota para Rafael: cómo evaluar modelos para el motor de decisión (OE3)
+
+Esta sección es una guía de referencia, no un log — se actualiza si cambia la recomendación, no se
+archiva por fecha. Escrita el 2026-09-10 a partir de literatura nueva (Maciejowska, Lipiecki,
+Uniejewski — *"Statistical and economic evaluation of forecasts in electricity markets: beyond
+RMSE and MAE"*, arXiv:2511.13616 / Energy Conversion and Management 2026).
+
+**El hallazgo central**: en ese paper, RMSE y MAE correlacionan **<0.20** con la ganancia real de
+arbitraje de una batería contra el precio pronosticado. La métrica que sí correlaciona fuerte
+(**>0.80**) es qué tan bien el pronóstico replica la *forma* de la curva de precio del día — no
+qué tan chico es el error promedio. Esto importa directamente para OE3: **el modelo con mejor MAE
+no es automáticamente el mejor insumo para una regla de compra/venta/espera.**
+
+**Las 3 métricas que sí importan** (implementadas en `scripts_experimento/metricas_decision.py`,
+reutilizable — `from metricas_decision import evaluar_modelo`):
+
+- **Corr-f**: correlación de Spearman entre el perfil horario pronosticado y el real, promediada
+  por día. La más correlacionada con ganancia real. Alto = el modelo acierta cuándo sube y cuándo
+  baja el precio dentro del día, aunque el nivel exacto no sea perfecto.
+- **MHD** (Min-Max Hour Deviation): a cuántas horas de distancia, en promedio, el modelo ubica el
+  mínimo/máximo del día respecto a cuándo ocurrió realmente. Importa si la regla de decisión
+  depende de *en qué hora* actuar, no solo de *si* actuar.
+- **MPD** (Min-Max Price Deviation): diferencia promedio entre el spread diario (máximo − mínimo)
+  pronosticado y el real. Mide directamente cuánta oportunidad de arbitraje se pierde o se
+  sobreestima si el motor de decisión confía en ese spread.
+
+**Resultado ya calculado sobre el holdout 2026** (`data/processed/resultados/metricas_decision_demo.csv`),
+y es contraintuitivo — léelo con cuidado antes de elegir qué modelo alimenta OE3:
+
+| Modelo | MAE | Corr-f | MHD (horas) | MPD (COP/kWh) |
+|---|---|---|---|---|
+| Persistencia | 56.31 | **0.835** | **2.00** | 144.77 |
+| N-BEATSx (ensamble ventanas) | **54.34** | 0.821 | 2.06 | 159.78 |
+| ARX+GARCH | 55.76 | 0.772 | 4.01 | **142.57** |
+
+**Ningún modelo domina las 4 columnas.** La persistencia (el modelo más tonto de todos) tiene el
+mejor Corr-f — tiene sentido: copiar el precio de ayer reproduce una forma diaria plausible por
+construcción, mientras que los modelos "mejores" suavizan hacia la media y aplanan un poco la
+curva. ARX+GARCH tiene el mejor MPD pero el peor MHD (se equivoca por 4 horas en promedio sobre
+cuándo ocurre el pico/valle) — probablemente inútil si la regla de decisión necesita el momento
+exacto, aceptable si solo necesita el tamaño del spread. N-BEATSx gana en MAE pero es el peor en MPD
+(subestima más el spread real).
+
+**Recomendación concreta**: no elijas el modelo de OE3 solo por el MAE de este README. Antes de
+integrar un modelo a la regla de decisión, corre `evaluar_modelo()` sobre el caso de uso real —
+si la regla depende del *momento* de actuar, prioriza MHD bajo; si depende del *tamaño* del
+movimiento esperado, prioriza MPD bajo; si es una regla direccional simple (subir/bajar/esperar),
+prioriza Corr-f alto. Puede que termines necesitando una combinación (ej. nivel de ARX+GARCH +
+corrección de forma inspirada en persistencia) en vez de un solo modelo puro.
+
+**Sobre El Niño y regímenes** (de otra referencia leída hoy, arXiv:2508.00040, modelos por
+régimen vía HMM): la literatura confirma que un régimen minoritario en el entrenamiento (como
+El Niño, ~10% de nuestros datos de 2019-2025) es el caso difícil incluso con técnicas dedicadas —
+no es que hicimos algo mal anoche al intentar atacarlo (4 hipótesis probadas, las 4 fallaron, ver
+bitácora 2026-09-10). Si OE3 va a operar distinto en El Niño, probablemente conviene una regla
+explícita basada en el régimen (ONI observado, no una variable que el modelo de precio tenga que
+aprender) en vez de esperar que el pronóstico de precio ya lo resuelva.
+
 ## Modelo recomendado (actualizado 2026-09-03, con respaldo estadístico)
 
 **N-BEATSx** (o su ensamble de 5 semillas) — no ARX+GARCH. Ver la sección "Modelos de deep learning" más abajo y la bitácora del final del día para el detalle completo de por qué cambió la recomendación a lo largo de la sesión.
