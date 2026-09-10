@@ -91,26 +91,37 @@ reutilizable — `from metricas_decision import evaluar_modelo`):
 - **MHD** (Min-Max Hour Deviation): a cuántas horas de distancia, en promedio, el modelo ubica el
   mínimo/máximo del día respecto a cuándo ocurrió realmente. Importa si la regla de decisión
   depende de *en qué hora* actuar, no solo de *si* actuar.
-- **MPD** (Min-Max Price Deviation): diferencia promedio entre el spread diario (máximo − mínimo)
-  pronosticado y el real. Mide directamente cuánta oportunidad de arbitraje se pierde o se
-  sobreestima si el motor de decisión confía en ese spread.
+- **MPD** (Min-Max Price Deviation): compara el precio **real** en la hora que el pronóstico marca
+  como mínimo/máximo del día contra el precio real en la hora en que **de verdad** ocurrió ese
+  mínimo/máximo. Mide directamente cuánta plata se deja de ganar por operar en la hora equivocada
+  (no es una diferencia de amplitud/spread — esa es otra métrica, Cov-e, que no implementamos).
+
+**Corrección 2026-09-10**: la primera versión de `metricas_decision.py` tenía dos bugs frente a la
+fórmula exacta del paper (Maciejowska, Lipiecki, Uniejewski — Energy Conversion and Management,
+2026, ya conseguido en PDF completo): (1) MHD/MPD promediaban las 2 desviaciones del día por
+separado en vez de **sumarlas** y promediar la suma sobre los días, lo que las dejaba en la mitad
+de su valor real; (2) MPD estaba implementada como diferencia de spread pronosticado vs. real, no
+como la comparación de precios reales en horas distintas que el paper realmente define. Ya
+corregido — los números de abajo son los correctos.
 
 **Resultado ya calculado sobre el holdout 2026** (`data/processed/resultados/metricas_decision_demo.csv`),
-y es contraintuitivo — léelo con cuidado antes de elegir qué modelo alimenta OE3:
+y sigue siendo contraintuitivo — léelo con cuidado antes de elegir qué modelo alimenta OE3:
 
 | Modelo | MAE | Corr-f | MHD (horas) | MPD (COP/kWh) |
 |---|---|---|---|---|
-| Persistencia | 56.31 | **0.835** | **2.00** | 144.77 |
-| N-BEATSx (ensamble ventanas) | **54.34** | 0.821 | 2.06 | 159.78 |
-| ARX+GARCH | 55.76 | 0.772 | 4.01 | **142.57** |
+| Persistencia | 56.31 | **0.835** | **3.99** | 65.15 |
+| **N-BEATSx (ensamble ventanas)** | **54.34** | 0.821 | 4.12 | **54.93** |
+| ARX+GARCH | 55.76 | 0.772 | 8.03 | 80.68 |
 
-**Ningún modelo domina las 4 columnas.** La persistencia (el modelo más tonto de todos) tiene el
-mejor Corr-f — tiene sentido: copiar el precio de ayer reproduce una forma diaria plausible por
-construcción, mientras que los modelos "mejores" suavizan hacia la media y aplanan un poco la
-curva. ARX+GARCH tiene el mejor MPD pero el peor MHD (se equivoca por 4 horas en promedio sobre
-cuándo ocurre el pico/valle) — probablemente inútil si la regla de decisión necesita el momento
-exacto, aceptable si solo necesita el tamaño del spread. N-BEATSx gana en MAE pero es el peor en MPD
-(subestima más el spread real).
+**Con la fórmula corregida, N-BEATSx queda mejor que los otros dos en 2 de las 3 métricas de
+decisión** (MAE y MPD), y muy cerca en Corr-f — a diferencia de la lectura anterior (ya
+incorrecta), esta sí es una recomendación razonablemente clara para OE3: N-BEATSx (ensamble de
+ventanas) es el candidato por defecto. Persistencia sigue ganando en Corr-f y MHD (por la misma
+razón de siempre: copiar el precio de ayer reproduce una forma diaria plausible por construcción),
+así que si la regla de decisión depende mucho de *replicar la forma exacta* del día antes que del
+*nivel* del precio, vale la pena revisar ese caso con cuidado. ARX+GARCH queda claramente atrás en
+las 3 métricas de decisión, pese a tener buen MAE — se equivoca por 8 horas en promedio sobre
+cuándo ocurre el pico/valle del día.
 
 **Recomendación concreta**: no elijas el modelo de OE3 solo por el MAE de este README. Antes de
 integrar un modelo a la regla de decisión, corre `evaluar_modelo()` sobre el caso de uso real —
