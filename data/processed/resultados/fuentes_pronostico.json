@@ -1,0 +1,22 @@
+{
+  "24h": {
+    "archivo": "pronostico_con_bandas_2026_adaptativo.csv",
+    "modelo": "N-BEATSx + calibracion conforme adaptativa (CQR, ventana movil 30 dias)",
+    "calibrado": true,
+    "cobertura_objetivo_pct": 80,
+    "cobertura_medida_pct": 78.0,
+    "generado": "2026-09-10",
+    "notebook_origen": "sesion 2026-09-10 (scripts_experimento/bandas_incertidumbre_nbeatsx.py + calibrar_bandas_adaptativo.py)",
+    "notas": "Contrato final para 24h segun el README. No reemplazar por una version sin calibrar sin actualizar tambien este campo."
+  },
+  "72h": {
+    "archivo": "pronostico_con_bandas_72h_2026_adaptativo.csv",
+    "modelo": "N-BEATSx (h=72, MQLoss con festivos) + calibracion conforme adaptativa por tramo de horizonte",
+    "calibrado": true,
+    "cobertura_objetivo_pct": 80,
+    "cobertura_medida_pct": 78.1,
+    "generado": "2026-09-10",
+    "notebook_origen": "commit 3d8d685 (scripts_experimento/bandas_incertidumbre_nbeatsx_72h.py + calibrar_bandas_72h_adaptativo.py)",
+    "notas": "Contrato final para OE3 horizonte completo. Ventanas de 72h no solapadas (cutoff cada 72h), serie horaria continua ene-ago 2026. Reemplazo el fallback de XGBoost que generaba el notebook 12 (ver bitacora 2026-09-10). El CSV trae columnas extra (cutoff, paso_horas, margen) que cargar_fuente_pronostico ignora."
+  }
+}

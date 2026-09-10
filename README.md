@@ -22,6 +22,7 @@ data/
     dataset_maestro_2019_2025.csv, dataset_maestro_2026.csv   # series sincronizadas a resolución horaria
     dataset_features_2019_2025.csv, dataset_features_2026.csv # + features de ingeniería (lags, medias, armónicos, hidrología rezagada)
     resultados/                                          # métricas y predicciones guardadas de los modelos entrenados
+      fuentes_pronostico.json                             # registro de qué modelo/archivo alimenta cada horizonte del motor de decisión (OE3)
 
 notebooks/
   01_prueba_conexion_juan.ipynb              # conexión a las APIs de XM/SIMEM
@@ -35,10 +36,17 @@ notebooks/
   09_modelos_deep_learning_juan.ipynb        # N-BEATSx y N-HiTS (neuralforecast), grid search, N-BEATSx "pesado", ensamble de 5 semillas
   10_diebold_mariano_juan.ipynb              # prueba de significancia estadística sobre el walk-forward -- decide el modelo final
   11_modelo_lightgbm_Rafa.ipynb              # modelo LightGBM (mismo pipeline/features/horizonte 24h que 06), grid search, feature importance nativa
+  12_motor_decision_Rafa.ipynb               # motor de decisión (OE3): genera bandas 72h, compara métodos de umbral, produce señales finales
   05_modelo_xgboost_Rafa.ipynb               # variante de XGBoost de Rafael (en desarrollo, pipeline de features propio)
 
-src/         # (pendiente) módulos reutilizables fuera de notebooks
-dashboard/   # (pendiente) dashboard de integración de pronósticos, recomendaciones e imágenes de decisión
+src/
+  motor_decision.py    # lógica del motor de decisión (OE3), reusable fuera de notebooks: umbrales, señales, backtest, carga de fuentes
+
+dashboard/
+  app.py                # prototipo Streamlit del motor de decisión -- `streamlit run dashboard/app.py`
+
+docs/
+  motor_decision_guia.md   # cómo correr/extender el motor de decisión y el dashboard, cómo cambiar de modelo sin tocar código
 ```
 
 ## Datos
@@ -63,10 +71,13 @@ dashboard/   # (pendiente) dashboard de integración de pronósticos, recomendac
 - [x] ARX+GARCH: grid search de 27 configuraciones + bandas de incertidumbre desde su propia varianza condicional (`08`)
 - [x] N-BEATSx y N-HiTS: entrenamiento, grid search de `input_size`, prueba de "más pesado" (perdió) y ensamble de 5 semillas (ganó) (`09`)
 - [x] Prueba de significancia estadística (Diebold-Mariano) sobre el walk-forward — resultado: **N-BEATSx/N-HiTS le ganan a ARX+GARCH de forma significativa en 6/6 orígenes; ARX+GARCH es significativamente PEOR que la persistencia en 3/6; XGBoost peor que persistencia en 5/6** (`10`)
-- [ ] Motor de decisión (reglas por percentil, señales compra/venta/espera) — OE3, no iniciado
-- [ ] Biblioteca de imágenes de apoyo a la decisión y dashboard — OE3, no iniciado
-- [ ] Backtesting del motor de decisión y validación con usuarios — OE4, no iniciado
-- [ ] Bandas de incertidumbre para N-BEATSx (el modelo recomendado ahora) — todavía no tiene, solo ARX+GARCH y XGBoost las tienen construidas
+- [x] Bandas de incertidumbre para N-BEATSx en los dos horizontes (24h y 72h), calibración conforme adaptativa, cobertura ~78% en ambos — `09` / commit `3d8d685` / consumidas por `12`
+- [x] Motor de decisión v1 (3 métodos de umbral por percentil, backtest económico, señal por rol generador/comercializador, 24h y 72h) — OE3, `src/motor_decision.py` + `12_motor_decision_Rafa.ipynb`
+- [x] Prototipo de dashboard (Streamlit, `dashboard/app.py`) — OE3, primera versión interactiva sobre el holdout 2026
+- [x] Motor de decisión desacoplado del modelo de pronóstico (`fuentes_pronostico.json` + `cargar_fuente_pronostico()`) — cambiar de modelo en cualquier horizonte es editar el JSON, no tocar código; guía completa en `docs/motor_decision_guia.md`. Ya se ejercitó una vez: el fallback de XGBoost a 72h se reemplazó por las bandas calibradas de N-BEATSx en cuanto existieron (`3d8d685`)
+- [ ] Motor de decisión conectado a Corr-f/MHD/MPD (`scripts_experimento/metricas_decision.py`) en vez de solo el nivel de q50 — pendiente, ver nota en `12`
+- [ ] Biblioteca de imágenes de apoyo a la decisión (más allá del prototipo de dashboard) — OE3
+- [ ] Backtesting del motor de decisión con simulación de portafolio real (no solo precio promedio) y validación con usuarios — OE4, no iniciado
 - [ ] Informe comparativo de modelos (documento formal, Fase 3) — resultados existen pero no están consolidados en un documento aparte de este README
 
 ## Nota para Rafael: cómo evaluar modelos para el motor de decisión (OE3)
@@ -152,6 +163,30 @@ documentada arriba) sigue siendo válida si OE3 solo necesita el punto de 24h.
 ## Resultados actuales (evaluación única y honesta contra 2026)
 
 Entrenamiento: 2019–2025 (60,625 filas). Prueba: 2026, enero–5 de agosto (5,208 filas).
+
+### Tabla comparativa consolidada de modelos
+
+Todos los modelos evaluados hasta el momento, en el mismo holdout (2026, horizonte 24 h, pipeline de sincronización mejorado). Los baselines (persistencia y naive estacional) se incluyen como referencia. **Negrita** = mejor valor de la columna.
+
+| # | Modelo | Familia | Notebook | MAE | RMSE | MAPE | ¿Supera a la persistencia? | Bandas de incertidumbre | Diebold-Mariano (walk-forward) |
+|---|---|---|---|---|---|---|---|---|---|
+| — | Persistencia (t-24h) | Baseline | — | 56.31 | 112.22 | 15.75% | — (referencia) | — | referencia |
+| — | Naive estacional (t-168h) | Baseline | — | 124.53 | 180.60 | 36.75% | No (peor en las 3) | — | no evaluado |
+| 1 | Prophet | Serie temporal aditiva (bayesiana) | `04` | 95.84 | 150.22 | 19.93% | No (peor en las 3) | No | no evaluado (el más débil en todas las pruebas) |
+| 2 | XGBoost | Árboles / gradient boosting | `06` | 61.15 | 107.32 | 15.89% | Parcial (solo RMSE) | Sí (regresión por cuantiles 10/50/90) | Sig. PEOR que persistencia en 5/6 orígenes |
+| 3 | LightGBM | Árboles / gradient boosting | `11` | 62.16 | 108.06 | 15.90% | Parcial (solo RMSE) | No | no evaluado (≈ XGBoost, sin mejora) |
+| 4 | N-HiTS | Deep learning (neuralforecast) | `09` | 57.08 | 101.35 | 16.36% | Parcial (solo RMSE) | No | Gana a ARX+GARCH en 6/6; vs persistencia 3 gana / 1 pierde / 2 empata |
+| 5 | N-BEATSx | Deep learning (neuralforecast) | `09` | 56.11 | 100.92 | 15.93% | Parcial (MAE y RMSE) | No (pendiente, vía `MQLoss`) | Gana a ARX+GARCH en 6/6; nunca pierde sig. vs persistencia (3 gana / 3 empata) |
+| 5b | N-BEATSx — ensamble 5 semillas | Deep learning (neuralforecast) | `09` | **54.89** | **97.61** | 16.15% | Parcial (MAE y RMSE) | No (pendiente) | mejor resultado puntual de la sesión |
+| 6 | ARX+GARCH(1,1) | Econométrico (ARX + varianza condicional) | `08` | 55.76 | 109.97 | **15.43%** | **Sí (en las 3 métricas)** | Sí (desde su propia varianza condicional) | Sig. PEOR que persistencia en 3/6; nunca le gana sig. |
+
+**Cómo leer la tabla:**
+
+- **No hay un único "mejor modelo" según todas las métricas.** En el holdout único de 2026, ARX+GARCH gana en MAE y MAPE y el ensamble de N-BEATSx gana en MAE y RMSE; N-BEATSx (una sola semilla) tiene el mejor RMSE de los modelos no ensamblados.
+- **Pero el holdout único engaña.** La validación walk-forward (6 orígenes / regímenes ENSO) y la prueba de Diebold-Mariano muestran que la ventaja de ARX+GARCH no es robusta: en promedio queda por debajo de la persistencia simple, mientras que **N-BEATSx / N-HiTS le ganan a ARX+GARCH de forma estadísticamente significativa en los 6 de 6 orígenes**.
+- **Modelo recomendado (2026-09-03, con respaldo estadístico): N-BEATSx**, idealmente su ensamble de 5 semillas. Ver las secciones de walk-forward, deep learning y Diebold-Mariano más abajo.
+- **XGBoost y Prophet** pierden significativamente contra la persistencia en la mayoría de los orígenes; están pendientes de sacarse formalmente de la comparación final (decisión con asesores).
+- Métricas por régimen (razón de error El Niño / La Niña), estabilidad entre orígenes (CV) y el detalle de cada modelo están en las secciones siguientes.
 
 **Horizonte 24 horas:**
 
@@ -269,6 +304,69 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 ## Bitácora de avances
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
+
+### 2026-09-10 — Motor de decisión (OE3): v1, desacople del modelo, y primer swap de fuente
+
+Arrancó el motor de decisión (OE3). Tres piezas nuevas:
+
+- **`src/motor_decision.py`** — lógica reusable, fuera de notebooks. Traduce un pronóstico con bandas
+  `[q10,q50,q90]` en una señal comprar/vender/esperar según el rol (generador: {vender, retener,
+  esperar}; comercializador: {comprar, evitar_compra, esperar}). Tres métodos de umbral por
+  percentil: `fijo` (percentiles del histórico 2019-2025), `rodante` (ventana móvil causal de 30
+  días), `banda` (fijo + forzar "esperar" cuando la banda de incertidumbre es ancha = poca
+  confianza). Se comparan con un backtest económico simple (precio real promedio en horas de acción
+  vs. promedio general) y se elige el ganador por rol/horizonte.
+- **`notebooks/12_motor_decision_Rafa.ipynb`** — carga las dos fuentes, corre el backtest, guarda las
+  señales finales (`data/processed/resultados/senales_motor_decision_2026.csv`).
+- **`dashboard/app.py`** — prototipo Streamlit: selector de rol/horizonte/método/percentiles, gráfica
+  precio+banda+señal, KPIs de ventaja económica recalculados en vivo. Muestra el modelo activo por
+  horizonte (verde=calibrado) y sugiere en vivo el método ganador del backtest. Verificado sin
+  excepciones con `streamlit.testing.v1.AppTest` en las 4 combinaciones rol×horizonte.
+
+**Desacople del modelo de pronóstico.** `data/processed/resultados/fuentes_pronostico.json` es el
+único lugar que declara qué archivo/modelo alimenta cada horizonte (`archivo`, `modelo`, `calibrado`,
+`cobertura_medida_pct`, ...). `cargar_fuente_pronostico(raiz, horizonte)` lee ese JSON, carga el CSV
+y lo valida con `validar_contrato_pronostico()` (columnas obligatorias `fecha_hora, real, q10, q50,
+q90`; NaN en los cuantiles = error; cuantiles cruzados = advertencia no bloqueante). Ni el notebook
+ni el dashboard tienen rutas de archivo hardcodeadas fuera de ese JSON.
+
+**El desacople se ejercitó de inmediato.** La v1 nació con un *fallback* de XGBoost a 72h (regresión
+por cuantiles, cobertura cruda ~73%, sin calibrar) porque N-BEATSx todavía no tenía pipeline a 72h.
+Ese pipeline llegó en el commit `3d8d685` (`pronostico_con_bandas_72h_2026_adaptativo.csv`, N-BEATSx
+h=72 + CQR adaptativo por tramo, cobertura ~78%). Cambiar la fuente fue editar 5 campos del JSON y
+re-ejecutar el notebook -- sin tocar `motor_decision.py` ni `app.py`. El CSV del fallback se borró.
+El archivo de N-BEATSx a 72h trae columnas extra (`cutoff`, `paso_horas`, `margen`) que
+`cargar_fuente_pronostico` ignora quedándose solo con las 5 del contrato.
+
+Resultado del backtest sobre el holdout 2026 (ambos horizontes ya con N-BEATSx calibrado):
+
+| Horizonte | Rol | Método ganador | Ventaja (COP/kWh) | Frecuencia de acción |
+|---|---|---|---|---|
+| 24h | generador | banda | 345.6 | 16.9% |
+| 24h | comercializador | banda | 281.6 | 14.3% |
+| 72h | generador | banda | 299.7 | 19.5% |
+| 72h | comercializador | banda | 279.5 | 11.8% |
+
+`banda` gana en los 4 casos: con bandas de incertidumbre bien calibradas (ancho que crece con el
+error real), filtrar por confianza mejora la ventaja económica. Con el fallback de XGBoost sin
+calibrar, a 72h el método `banda` quedaba fuera del rango de frecuencia válido (bandas
+sistemáticamente demasiado anchas) y ganaba `fijo` -- otra confirmación de que la calibración de las
+bandas de 72h sí importa para el motor, no es un detalle cosmético.
+
+**Hallazgo de la validación**: las bandas de 24h (N-BEATSx adaptativo) tienen 2 filas de 5208 con
+cuantiles cruzados (`q10>q50` o `q50>q90`, ambas el 2026-03-12 de madrugada). Es un borde conocido de
+la calibración por cuantiles (no siempre quedan monótonos), no un bug del motor -- advertencia no
+bloqueante, documentada en la guía.
+
+**Guía nueva**: `docs/motor_decision_guia.md` -- arquitectura, contrato de datos, cómo correr
+notebook/dashboard, y el procedimiento paso a paso ("Cambiar o agregar un modelo"), que ya se validó
+en la práctica con el swap de 72h descrito arriba.
+
+**Limitaciones explícitas** (en la guía): (a) el backtest es "precio promedio en horas de acción vs.
+promedio general", no una simulación de portafolio con capacidad/contratos/costos de transacción;
+(b) el motor decide solo con el nivel de `q50`, todavía no usa Corr-f/MHD/MPD de
+`scripts_experimento/metricas_decision.py` como sugiere la nota para Rafael. Los dos son el siguiente
+paso, no bloquean usar la v1 para explorar.
 
 ### 2026-09-10 01:16 — sesión nocturna: benchmark LEAR, bandas de incertidumbre, ensamble de ventanas, ataque a El Niño y festivos confirmados
 
