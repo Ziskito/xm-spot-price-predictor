@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif; background: #F1F5F9; color: #0F172A; }
+    a { color: #B45309; } a:hover { color: #92400E; }
+    .celda { flex: 1 1 0; text-align: center; font-size: 12px; padding: 9px 0; border-radius: 6px; color: #1E293B; }
+  </style>
+</helmet>
+
+<div style="display: flex; align-items: stretch; min-height: 1270px; background: #F1F5F9;">
+
+  <!-- ================= BARRA LATERAL ================= -->
+  <div style="width: 320px; flex-shrink: 0; background: #FFFFFF; border-right: 1px solid #E2E8F0; padding: 28px 22px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#0F172A" aria-hidden="true"><path d="M13 2 L4.5 13.2 A1 1 0 0 0 5.3 14.8 L11 14.8 L10 22 L19.5 10.4 A1 1 0 0 0 18.7 8.8 L13 8.8 L13 2 Z"/></svg>
+      <span style="font-size: 17px; font-weight: 800; color: #0F172A;">Motor de decisión</span>
+    </div>
+
+    <div>
+      <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">Vista</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="width: 14px; height: 14px; border-radius: 50%; border: 4px solid #15803D; flex-shrink: 0;"></span>
+          <span>
+            <span style="font-weight: 600; color: #0F172A;">Operador</span><br>
+            <span style="font-size: 12px; color: #64748B;">Qué hago ahora</span>
+          </span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #CBD5E1; flex-shrink: 0;"></span>
+          <span>
+            <span style="color: #334155;">Analista</span><br>
+            <span style="font-size: 12px; color: #64748B;">Controles y backtest</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 1px; background: #E2E8F0;"></div>
+
+    <div>
+      <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">Rol</div>
+      <div style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; background: #FFFFFF;">
+        <span>generador</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">Horizonte de pronóstico</div>
+      <div style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; background: #FFFFFF;">
+        <span>24h</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+
+    <div style="height: 1px; background: #E2E8F0;"></div>
+
+    <div style="background: #DCFCE7; border: 1px solid #BBF7D0; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #14532D;">
+      Modelo activo: N-BEATSx + calibración conforme adaptativa (CQR, ventana móvil 30 días)
+    </div>
+    <div style="font-size: 12px; color: #64748B;">Cobertura medida: 78.0% (objetivo 80%)</div>
+  </div>
+
+  <!-- ================= CONTENIDO ================= -->
+  <div style="flex-grow: 1; padding: 32px 40px; max-width: 1080px;">
+    <div style="font-size: 25px; font-weight: 800; color: #0F172A;">Motor de decisión &middot; precio de bolsa de energía</div>
+    <div style="color: #64748B; font-size: 15px; margin: 6px 0 22px;">Qué conviene hacer con la energía en cada hora, según el pronóstico con bandas de incertidumbre. Prototipo OE3 &middot; no es asesoría financiera ni una simulación de portafolio.</div>
+
+    <!-- controles -->
+    <div style="display: flex; gap: 24px; margin-bottom: 18px;">
+      <div style="flex: 2 1 0;">
+        <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">Día operativo</div>
+        <div style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 9px 12px; background: #FFFFFF;">2026/08/05</div>
+      </div>
+      <div style="flex: 1 1 0;">
+        <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">Hora del día</div>
+        <div style="padding: 14px 4px 0;">
+          <div style="position: relative; height: 6px; background: #DBEAFE; border-radius: 3px;">
+            <div style="position: absolute; left: 0; width: 35%; height: 6px; background: #15803D; border-radius: 3px;"></div>
+            <div style="position: absolute; left: 35%; top: -6px; width: 18px; height: 18px; border-radius: 50%; background: #15803D; transform: translateX(-9px); border: 2px solid #FFFFFF;"></div>
+            <div style="position: absolute; left: 35%; top: -24px; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: #0F172A;">8</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div style="border: 1px solid #E2E8F0; border-left: 7px solid #B45309; border-radius: 18px; background: #FFFFFF; padding: 22px 24px; box-shadow: 0 1px 2px rgba(15,23,42,0.05); margin-bottom: 16px;">
+      <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B;">Recomendación &middot; 05/08/2026 &middot; 08:00 h &middot; rol generador</div>
+      <div style="font-size: 33px; font-weight: 800; color: #B45309; margin: 4px 0 8px; line-height: 1.1;">ESPERAR</div>
+      <div style="font-size: 16px; color: #334155; max-width: 62ch;">El precio esperado está alto, pero el pronóstico de esta hora es muy incierto (banda ancha). El motor prefiere esperar antes que arriesgarse con una señal poco confiable.</div>
+
+      <div style="position: relative; height: 14px; border-radius: 8px; margin: 20px 0 7px; border: 1px solid #E2E8F0; background: linear-gradient(90deg, #DCFCE7 0%, #DCFCE7 4%, #EEF2F7 4%, #EEF2F7 33%, #FEE2E2 33%, #FEE2E2 100%);">
+        <div style="position: absolute; top: -6px; left: 91%; width: 3px; height: 24px; background: #0F172A; border-radius: 2px; transform: translateX(-1.5px);"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: #64748B;">
+        <span>barato &le; 127</span>
+        <span>esperado ahora: <b style="color: #0F172A;">974 COP/kWh</b></span>
+        <span>caro &ge; 406</span>
+      </div>
+
+      <div style="margin-top: 14px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #FEE2E2; color: #B91C1C; padding: 3px 11px; border-radius: 999px; font-size: 13px; font-weight: 700;">Confianza baja</span>
+        <span style="font-size: 13px; color: #64748B;">banda de &plusmn;230 COP/kWh &mdash; más ancha que el 96% de las horas típicas</span>
+      </div>
+    </div>
+
+    <!-- franja -->
+    <div style="font-weight: 700; margin-bottom: 8px;">El día, hora por hora</div>
+    <div style="display: flex; gap: 3px; margin-bottom: 6px;">
+      <div class="celda" style="background: #DCFCE7;">00</div>
+      <div class="celda" style="background: #FEF3C7;">01</div>
+      <div class="celda" style="background: #FEF3C7;">02</div>
+      <div class="celda" style="background: #FEF3C7;">03</div>
+      <div class="celda" style="background: #FEF3C7;">04</div>
+      <div class="celda" style="background: #FEF3C7;">05</div>
+      <div class="celda" style="background: #FEF3C7;">06</div>
+      <div class="celda" style="background: #FEF3C7;">07</div>
+      <div class="celda" style="background: #FEF3C7; outline: 2px solid #0F172A; font-weight: 800;">08</div>
+      <div class="celda" style="background: #DCFCE7;">09</div>
+      <div class="celda" style="background: #DCFCE7;">10</div>
+      <div class="celda" style="background: #DCFCE7;">11</div>
+      <div class="celda" style="background: #DCFCE7;">12</div>
+      <div class="celda" style="background: #DCFCE7;">13</div>
+      <div class="celda" style="background: #DCFCE7;">14</div>
+      <div class="celda" style="background: #DCFCE7;">15</div>
+      <div class="celda" style="background: #DCFCE7;">16</div>
+      <div class="celda" style="background: #DCFCE7;">17</div>
+      <div class="celda" style="background: #DCFCE7;">18</div>
+      <div class="celda" style="background: #DCFCE7;">19</div>
+      <div class="celda" style="background: #DCFCE7;">20</div>
+      <div class="celda" style="background: #DCFCE7;">21</div>
+      <div class="celda" style="background: #FEF3C7;">22</div>
+      <div class="celda" style="background: #FEF3C7;">23</div>
+    </div>
+    <div style="font-size: 13px; color: #64748B; margin-bottom: 18px;"><b style="color: #334155;">Verde</b> = hora para despachar y vender &nbsp;&middot;&nbsp; <b style="color: #334155;">rojo</b> = hora para retener generación &nbsp;&middot;&nbsp; <b style="color: #334155;">ámbar</b> = esperar. Recuadro negro = la hora seleccionada.</div>
+
+    <!-- indicadores -->
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;">
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px;">
+        <div style="font-size: 13px; color: #64748B;">Horas para actuar hoy</div>
+        <div style="font-size: 24px; font-weight: 750; color: #0F172A; margin: 2px 0;">9 de 24</div>
+        <div style="font-size: 12px; color: #64748B;">cuadros verdes en la franja de arriba</div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px;">
+        <div style="font-size: 13px; color: #64748B;">Ventaja histórica de la regla</div>
+        <div style="font-size: 24px; font-weight: 750; color: #0F172A; margin: 2px 0;">+346 COP/kWh</div>
+        <div style="font-size: 12px; color: #64748B;">habrías vendido más caro que el promedio, en el backtest 2026</div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px;">
+        <div style="font-size: 13px; color: #64748B;">Con qué frecuencia actúa</div>
+        <div style="font-size: 24px; font-weight: 750; color: #0F172A; margin: 2px 0;">17% del tiempo</div>
+        <div style="font-size: 12px; color: #64748B;">880 horas de acción en todo el periodo</div>
+      </div>
+    </div>
+
+    <!-- grafico -->
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px 18px 10px;">
+      <div style="font-weight: 700; margin-bottom: 10px;">La semana alrededor del día elegido</div>
+      <svg viewBox="0 0 960 300" style="width: 100%; height: 300px;" preserveAspectRatio="none">
+        <path d="M0,190 C120,120 200,250 320,150 C440,60 520,210 640,120 C760,40 840,170 960,110 L960,250 C840,200 760,120 640,200 C520,270 440,110 320,230 C200,300 120,170 0,240 Z" fill="#DBEAFE" opacity="0.55"/>
+        <polyline points="0,215 90,205 150,235 200,150 260,170 330,120 400,140 470,110 540,150 620,120 700,135 780,115 860,130 960,120" fill="none" stroke="#0F172A" stroke-width="1.6"/>
+        <g fill="#15803D">
+          <circle cx="200" cy="150" r="4"/><circle cx="260" cy="170" r="4"/><circle cx="330" cy="120" r="4"/>
+          <circle cx="470" cy="110" r="4"/><circle cx="620" cy="120" r="4"/><circle cx="700" cy="135" r="4"/>
+          <circle cx="780" cy="115" r="4"/><circle cx="860" cy="130" r="4"/>
+        </g>
+        <line x1="820" y1="0" x2="820" y2="270" stroke="#64748B" stroke-width="1.4" stroke-dasharray="4 4"/>
+      </svg>
+    </div>
+    <div style="font-size: 13px; color: #64748B; margin-top: 8px;">Regla activa: <b style="color: #334155;">banda</b>. La elige el motor automáticamente porque dio la mejor ventaja económica en el backtest 2026 entre los métodos que actúan una fracción razonable del tiempo (10&ndash;40%). Para ver la comparación o forzar otro método, entra a la vista Analista.</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1270}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

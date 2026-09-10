@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif; background: #F1F5F9; color: #0F172A; }
+    a { color: #B45309; } a:hover { color: #92400E; }
+    .sw { border-radius: 10px; height: 64px; border: 1px solid rgba(15,23,42,0.08); }
+    .lbl { font-size: 12px; color: #64748B; margin-top: 6px; }
+    .val { font-size: 12px; color: #0F172A; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="padding: 40px 44px; background: #F1F5F9; min-height: 950px;">
+  <div style="font-size: 25px; font-weight: 800;">Sistema de color y estados</div>
+  <div style="color: #64748B; font-size: 15px; margin: 6px 0 28px;">Los mismos valores viven en el diccionario <b style="color:#334155;">T</b> de <b style="color:#334155;">dashboard/app.py</b> y en <b style="color:#334155;">.streamlit/config.toml</b>. Editar aquí = editar el puente con Figma.</div>
+
+  <!-- swatches -->
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 34px;">
+    <div><div class="sw" style="background: #15803D;"></div><div class="lbl">verde &mdash; acción / oportunidad</div><div class="val">#15803D</div></div>
+    <div><div class="sw" style="background: #B91C1C;"></div><div class="lbl">rojo &mdash; cautela / cubrirse</div><div class="val">#B91C1C</div></div>
+    <div><div class="sw" style="background: #B45309;"></div><div class="lbl">ámbar &mdash; esperar</div><div class="val">#B45309</div></div>
+    <div><div class="sw" style="background: #0F172A;"></div><div class="lbl">tinta &mdash; texto principal</div><div class="val">#0F172A</div></div>
+    <div><div class="sw" style="background: #DCFCE7;"></div><div class="lbl">verde_bg</div><div class="val">#DCFCE7</div></div>
+    <div><div class="sw" style="background: #FEE2E2;"></div><div class="lbl">rojo_bg</div><div class="val">#FEE2E2</div></div>
+    <div><div class="sw" style="background: #FEF3C7;"></div><div class="lbl">ámbar_bg</div><div class="val">#FEF3C7</div></div>
+    <div><div class="sw" style="background: #64748B;"></div><div class="lbl">gris &mdash; texto secundario</div><div class="val">#64748B</div></div>
+    <div><div class="sw" style="background: #FFFFFF;"></div><div class="lbl">panel</div><div class="val">#FFFFFF</div></div>
+    <div><div class="sw" style="background: #F1F5F9;"></div><div class="lbl">fondo</div><div class="val">#F1F5F9</div></div>
+    <div><div class="sw" style="background: #EEF2F7;"></div><div class="lbl">neutro_bg &mdash; zona media del gauge</div><div class="val">#EEF2F7</div></div>
+    <div><div class="sw" style="background: #E2E8F0;"></div><div class="lbl">línea &mdash; bordes</div><div class="val">#E2E8F0</div></div>
+  </div>
+
+  <!-- estados del hero -->
+  <div style="font-size: 17px; font-weight: 700; margin-bottom: 14px;">La tarjeta de recomendación, en sus tres estados</div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 30px;">
+
+    <div style="border: 1px solid #E2E8F0; border-left: 7px solid #15803D; border-radius: 16px; background: #FFFFFF; padding: 18px 20px;">
+      <div style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B;">Recomendación</div>
+      <div style="font-size: 24px; font-weight: 800; color: #15803D; margin: 4px 0 6px;">DESPACHAR Y VENDER</div>
+      <div style="font-size: 14px; color: #334155;">El precio esperado está alto. Es buena hora para despachar y vender energía.</div>
+      <div style="margin-top: 12px;"><span style="background: #DCFCE7; color: #15803D; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;">Confianza alta</span></div>
+    </div>
+
+    <div style="border: 1px solid #E2E8F0; border-left: 7px solid #B91C1C; border-radius: 16px; background: #FFFFFF; padding: 18px 20px;">
+      <div style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B;">Recomendación</div>
+      <div style="font-size: 24px; font-weight: 800; color: #B91C1C; margin: 4px 0 6px;">RETENER GENERACIÓN</div>
+      <div style="font-size: 14px; color: #334155;">El precio esperado está bajo. Si puedes, evita despachar y guarda generación para más tarde.</div>
+      <div style="margin-top: 12px;"><span style="background: #FEF3C7; color: #B45309; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;">Confianza media</span></div>
+    </div>
+
+    <div style="border: 1px solid #E2E8F0; border-left: 7px solid #B45309; border-radius: 16px; background: #FFFFFF; padding: 18px 20px;">
+      <div style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B;">Recomendación</div>
+      <div style="font-size: 24px; font-weight: 800; color: #B45309; margin: 4px 0 6px;">ESPERAR</div>
+      <div style="font-size: 14px; color: #334155;">El precio esperado está en su rango normal. No hay una ventaja clara en actuar ahora.</div>
+      <div style="margin-top: 12px;"><span style="background: #FEE2E2; color: #B91C1C; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;">Confianza baja</span></div>
+    </div>
+  </div>
+
+  <!-- rol comercializador -->
+  <div style="font-size: 17px; font-weight: 700; margin-bottom: 14px;">Rol comercializador &mdash; mismas señales, otro vocabulario</div>
+  <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+    <div style="border: 1px solid #E2E8F0; border-radius: 12px; background: #FFFFFF; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="width: 12px; height: 12px; border-radius: 3px; background: #15803D;"></span><span style="font-weight: 700; color: #15803D;">COMPRAR EN BOLSA</span><span style="color: #64748B; font-size: 13px;">precio barato</span>
+    </div>
+    <div style="border: 1px solid #E2E8F0; border-radius: 12px; background: #FFFFFF; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="width: 12px; height: 12px; border-radius: 3px; background: #B91C1C;"></span><span style="font-weight: 700; color: #B91C1C;">EVITAR LA BOLSA</span><span style="color: #64748B; font-size: 13px;">cubrirse con contratos</span>
+    </div>
+    <div style="border: 1px solid #E2E8F0; border-radius: 12px; background: #FFFFFF; padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="width: 12px; height: 12px; border-radius: 3px; background: #FEF3C7; border: 1px solid #FCD34D;"></span><span style="font-weight: 700; color: #B45309;">ESPERAR</span><span style="color: #64748B; font-size: 13px;">rango normal</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":950}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>
