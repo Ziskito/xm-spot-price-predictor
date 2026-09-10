@@ -316,6 +316,34 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
 
+### 2026-09-10 (tarde) — Notebook 10 reejecutada con festivos: confirma 2026, matiz en Origen 1 (2020, pandemia)
+
+`10_diebold_mariano_juan.ipynb` reejecutada con festivos integrados en las 5 familias de
+modelo (misma edición que 08/09). Comparado contra la corrida anterior (sin festivos):
+
+**Origen 6 (2026, el holdout que realmente importa) — sin cambios de fondo, todo sigue
+ganando de forma significativa**: N-BEATSx y N-HiTS le ganan a ARX+GARCH (p≈5e-05) y a la
+persistencia (p≈3e-05) en ambos casos. Ningún retroceso aquí.
+
+**Origen 1 (2020-07 a 09, La Niña inicio, plena pandemia) — único origen que empeora**:
+N-BEATSx y N-HiTS pasan de "sin diferencia significativa" contra la persistencia a
+**perder de forma significativa** (p<1e-10 en ambos, muy fuerte). Hipótesis: los festivos
+de 2020 no se comportaron como festivos normales por los confinamientos estrictos (la
+gente no salía, el consumo no bajaba igual) — la feature de festivo probablemente
+"engañó" al modelo justo en ese origen atípico. Es el único de los 6 orígenes con
+confinamiento estricto vigente, coincide con la hipótesis.
+
+**Resto de orígenes (2, 3, 4, 5) — sin cambios relevantes**, mismo patrón de siempre
+(N-BEATSx/N-HiTS ganan a ARX+GARCH consistentemente; contra persistencia depende del
+origen). Resumen actualizado: N-BEATSx vs ARX+GARCH 6/6 gana; N-BEATSx vs Persistencia
+3/6 gana, 1/6 pierde (Origen 1), 2/6 sin diferencia; N-HiTS vs ARX+GARCH 5/6 gana, 1/6
+sin diferencia (Origen 1); N-HiTS vs Persistencia igual que antes.
+
+**Veredicto**: festivos se mantiene como mejora neta — el único origen afectado es uno
+atípico (pandemia) que no representa el régimen operativo normal, y el holdout que
+importa para la recomendación final (2026) mejora sin matices. Vale la pena que quede
+anotado como limitación conocida si se defiende el resultado ante los asesores.
+
 ### 2026-09-10 — Motor de decisión (OE3): v1, desacople del modelo, y primer swap de fuente
 
 Arrancó el motor de decisión (OE3). Tres piezas nuevas:
