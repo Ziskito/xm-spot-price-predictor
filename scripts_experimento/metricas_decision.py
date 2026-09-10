@@ -49,11 +49,13 @@ def corr_f(fecha_hora, real, pred, horas_min=20):
 
 
 def mhd(fecha_hora, real, pred, horas_min=20):
-    """Min-Max Hour Deviation: diferencia absoluta promedio (en horas) entre cuando el pronostico
-    ubica el minimo/maximo del dia y cuando realmente ocurrio."""
+    """Min-Max Hour Deviation (formula exacta de Maciejowska et al. 2026, ec. en Sec. 4.2.3):
+    MHD = (1/T) * sum_t [ |h_min_real - h_min_pred| + |h_max_real - h_max_pred| ]
+    Es la SUMA de las dos desviaciones por dia, promediada sobre los dias -- no el promedio de
+    las 2T desviaciones sueltas (eso da la mitad del valor correcto)."""
     df = _por_dia(fecha_hora, real, pred)
     df["hora"] = df["fecha_hora"].dt.hour
-    desviaciones = []
+    sumas_por_dia = []
     for _, grupo in df.groupby("fecha"):
         if len(grupo) < horas_min:
             continue
@@ -61,23 +63,30 @@ def mhd(fecha_hora, real, pred, horas_min=20):
         hora_max_real = grupo.loc[grupo["real"].idxmax(), "hora"]
         hora_min_pred = grupo.loc[grupo["pred"].idxmin(), "hora"]
         hora_max_pred = grupo.loc[grupo["pred"].idxmax(), "hora"]
-        desviaciones.append(abs(hora_min_real - hora_min_pred))
-        desviaciones.append(abs(hora_max_real - hora_max_pred))
-    return float(np.mean(desviaciones)) if desviaciones else np.nan
+        sumas_por_dia.append(abs(hora_min_real - hora_min_pred) + abs(hora_max_real - hora_max_pred))
+    return float(np.mean(sumas_por_dia)) if sumas_por_dia else np.nan
 
 
 def mpd(fecha_hora, real, pred, horas_min=20):
-    """Min-Max Price Deviation: diferencia promedio entre el spread diario (max-min) pronosticado
-    y el real -- mide directamente cuanta oportunidad de arbitraje se pierde/sobreestima."""
+    """Min-Max Price Deviation (formula exacta de Maciejowska et al. 2026, ec. en Sec. 4.2.3):
+    MPD = (1/T) * sum_t [ |P_real[h_min_real] - P_real[h_min_pred]| + |P_real[h_max_real] - P_real[h_max_pred]| ]
+    OJO: compara precios REALES en dos horas distintas (la hora optima real vs. la hora que el
+    pronostico hubiera indicado operar) -- NO es la diferencia de amplitud (spread) entre el
+    pronostico y lo real, que es una metrica distinta (mas parecida a Cov-e)."""
     df = _por_dia(fecha_hora, real, pred)
-    desviaciones = []
+    df["hora"] = df["fecha_hora"].dt.hour
+    sumas_por_dia = []
     for _, grupo in df.groupby("fecha"):
         if len(grupo) < horas_min:
             continue
-        spread_real = grupo["real"].max() - grupo["real"].min()
-        spread_pred = grupo["pred"].max() - grupo["pred"].min()
-        desviaciones.append(abs(spread_real - spread_pred))
-    return float(np.mean(desviaciones)) if desviaciones else np.nan
+        hora_min_real = grupo.loc[grupo["real"].idxmin(), "hora"]
+        hora_max_real = grupo.loc[grupo["real"].idxmax(), "hora"]
+        hora_min_pred = grupo.loc[grupo["pred"].idxmin(), "hora"]
+        hora_max_pred = grupo.loc[grupo["pred"].idxmax(), "hora"]
+        precio_en = lambda h: grupo.loc[grupo["hora"] == h, "real"].iloc[0]
+        sumas_por_dia.append(abs(precio_en(hora_min_real) - precio_en(hora_min_pred)) +
+                              abs(precio_en(hora_max_real) - precio_en(hora_max_pred)))
+    return float(np.mean(sumas_por_dia)) if sumas_por_dia else np.nan
 
 
 def evaluar_modelo(fecha_hora, real, pred, nombre=""):
