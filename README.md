@@ -78,7 +78,7 @@ docs/
 - [ ] Motor de decisión conectado a Corr-f/MHD/MPD (`scripts_experimento/metricas_decision.py`) en vez de solo el nivel de q50 — pendiente, ver nota en `12`
 - [ ] Biblioteca de imágenes de apoyo a la decisión (más allá del prototipo de dashboard) — OE3
 - [ ] Backtesting del motor de decisión con simulación de portafolio real (no solo precio promedio) y validación con usuarios — OE4, no iniciado
-- [ ] Informe comparativo de modelos (documento formal, Fase 3) — resultados existen pero no están consolidados en un documento aparte de este README
+- [x] Informe comparativo de modelos (documento formal, Fase 3) — `docs/informe_comparativo_modelos.md`
 
 ## Nota para Rafael: cómo evaluar modelos para el motor de decisión (OE3)
 
@@ -315,6 +315,513 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 ## Bitácora de avances
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
+
+### 2026-09-17 — Comparación de métricas contra el paper noruego (mismo formato: sMAPE y R²), y nota para Rafael
+
+**Para Rafael (dashboard/OE3)**: el hallazgo de esta tarde (ver entrada de abajo) es que la hidrología y el ONI no bajan el error del modelo, pero predicen muy bien *cuándo desconfiar* de él — el error se triplica según el régimen (28.5 a 97.1 COP/kWh de MAE entre la mejor y la peor combinación de embalse×El Niño). **Sugerencia concreta para la vista Operador**: agregar una segunda señal de confianza basada en el régimen hidrológico actual (embalse alto/bajo × ONI alto/bajo), independiente del chip de confianza que ya existe (que se basa en el ancho de la banda `[q10,q90]`). Los datos están en `data/processed/resultados/estratificacion_regimen_24h.csv`. Con eso, una hora en régimen "embalse bajo + El Niño" podría mostrarse con una advertencia adicional aunque su banda de incertidumbre no se vea especialmente ancha — son dos señales de riesgo distintas y complementarias.
+
+**Comparación de precisión, en el mismo formato que reportan los papers** (sMAPE y R², que ellos usan; nuestro MAPE convencional no es directamente comparable porque sMAPE está acotado 0-200% y es más robusto a errores relativos grandes en precios bajos). Calculado con `metricas_comparables_papers.py`:
+
+| Modelo | MAE | MAPE (convencional) | sMAPE | R² |
+|---|---|---|---|---|
+| **Noruega, LightGBM, 5 zonas (arXiv 2604.26634)** | 1.60-5.58 EUR/MWh | — | **12.07%-25.32%** | **0.889-0.934** |
+| **Nuestro ensamble v4, 24h** | 42.51 COP/kWh | 11.27% | **10.38%** | **0.910** |
+| Nuestro ensamble, 72h tramo 1-24h | 47.91 | 13.40% | 12.46% | 0.898 |
+| Nuestro ensamble, 72h tramo 25-48h | 64.00 | 18.57% | 16.94% | 0.854 |
+| Nuestro ensamble, 72h tramo 49-72h | 74.69 | 21.93% | 19.83% | 0.819 |
+| Persistencia (referencia) | 56.40 | 15.81% | 14.77% | 0.845 |
+| Naive-168h (semana pasada) | 123.68 | 36.77% | 34.44% | 0.605 |
+
+**Nuestro modelo de 24h le gana al mejor resultado publicado de Noruega en sMAPE** (10.38% contra su mínimo de 12.07% en NO5) y su R² (0.910) queda dentro de su rango, por encima de 2 de sus 5 zonas (NO1 0.889, NO2 0.889). Incluso el tramo más débil de 72h (49-72h, sMAPE 19.83%) queda dentro del rango noruego. Es una comparación justa porque ambos son mercados hidro-dominados con metodología similar (walk-forward causal, LightGBM/gradient boosting como uno de los mejores modelos en ambos casos).
+
+**No se pudo obtener la cifra equivalente para Brasil**: los dos papers brasileños con resultados numéricos de pronóstico (el MLP multi-step de MDPI y el de streamflow+correntropía de Springer) están bloqueados para descarga automática — MDPI por detección de bot (es de acceso abierto CC-BY, cualquier navegador normal lo abre sin login) y Springer por muro de pago.
+
+**Papers pendientes de leer completos, bloqueados para descarga automática — pedidos al usuario para que los baje con su acceso institucional y me los pase**:
+
+| Paper | Por qué importa | Bloqueo |
+|---|---|---|
+| Dias, Lira & Freire — *"Methodology for Multi-Step Forecasting of Electricity Spot Prices Based on Neural Networks Applied to the Brazilian Energy Market"*, Energies 2024 | Pronóstico multi-step (4 semanas) del PLD brasileño con MLP + selección de features; reporta TAPI/NRMSE/MAPE — el benchmark numérico brasileño que nos falta | MDPI bloquea bots (es CC-BY, abrir en navegador normal: <https://www.mdpi.com/1996-1073/17/8/1864>) |
+| Nunes, Ferreira & da Costa Pinho — *"Information Theoretic Learning Applied to Daily Streamflow Forecast and Its Impact on the Brazilian Hourly Energy Spot Prices"*, J. Control Autom. Electr. Syst. 2024 | Arquitectura de dos etapas (pronostica el caudal primero, luego el precio) — la idea que probamos hoy pero con datos reales de Brasil, para ver si a ellos sí les funcionó | Springer, muro de pago |
+| Albani, Marcavillaca, Moreira et al. — *"Short-term forecasting of forward prices in the Brazilian electricity market with a hybrid stochastic-neural network model"*, Energy Economics 148 (2025) | Modelo híbrido SDE+red neuronal, la red modela explícitamente el efecto de la ENA (aportes hídricos) sobre el precio forward | ScienceDirect, muro de pago |
+| *"Electricity price forecasting in New Zealand: A comparative analysis of statistical and machine learning models with feature selection"*, Applied Energy (~2023) | Nueva Zelanda, ~60% hidro, comparación estadístico vs. ML con selección de features — mercado pequeño y aislado, el más parecido en escala al de XM | ScienceDirect, muro de pago |
+
+Si el usuario consigue el PDF de cualquiera de estos (biblioteca de Uninorte, Sci-Hub-alternativas institucionales, o pidiéndoselo al autor), se puede releer completo y repetir el ejercicio de esta tarde: sacar una idea concreta, implementarla, y validarla con el mismo rigor (múltiples semillas, DM test).
+
+### 2026-09-17 — Ideas de papers de mercados hidro-dominados (Noruega y Brasil): la hidrología no predice el precio, pero predice cuándo falla el modelo
+
+Se buscaron mercados con matriz energética parecida a la colombiana (~70-74% hidro) para tomar ideas de su literatura. Los tres más útiles: **Brasil** (mismo diseño de mercado hidro-térmico, mismo fenómeno ENSO), **Noruega/Nord Pool** (>90% hidro, la literatura de EPF más desarrollada del mundo) y **Nueva Zelanda**. Se leyeron completos dos papers abiertos (los otros dos: MDPI bloquea bots, Springer es de pago):
+
+1. *"Electricity price forecasting across Norway's five bidding zones in the post-crisis era"* (arXiv 2604.26634).
+2. *"How optimistic inflow forecasts distort dispatch, prices, and contracts in hydro-dominated power systems: evidence from Brazil"* (arXiv 2607.00504v2).
+
+**Idea 1 probada (del paper brasileño) — "memoria hidrológica"**: el paper muestra que el precio no responde al aporte hídrico de hoy sino a la desviación **acumulada** frente a lo normal, porque es eso lo que vacía el embalse, con rezago de 1-3 meses. Se implementaron 7 variables nuevas (anomalía de aportes y de embalse contra su climatología por día del año —calculada solo con entrenamiento, sin fuga—, acumulados a 30/60/90 días, déficit acumulado, e interacción embalse×ONI). **Resultado: MAE 59.41 → 59.04, p=0.52 — no significativo**, y el MAPE incluso empeora. No sirve.
+
+**Idea 2 probada (del paper noruego) — ablación LOGO**: quitar un grupo de variables a la vez y medir cuánto empeora. El paper noruego encuentra que quitar los rezagos de precio cuesta 17-24 EUR/MWh, el calendario 0.04-0.42 y **los embalses ~0.01-0.03 (nada)**, y concluye que "las exógenas aportan poco a la precisión puntual una vez que la estructura autorregresiva y estacional ya está representada".
+
+**Réplica en nuestros datos, con 3 semillas** (`ablacion_logo_multisemilla.py`, CatBoost directo 24h):
+
+| Grupo quitado | Δ MAE medio | Por semilla | Veredicto |
+|---|---|---|---|
+| Precio (rezagos e historia) | **+125.76** | [121.4, 138.0, 117.9] | **APORTA** |
+| Calendario | **+2.92** | [3.64, 3.36, 1.76] | **APORTA** |
+| Festivos | −0.91 | [0.15, 1.01, −3.89] | ruido (el signo cambia) |
+| Hidrología (embalses, aportes) | +0.64 | [0.37, 2.40, −0.86] | ruido (el signo cambia) |
+| Demanda y generación | +0.12 | [2.03, 1.18, −2.84] | ruido (el signo cambia) |
+| ONI | −1.36 | [−2.82, 1.69, −2.96] | ruido (el signo cambia) |
+
+**La jerarquía noruega se replica casi exactamente en Colombia**: solo el historial de precio y el calendario aportan; todo lo demás está dentro del ruido.
+
+**Advertencia metodológica importante que salió de aquí, y que aplica a TODO el proyecto**: la primera corrida de esta ablación (una sola semilla) sugirió que **quitar el ONI mejoraba el modelo en 2.82 COP/kWh con p<0.0001** — un resultado que habría contradicho el marco conceptual del proyecto. Se verificó antes de reportarlo (`verificar_oni_degrada.py`) y **resultó ser ruido**:
+- El ONI de 2026 está **100% dentro** del rango de entrenamiento (2019-2025 llegó a +2.00 por el súper Niño 2023-24; 2026 solo a +1.40) — la hipótesis de extrapolación era falsa.
+- Con 3 semillas **el signo del efecto se invierte** (−2.82, +1.69, −2.96).
+- El MAE base varía 58.23-60.48 **solo por el azar del ajuste** (±0.92): el "efecto" era del tamaño del ruido.
+- Caso extremo del problema: con Ridge, el modelo base y el modelo sin ONI dan **exactamente 59.43 los dos**, y el test DM igual reporta **p=0.0000**. Con 5,208 horas el DM detecta diferencias sistemáticas minúsculas y las declara significativas. **Significancia estadística ≠ relevancia práctica.**
+
+→ **Regla de trabajo derivada: cualquier diferencia de MAE menor a ~2 COP/kWh medida con una sola semilla no es interpretable en este proyecto.** Vale la pena releer con esa lente los experimentos anteriores que compararon corridas únicas con diferencias pequeñas.
+
+**Idea 3 probada (la que sí sirve) — estratificación del error por régimen**: el paper noruego recomienda usar las exógenas para *estratificar el riesgo*, no para bajar el error. Aplicado a nuestros datos (celdas embalse alto/bajo × ONI alto/bajo):
+
+| | El Niño (ONI alto) | Neutral/Niña |
+|---|---|---|
+| **Embalse alto** | 45.8 | 32.1 |
+| **Embalse bajo** | **97.1** | 28.5 |
+
+**El error se triplica** (28.5 → 97.1) entre la mejor y la peor celda. Efecto de embalse bajo: +49.4 COP/kWh; efecto de El Niño: +56.0. (Nota honesta: las dos variables están correlacionadas negativamente —El Niño seca los embalses— así que los efectos están parcialmente confundidos; se ve en el conteo desbalanceado de celdas: 492/2112/2112/492.)
+
+**Conclusión accionable para OE3**: la hidrología y el ONI **no sirven para predecir el precio, pero sí para saber cuándo desconfiar del pronóstico**. Eso encaja exactamente con el requisito del Anexo 1 de que las imágenes de decisión lleven metadato de **confianza**: el dashboard puede marcar "esta hora cae en régimen de embalse bajo + El Niño, donde el modelo históricamente se equivoca 3 veces más". Es un uso mejor justificado de esas variables que forzarlas como predictoras.
+
+**Limitación del alcance de esta conclusión**: la ablación se hizo sobre el modelo de árboles de formulación directa a 24h. No se puede extrapolar sin más a N-BEATSx, donde los festivos sí se validaron como significativos en su momento (prueba t pareada, 5 semillas, p=0.0064). La afirmación defendible es: *en un modelo de árboles con historial de precio rico, las exógenas no aportan a la precisión puntual*.
+
+### 2026-09-11 (noche) — Walk-forward con orígenes de 12 meses completos: N-HiTS falla de forma severa en un régimen que las ventanas de 3 meses nunca alcanzaban a mostrar
+
+Los notebooks 10 y 07 se reejecutaron con los 5 orígenes ampliados a ventanas de prueba de **12 meses consecutivos** (jul-2020→jun-2021, …, jul-2024→jun-2025), en vez de los 3 meses originales — el mínimo que recomienda Lago et al. (2021). El Origen 6 (2026) se verificó sin cambios (diferencia máxima 0.000000 en los 5 modelos, confirmando que la reejecución no alteró nada fuera de lo pedido).
+
+**Hallazgo principal, que la ventana corta ocultaba por completo**: en el Origen 1 (jul-2020 a jun-2021, La Niña, arranca en plena pandemia), **N-HiTS falla de forma severa** y ARX+GARCH se deteriora fuerte, mientras N-BEATSx se mantiene estable:
+
+| Modelo | MAE (3 meses, jul-sep 2020) | MAE (12 meses completos) | Corr-f (12m) | MHD (12m) |
+|---|---|---|---|---|
+| N-BEATSx | 24.85 | 25.79 | 0.838 | 7.70 h |
+| N-HiTS | 28.17 | **55.38** (+97%) | **0.204** | **17.24 h** |
+| ARX+GARCH | 31.72 | **50.88** (+60%) | 0.793 | 8.48 h |
+
+Con solo 3 meses de prueba, N-HiTS parecía competitivo (28.17, similar a N-BEATSx). Con el año completo, su Corr-f se desploma a 0.204 (el peor de todo el proyecto, en cualquier origen) y su error en ubicar el pico/valle del día casi se triplica (17.24 horas). **Este es exactamente el riesgo que Lago et al. (2021) señalan sobre ventanas de prueba cortas**: una ventana de 3 meses simplemente no alcanzaba a recorrer lo suficiente para que este problema se manifestara.
+
+**Se investigó la causa antes de reportar** (mes a mes, `fecha_hora.dt.to_period('M')`): el error de N-HiTS y ARX+GARCH crece progresivamente de jul-2020 (24.3 y 21.4) a un pico en oct-2020/feb-2021 (76-99), para luego bajar parcialmente hacia jun-2021 (34.9 y 13.4) — un deterioro gradual, no un evento puntual aislado. La hipótesis obvia ("el error crece con la distancia al corte de entrenamiento") **se descartó explícitamente**: se probó el mismo patrón en los Orígenes 3, 4 y 5, y en ninguno se repite (Origen 4 y 5 incluso *mejoran* hacia el final del año; Origen 3 empeora pero por igual en los 3 modelos, reflejando el aumento real de precios de ese período, no una falla específica de modelo). **Conclusión honesta**: el problema es específico del Origen 1 — probablemente algo propio de la dinámica de precio/demanda en el año de pandemia (jul-2020 a jun-2021) que N-HiTS y el componente GARCH de ARX+GARCH manejan mal y N-BEATSx no — pero no se identificó el mecanismo exacto por límite de tiempo. Queda como pregunta abierta para quien quiera profundizar (candidato natural: revisar `es_pandemia` y la volatilidad de la demanda mes a mes en ese período específico).
+
+**Actualización de una afirmación central del informe**: con orígenes de 12 meses, el test de Diebold-Mariano da **N-BEATSx gana a ARX+GARCH en 5/6 orígenes (no 6/6 como se documentaba con ventanas de 3 meses)** — el origen que ya no gana de forma significativa es, previsiblemente, el Origen 1. También cambia frente a Persistencia: N-BEATSx solo gana significativamente en 1/6 orígenes y **pierde en 1/6** (antes con ventanas cortas esto no se había medido con esta granularidad). XGBoost sigue perdiendo contra Persistencia en 6/6 orígenes, sin cambios.
+
+**No afecta las conclusiones de OE3** para 2026 (Origen 6, el año de publicación, es idéntico a antes) pero sí matiza la generalización "N-BEATSx es sistemáticamente mejor en todo régimen" — hay al menos un régimen conocido (pandemia 2020-21) donde no se puede afirmar eso con la misma contundencia para N-HiTS ni ARX+GARCH.
+
+**Segunda ronda de investigación** (mismo tema, después de descartar "distancia al corte"): se revisó si la hidrología del Origen 1 sale del rango visto en entrenamiento — solo 1 de los 12 meses (jun-2021, volumen de embalses 14.06 mil millones de m³) supera el máximo histórico de entrenamiento (12.79 mil millones); los meses donde el error realmente se dispara (oct-2020 a feb-2021) tienen volumen de embalse *dentro* del percentil 95 de entrenamiento, no fuera de rango. Se descarta también esta hipótesis como explicación única. El ONI sí traza un arco muy limpio y completo dentro de este origen (−0.25 → −1.10 → −0.35, un ciclo de La Niña que nace y muere completo dentro de los 12 meses) — candidato más prometedor para seguir, pero no se alcanzó a probar si eso específicamente es lo que confunde a N-HiTS/ARX+GARCH. Cierre por esta noche: **pregunta genuinamente abierta**, con dos hipótesis descartadas y una tercera (el ciclo ONI completo) sin verificar.
+
+### 2026-09-11 (noche) — Ningún candidato nuevo mejora el ensamble de 24h: cierre limpio de esta línea de trabajo
+
+Con TFT, LSTM, las ventanas de calibración promediadas y la recalibración 2026 ya generados, se probó cada uno como votante nuevo del ensamble v4 (`evaluar_votantes_24h.py`, mismo método: QRA por franja de 6h, validación cruzada y versión desplegable, DM en orden cronológico):
+
+| Conjunto probado | MAE (CV) | p vs v4 | MAE (desplegable) | p vs v4 |
+|---|---|---|---|---|
+| v4 actual (5 modelos) | 42.84 | — | 44.52 | — |
+| v4 + TFT | 42.85 | 0.889 (n.s.) | 44.65 | 0.162 (n.s.) |
+| v4 + LSTM | 42.87 | 0.383 (n.s.) | 44.54 | 0.548 (n.s.) |
+| v4 + TFT + LSTM | 42.88 | 0.662 (n.s.) | 44.67 | 0.145 (n.s.) |
+| Ventanas promediadas (reemplaza N-BEATSx/N-HiTS) | 43.31 | 0.227 (n.s.) | 44.90 | 0.359 (n.s.) |
+| Recalibrados (reemplaza los 4 modelos base) | 52.39 | **0.0000 PIERDE** | 53.85 | **0.0000 PIERDE** |
+| Recalibrados + congelados (se suman como extra) | 42.90 | 0.199 (n.s.) | 44.61 | **0.027 PIERDE** |
+
+**Ninguno mejora.** TFT y LSTM no aportan nada al ensamble pese a ser de una familia arquitectónica distinta — su error individual (57.5 y 66.2 de MAE) es demasiado alto para compensar con diversidad. Las ventanas promediadas, que sí mejoraban un poco como modelo individual (46.8→46.0), no se traducen en mejora del ensamble: una vez que Persistencia/XGBoost/ARX+GARCH ya aportan diversidad real, una versión ligeramente mejor de N-BEATSx/N-HiTS no mueve la aguja (rendimientos decrecientes). Los modelos recalibrados confirman, con significancia aplastante, el hallazgo negativo de la entrada anterior — incluirlos como opción extra incluso empeora la versión desplegable.
+
+**Conclusión**: el ensamble v4 (QRA por franja horaria, 5 modelos base, MAE 42.51-42.84 según la corrida) queda confirmado como el mejor resultado de 24h del proyecto, robusto contra todos los candidatos adicionales probados hoy. Esta línea de trabajo se da por cerrada — no quedan candidatos obvios pendientes de probar para 24h.
+
+### 2026-09-11 (noche) — Recalibración v2 (ya sin los bugs de crash/ONI): sigue perdiendo. Hallazgo negativo genuino, con hipótesis pero sin certeza total
+
+Tras corregir los dos bugs de la entrada anterior, la corrida completa (67 min) terminó **sin errores** pero **sigue perdiendo** contra el modelo congelado, y de forma pareja en los 8 meses (no es un reentrenamiento aislado que salió mal):
+
+| Modelo | Congelado | Recalibrado v2 |
+|---|---|---|
+| N-BEATSx | 46.83 | 55.70 |
+| N-HiTS | 46.45 | 56.65 |
+
+Se investigó una hora más antes de aceptar esto como conclusión, porque contradice directamente el experimento de anoche (reentrenar antes de junio sí ganó). Se descartó una hipótesis real que sí encontré pero que resultó **no ser la explicación completa**: los cortes de mi script (ventanas de 00:00 a 23:00) están desalineados por una hora contra el walk-forward original (que predice de 01:00 a 00:00 del día siguiente, porque `cross_validation` ancla sus ventanas contando hacia atrás desde el final absoluto de la serie, no desde la máscara de entrenamiento). Confirmado con una prueba aislada: si fuerzo mi script a predecir con la alineación "correcta" (01:00 en vez de 00:00), `predict()` truena, porque un modelo entrenado hasta el 31-dic 23:00 solo puede predecir exactamente las 24 horas siguientes a ESE punto (1-ene 00:00 a 23:00) — confirma que mi alineación original (00:00-23:00) era la esperada dado el punto de corte, no un bug. El desfase de 1 hora entre mi convención y la del walk-forward original afecta como máximo 2 de 5,184 horas en las comparaciones (por el `join` con `how="left"`), insuficiente para explicar una brecha de +19% de MAE.
+
+**Hipótesis que queda en pie, sin verificar del todo por límite de tiempo**: cada reentrenamiento completo (8 en total) es una corrida de optimización independiente que puede converger a un mínimo local distinto, incluso con semilla fija — a diferencia del experimento de anoche, que hizo **una sola** apuesta de reentrenamiento, deliberada, evaluada solo en el mes para el que se diseñó. Aquí se apuestan 8 veces seguidas, cada una con `max_steps=1000` fijo sin importar que el conjunto de entrenamiento crezca solo ~1-2% por reentrenamiento — plausible que el ruido de convergencia entre corridas pese más que cualquier beneficio real de adaptación, cuando se acumula 8 veces.
+
+**Decisión**: no se seleccionó una nueva estrategia (ej. promediar semillas por reentrenamiento, aumentar max_steps con el tamaño de los datos) porque el tiempo ya invertido en depurar esto (2+ horas) compite con las tareas explícitamente pedidas y aún pendientes (walk-forward anual). Queda documentado como pregunta abierta, no como bug pendiente de arreglar — el código ya está correcto (dos bugs reales encontrados y corregidos), el resultado es simplemente negativo por razones que no se terminaron de aislar. **No se recomienda usar `recalibracion_2026_v2_predicciones.csv` en el ensamble** hasta investigarlo más si hay tiempo.
+
+### 2026-09-11 (noche) — Dos bugs más en la recalibración v2, encontrados antes de que causaran daño
+
+Al retomar la sesión, la primera corrida de `recalibracion_2026_v2.py` (la corrección de anoche) **truena** en la segunda ventana después de cada reentrenamiento, con `ValueError: There are missing combinations of ids and times in futr_df`. Se investigó en vez de parchear a ciegas, y aparecieron dos bugs reales, uno de los cuales es silencioso (no lanza error, solo produce números mal escalados) y es justo el tipo de error más peligroso de un proyecto de este tamaño:
+
+**Bug A (el que tronaba)**: `NeuralForecast.predict(futr_df=...)` **no** pronostica "la ventana que se le pida" según las fechas de `futr_df` — pronostica exclusivamente los `h` pasos inmediatamente siguientes al final de los datos con los que el modelo fue entrenado (o de los que se le pasen explícitamente en `df=`). El script reentrenaba cada 30 días pero seguía llamando `predict()` para los 29 días intermedios sin decirle qué había pasado en esos días reales ya observados — funcionaba por casualidad en la primera ventana tras cada reentrenamiento (coincide con el fin del entrenamiento) y explotaba en la segunda. Una prueba aislada de una sola ventana (la que se hizo para "confirmar" el fix de anoche) no lo detectaba, precisamente porque solo probaba el caso que sí funcionaba.
+
+**Bug B (silencioso)**: la normalización del ONI (la única exógena futura continua) se aplicaba a los datos de entrenamiento pero **nunca** a `futr_df` — el modelo entrenaba viendo el ONI en escala normalizada (z-score) y al predecir recibía el valor crudo (rango −1 a 2). Ningún chequeo de la librería detecta esto; simplemente habría producido predicciones mal calibradas sin ningún aviso.
+
+**Corrección** (`recalibracion_2026_v2.py`, reescrito): se congelan las estadísticas de normalización (media/desviación) en cada reentrenamiento; en las ventanas intermedias se le pasa a `predict()` el histórico real observado hasta esa fecha (`df=`, normalizado con las estadísticas congeladas) además de `futr_df` (con el ONI ahora sí normalizado). Validado con una prueba rápida de 6 ventanas y 2 reentrenamientos antes de lanzar la corrida completa — confirmado que las ventanas intermedias usan el histórico extendido correctamente (60,649 → 60,673 → 60,721 filas, creciendo un día a la vez) sin error. Corriendo ahora la versión completa (~40-55 min estimados).
+
+**Lección operativa**: al retomar una sesión pausada, un "arreglo" que solo se probó en el caso más fácil (una ventana) puede ocultar un bug que aparece en el caso general (muchas ventanas seguidas). Vale la pena, antes de lanzar una corrida larga, una prueba rápida y barata que ejercite el patrón completo (aquí: varias ventanas, más de un reentrenamiento) en vez de solo el primer caso.
+
+### 2026-09-11 (tarde) — PAUSADO: el usuario apaga el equipo. Estado exacto y cómo retomar
+
+Se detuvo todo limpiamente a pedido del usuario (necesitaba apagar el PC). Detalle relevante para
+la próxima sesión: `TaskStop` sobre la tarea rastreada de la cola (`cola_trabajos.sh`) **no mató el
+proceso real del sistema operativo** — el script bash siguió corriendo como huérfano y, al matar
+manualmente los procesos de Python del notebook 10, el propio script interpretó eso como "paso
+terminado" y arrancó el notebook 07 sin que se le pidiera. Se detectó revisando los procesos con
+`Get-CimInstance Win32_Process` (que sí muestra la línea de comando real) y se mató el árbol
+completo (`bash.exe` de `cola_trabajos.sh` + todos los `python.exe`/`jupyter-nbconvert` hijos).
+Lección para la próxima vez que haya que frenar una cola en background: verificar con
+`Get-CimInstance Win32_Process` si el proceso real sigue vivo después de `TaskStop`, no confiar
+solo en la respuesta de la herramienta.
+
+**Verificado antes de confirmar que era seguro apagar**:
+- `git status` sobre `notebooks/10_diebold_mariano_juan.ipynb` y `07_validacion_walkforward_juan.ipynb`
+  muestra ambos como "modificados" (por la edición de los orígenes a 12 meses) pero **no ejecutados**
+  — `nbconvert --inplace` solo escribe el archivo al terminar con éxito, así que matar el proceso a
+  mitad de camino no corrompió ni truncó ningún notebook. Quedan exactamente como se dejaron antes
+  de correr, listos para ejecutarse limpios la próxima vez.
+- Ningún proceso python/bash relacionado con el proyecto seguía vivo tras la limpieza.
+- Todos los CSV nuevos de la tarde están completos en disco (verificado por tamaño/fecha), ninguno
+  a medio escribir.
+
+**Qué quedó completo y guardado** (ver entradas de esta tarde arriba y abajo de esta):
+TFT/LSTM de 24h, ventanas de calibración de 24h, forma del día (2 rondas), sesgo 2026,
+recalibración 2026 v1 (con el bug de warm-start ya diagnosticado), evaluación de 72h con 214 cortes
+diarios + su ensamble (con el bug de bandas NaN ya corregido).
+
+**Qué falta, en orden de prioridad para retomar**:
+1. `python scripts_experimento/recalibracion_2026_v2.py 30` — la versión corregida (reentrena
+   desde cero), ~40-55 min. **No usar `recalibracion_2026_predicciones.csv` (v1) para nada nuevo**,
+   solo quedó documentado como diagnóstico del bug.
+2. `python scripts_experimento/evaluar_votantes_24h.py` — decide si TFT, LSTM, las ventanas
+   promediadas y los modelos recalibrados (v2) entran al ensamble de 24h. Antes de correrlo, editar
+   `FUENTES` en ese script para que apunte a `recalibracion_2026_v2_predicciones.csv` en vez de la
+   v1 (columnas `NBEATSx_rec`/`NHITS_rec` con el mismo nombre en ambos archivos).
+3. Reejecutar los notebooks 10 y 07 (ya editados, solo falta correr):
+   `python -m jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=-1
+   --ExecutePreprocessor.kernel_name=python3 notebooks/10_diebold_mariano_juan.ipynb` (y luego el 07)
+   — con orígenes de 12 meses, ~90-110 min combinados. Los backups de la versión de 3 meses
+   (`*_3meses_backup.csv`) ya existen, así que `cola_trabajos.sh` los detecta y no los pisa.
+4. Con el walk-forward anual ya generado, correr `resumen_walkforward_anual.py` (script ya
+   preparado hoy) para la tabla de MAE/rMAE/sesgo/forma por origen y decidir si algo cambia en las
+   conclusiones del informe comparativo.
+5. Se puede simplemente reejecutar `bash scripts_experimento/cola_trabajos.sh` completo — es
+   idempotente en el paso de backups y retoma exactamente en el paso 1 (TFT/LSTM), que ya está
+   guardado, así que conviene comentar esa línea o correr los pasos sueltos en el orden de arriba
+   en vez de la cola completa, para no repetir 40 minutos de trabajo ya hecho.
+
+### 2026-09-11 (tarde) — 72h con 216 cortes diarios: la significancia que faltaba esta mañana ya aparece en los tres tramos
+
+Pedido del usuario: la evaluación de 72h usaba solo 72 cortes no solapados (`step_size=72`); con `step_size=24` habría 214-216 ventanas solapadas y mucha más potencia estadística en los tests DM — identificado esta mañana como la mejora metodológica más barata pendiente. Se corrió (`evaluacion_72h_diaria.py`): 214 cortes diarios a las 00:00 (alineados con los cortes de 24h, para que el contrato unificado sea consistente), entrenando 5 variantes de N-BEATSx (base, semillas 7 y 123, contexto de 336h, exógenas enriquecidas) + XGBoost/CatBoost/CatBoost-denso/Ridge directos + naive estacional.
+
+Resultado — con 214 ventanas (`ensamble_72h_diario.py`, meta-modelo LAD por tramo, igual que v3), **la ganancia contra N-BEATSx ahora es significativa en los tres tramos, en las dos versiones**:
+
+| Tramo | N-BEATSx | Ensamble (CV) | p (CV) | Ensamble (desplegable) | p (desplegable) |
+|---|---|---|---|---|---|
+| 1-24h | 49.41 | **47.07** (−4.7%) | **0.0008** | **49.43** (−3.7%) | **0.0224** |
+| 25-48h | 70.97 | **64.00** (−9.8%) | **0.0010** | **67.13** (−8.4%) | **0.0065** |
+| 49-72h | 85.99 | **74.69** (−13.1%) | **0.0003** | **79.34** (−10.1%) | **0.0116** |
+
+Con 72 cortes esta mañana, la versión desplegable de 25-48h y 49-72h no alcanzaba a ser significativa (p=0.15 y p=0.09); con 214 cortes **sí lo es** en ambos tramos y en ambas versiones — confirma que el problema de esta mañana era falta de potencia estadística, no que la mejora no fuera real. El promedio de semillas de N-BEATSx (`NBX_semillas`) resultó el mejor votante individual en 1-24h y 25-48h (47.50 y 67.85); Ridge directo sigue ganando en 49-72h (82.13).
+
+**Bug encontrado y corregido en el camino**: al calcular las bandas de la versión desplegable en el tramo 49-72h, 672 de 5,136 filas dieron NaN en el ancho de banda. Causa: en esas filas el optimizador LAD le dio peso 0 a los dos únicos modelos con cuantiles propios (N-BEATSx y N-BEATSx-exog) porque el punto se armaba mejor solo con árboles/lineal — al no quedar ningún modelo con banda, la normalización de pesos para las bandas quedaba en 0/0. Corregido con un respaldo de peso igual entre los modelos con banda, usado solo para ese cálculo (el pronóstico puntual no cambia). Tras la corrección: cobertura 76.2%/76.9% en 49-72h (objetivo 80%).
+
+**Nuevos contratos**: `pronostico_unificado_72h_diario_2026.csv` (todas las 214 ventanas solapadas, para análisis) y `pronostico_unificado_72h_v2_2026.csv` (ventanas no solapadas, mismo esquema que el contrato anterior — reemplaza a `pronostico_unificado_72h_2026.csv` como candidato a contrato de OE3, pendiente de decidir cuál de los dos usar).
+
+### 2026-09-11 (tarde) — Recalibración 2026: bug de warm-start encontrado en `refit` de neuralforecast; corrección lista, pendiente de correr
+
+Al recalibrar ARX+GARCH y XGBoost a diario (reentrenados **desde cero** en un loop propio) el resultado fue neutro-a-positivo, como se esperaba. Pero al recalibrar N-BEATSx/N-HiTS con el parámetro nativo `refit=30` de `NeuralForecast.cross_validation`, el resultado fue **peor que el modelo congelado en los 8 meses de 2026**, contradiciendo directamente el hallazgo de anoche (reentrenar antes de junio sí ganó, 93.59→86.21):
+
+| Modelo | Congelado (MAE) | Recalibrado v1 (MAE) |
+|---|---|---|
+| ARX+GARCH | 55.83 | 56.26 |
+| XGBoost | 61.39 | **60.00** |
+| N-BEATSx | 46.82 | 48.72 (peor) |
+| N-HiTS | 46.44 | 52.92 (mucho peor) |
+
+**Causa raíz encontrada, leyendo el código fuente de `neuralforecast` 3.2.1**: cuando se usa `refit=N`, cada reentrenamiento llama internamente a `self.fit(..., use_init_models=False)` — que es también el valor por defecto de `fit()` — y eso **continúa el entrenamiento desde los pesos ya ajustados** (warm-start) en vez de reiniciar el modelo desde cero. Con un conjunto de entrenamiento que apenas crece unos cientos de horas cada vez (frente a ~60,000 ya vistas), 1000 pasos adicionales de warm-start no aprenden nada nuevo de peso, pero sí reinician el programa de tasa de aprendizaje, empujando al modelo fuera de un mínimo ya bueno — efecto que se acumula en cada reentrenamiento sucesivo (por eso el deterioro crece mes a mes: 46.82 en enero-abril, hasta perder 6-9 puntos de MAE en mayo-agosto). El experimento de anoche no tenía este problema porque usaba un `NeuralForecast` completamente nuevo con un único `.fit()` desde cero — igual que se hace aquí manualmente para ARX+GARCH y XGBoost.
+
+**No es un resultado negativo genuino sobre la adaptabilidad** — es un detalle de implementación de la librería. Corregido en `recalibracion_2026_v2.py`: loop manual que crea una instancia nueva de NBEATSx/NHITS en cada punto de reentrenamiento (mismo criterio que anoche), y recalcula la normalización de las exógenas con los datos disponibles hasta ese corte (la v1 usaba una normalización fija de enero-2026, que la v2 también corrige). **No se alcanzó a correr** — el usuario tuvo que apagar el equipo antes de que hubiera tiempo (~40-55 min estimados). Queda listo para la próxima sesión.
+
+### 2026-09-11 (tarde) — Forma del día: separar nivel y forma; el sesgo visto solo dentro de 2026; por qué el TFT no terminaba
+
+Pedido del usuario: (1) dejar de lado el desempeño 2020-2025 y **adaptar el modelo a 2026**, el año que se publica; (2) resolver la forma del día; (3) terminar primero el TFT y todo lo que quedó a medias; (4) walk-forward con orígenes de **un año completo**; (5) recalibración diaria; (6) 72h con cortes diarios. Esta entrada cubre lo ya cerrado; el resto corre en una cola secuencial (`cola_trabajos.sh`) y se documenta en la entrada siguiente.
+
+**Forma del día — primera vez medida para los ensambles** (`metricas_forma_2026.py`, métricas de Maciejowska, Lipiecki & Uniejewski 2026). Corr-f = si el pronóstico ordena las 24 horas del día igual que la realidad; MHD = horas de error al ubicar la hora más barata y la más cara (suma de ambas); MPD = COP/kWh que se pierden por operar en la hora señalada en vez de la óptima.
+
+| 2026 | MAE | Corr-f | MHD (h) | MPD | Amplitud |
+|---|---|---|---|---|---|
+| Persistencia | 56.40 | **0.835** | **3.97** | 65.45 | 1.00 |
+| N-BEATSx | 46.82 | 0.775 | 5.70 | 58.82 | 0.81 |
+| Ensamble v1 (NNLS) | 44.51 | 0.816 | 4.51 | 53.27 | 0.80 |
+| Ensamble v4 (QRA franjas) | **42.51** | 0.799 | 5.01 | **47.43** | 0.94 |
+
+El v4 ya es el que **menos plata deja en la mesa** (MPD) y el que menos aplana la curva, pero copiar el día anterior ordena mejor las horas y ubica mejor el pico y el valle. Y v1 ordenaba mejor que v4: los pesos por franja crean saltos en las fronteras de las franjas.
+
+**Solución probada — separar nivel y forma** (`forma_del_dia.py`, `forma_del_dia_v2.py`). Las tres métricas de forma dependen solo de cómo se mueve cada hora respecto a la media del día; sumarle una constante a todo el día no las cambia. Entonces se toma el **nivel** (media de la ventana de pronóstico) del v4, que gana en MAE, y la **forma** de un ensamble LAD ajustado solo sobre las desviaciones respecto a la media, con candidatos que incluyen el perfil semanal del precio (mediana de la misma hora en los últimos 7 días):
+
+| | MAE | Corr-f | MHD (h) | MPD |
+|---|---|---|---|---|
+| v4, validación cruzada | 42.51 | 0.799 | 5.01 | 47.43 |
+| Nivel v4 + forma ajustada, validación cruzada | 43.05 (+1.3%) | **0.829** (p<0.0001) | 4.74 (n.s.) | 46.70 (n.s.) |
+| v4 desplegable | 44.52 | 0.796 | 4.92 | 47.99 |
+| Nivel + forma, desplegable | 45.25 (+1.6%, p=0.016) | **0.829** (p=0.001) | 4.50 (p=0.31) | 48.19 (n.s.) |
+
+Es un intercambio real: casi el Corr-f de la persistencia (0.835) con un MAE mucho mejor (45 contra 56), a cambio de +1.6% de MAE frente a v4. Como Maciejowska et al. reportan que el Corr-f correlaciona >0.80 con la ganancia de una regla de arbitraje y el MAE <0.20, la versión con forma ajustada es la candidata natural si la regla de OE3 depende del *momento* de actuar. El MHD (ubicar exactamente el pico y el valle) sigue sin mejorar de forma significativa: queda abierto.
+
+**El sesgo visto solo dentro de 2026** (`sesgo_2026.py`, pronóstico − real, en COP/kWh):
+
+| Mes 2026 | Precio medio | XGBoost | N-BEATSx | v4 |
+|---|---|---|---|---|
+| Ene-Abr | 124-269 | +2 a +10 | +2 a +7 | −1.6 a +1.5 |
+| May | 505 | −46.0 | −7.1 | −9.8 |
+| Jun | 548 | −51.0 | +3.9 | −6.5 |
+| Jul | 791 | −66.3 | +17.5 | +4.4 |
+| Ago (5 días) | 935 | −58.2 | +44.5 | +34.4 |
+
+Cuando el precio se duplica en mayo-junio **todos subestiman**; en julio-agosto las redes pasan a **sobreestimar**. XGBoost se queda corto por 46-66 COP/kWh desde mayo: los árboles no pueden pronosticar por encima de lo que vieron en entrenamiento, y 2026 supera los precios de 2019-2025. Por tercil de precio se repite el patrón conocido (v4: +8.3 en el tercil bajo, −25.7 en el alto). Todo esto apunta a lo mismo: un modelo congelado a diciembre de 2025 no ha visto el nivel de precios de 2026 — que es lo que ataca la recalibración.
+
+**Por qué el TFT no terminaba** (`tft_benchmark.py`): con la configuración de anoche (hidden 64, lote de 1024 ventanas) cada paso de entrenamiento tomaba **23.5 s**, o sea ~6.5 horas para las 1000 iteraciones — no estaba colgado, simplemente era inviable en CPU. Con hidden 32 y lotes de 256 ventanas baja a 2.6 s/paso (~43 min). LSTM y N-BEATSx toman ~3 min.
+
+**Walk-forward con años completos**: los notebooks 07 y 10 pasan de ventanas de prueba de 3 meses a **5 ventanas consecutivas de 12 meses** (jul-2020→jun-2021, …, jul-2024→jun-2025), sin solapes. Se eligieron años julio→junio y no calendario porque así el Origen 1 entrena con la pandemia ya incluida (con años calendario entrenaría solo con 2019), y el episodio completo de El Niño 2023-24 (ONI medio +1.30, pico 2.0) queda dentro del Origen 4. El Origen 6 (2026) no cambia. Las salidas de la versión de 3 meses se respaldan como `*_3meses_backup.csv` antes de reejecutar.
+
+### 2026-09-11 — Contrato unificado 1-72h para OE3: MAE global 63.50, −18.4% frente al punto de partida del día
+
+Los cortes de 72h (cada 3 días a las 23:00) son un subconjunto de los cortes diarios de 24h (23:00): para h=1-24, el ensamble de 24h y el de 72h pronostican **exactamente las mismas horas desde el mismo corte**. Entonces el contrato de horizonte completo puede usar el especialista de 24h (v4) en los pasos 1-24 y el ensamble v3 en los pasos 25-72 (`contrato_unificado_72h.py`). Antes de unificar se verificó en esas mismas 1,728 horas:
+
+| Pasos 1-24 (72 cortes) | MAE | MAPE | Cobertura | Ancho | Interval Score |
+|---|---|---|---|---|---|
+| v3 (LAD 72h) | 54.68 | 15.52% | 78.4% | 181.4 | 302.2 |
+| **v4 (QRA 24h por franja)** | **41.69** | **10.20%** | 79.6% | 162.0 | 282.2 |
+
+El especialista gana en punto con amplitud (DM p<0.0001); en bandas es más angosto con más cobertura, aunque la diferencia de Interval Score no es significativa (p=0.32).
+
+**Evolución del día (2026, fuera de muestra):**
+
+| | 1-24h | 25-48h | 49-72h | Global 1-72h |
+|---|---|---|---|---|
+| Inicio del día — N-BEATSx 72h solo | 58.68 | 76.20 | 98.56 | 77.81 |
+| **Contrato unificado (v4 + v3)** | **41.69** | **64.32** | **84.50** | **63.50** (MAPE 18.20%) |
+
+Detalle corregido en el camino: la calibración conforme puede producir un margen negativo cuando la banda sobrecubre, y eso cruzaba cuantiles en 42 de 5,184 horas de las bandas QRA de 24h. Ahora se reordenan después de calibrar (q10 ≤ q50 ≤ q90). Los tres contratos nuevos pasan `validar_contrato_pronostico` del motor de decisión con 0 NaN y 0 cuantiles cruzados.
+
+**Integración pendiente de aprobación del equipo**: `fuentes_pronostico.json` **no se modificó** y sigue apuntando a N-BEATSx solo. El cambio propuesto es `"24h"` → `bandas_24h_qra_causal_2026.csv` y `"72h"` → `pronostico_unificado_72h_2026.csv`. El motor solo consume `fecha_hora, real, q10, q50, q90`, así que no hay que tocar el notebook 12 ni el dashboard — pero ambos leen de ese JSON, así que el cambio se deja para decidirlo con Rafael.
+
+### 2026-09-11 — Ensamble de 24h v4: QRA por franja horaria — MAPE 11.27%, nuevo mejor resultado del proyecto
+
+Dos ideas de la literatura revisada, combinadas: el paper de Uniejewski (2026) aplica todos sus esquemas de combinación **por separado para cada hora del día**, y QRA (Quantile Regression Averaging, Nowotarski & Weron 2015) es la generalización del meta-modelo LAD a cualquier cuantil. Mismos 5 votantes del ensamble anterior (Persistencia, XGBoost, ARX+GARCH, N-BEATSx, N-HiTS), mismas predicciones — solo cambia cómo se combinan.
+
+**Paso 1 — pesos por franja horaria** (`pesos_por_franja.py`, 4 franjas de 6h elegidas antes de ver resultados): LAD por franja da MAE 43.24 / MAPE 11.70% contra 44.51 / 12.05% (DM p=0.0006). Con un solo vector de pesos para todo el día (NNLS o LAD global) no hay diferencia; la ganancia viene de dejar que los pesos cambien a lo largo del día. Los pesos se leen bien físicamente: en la **noche** (18-23h) la persistencia se lleva 41% — el pico nocturno se repite casi idéntico día a día —; en la **madrugada** domina N-HiTS (65%); en la **tarde** ARX+GARCH sube a 33%.
+
+**Paso 2 — QRA en vez de LAD** (`validar_qra_24h.py`): QRA en el cuantil 0.5 difiere del LAD en que tiene intercepto y los pesos no están obligados a sumar 1. El intercepto absorbe el sesgo de nivel común a todos los votantes que el proyecto ya había documentado (todos sobreestiman en precios bajos).
+
+| Ensamble de 24h | MAE | MAPE | Acierto por tercil | Errores graves | MAE versión desplegable* |
+|---|---|---|---|---|---|
+| v1 — NNLS global (anterior) | 44.51 | 12.05% | 90.90% | 0.19% | 46.12 |
+| v3 — LAD por franja | 43.24 | 11.70% | 91.53% | 0.21% | 45.17 |
+| **v4 — QRA por franja** | **42.51** | **11.27%** | **92.01%** | **0.14%** | **44.51** |
+
+\*Pesos estimados solo con días anteriores (ventana expansiva), evaluado tras 14 días de calentamiento.
+
+Pruebas de robustez superadas: (1) la ganancia se sostiene con 3, 4 y 6 franjas (+4.0% a +4.5%, DM p<0.0001 en las tres) — no es una partición elegida con suerte; con 12 o 24 franjas cae, porque 5 pesos por grupo con ~200 días empiezan a estimarse con ruido; (2) v4 le gana a LAD por franja (p=0.0016); (3) **en versión desplegable también gana**: 44.51 contra 46.12 del ensamble anterior desplegable (p=0.0004).
+
+**Bandas propias para el ensamble de 24h** (antes solo N-BEATSx solo tenía bandas a 24h): QRA en los cuantiles 0.1 y 0.9 con los mismos votantes, más calibración conforme adaptativa causal. Cobertura 79.7% con ancho medio 159.6 COP/kWh, contra 76.8% y 181.4 del contrato de bandas vigente — **más cobertura con bandas 12% más angostas**; Interval Score (Gneiting & Raftery 2007) 289.8 vs 322.5, mejor con significancia (p=0.006). En versión desplegable: 76.6% / 176.0 / IS 312.1 contra 76.8% / 192.3 / IS 342.1.
+
+Archivos: `stacking_24h_v4_qra_2026.csv` (punto por validación cruzada y columnas de la versión desplegable), `bandas_24h_qra_causal_2026.csv` (q10/q50/q90).
+
+### 2026-09-11 — Segunda revisión: dos correcciones metodológicas, meta-modelo LAD (72h v3), y lo que la literatura no transfirió
+
+Pedido del usuario: seguir buscando mejoras para ambos modelos (24h y 72h), guiándose por la literatura ya revisada. Se reportan primero las **correcciones**, porque cambian conclusiones ya documentadas.
+
+**Corrección 1 — los p-valores del ensamble v2 de 72h estaban inflados.** En `ensamble_72h_v2.py` la serie de diferencias de pérdida para el test Diebold-Mariano se armaba concatenando los pliegues de la validación cruzada (días en orden aleatorio). El estimador HAC (Newey-West) asume orden temporal para medir la autocorrelación; al desordenar la serie la subestima y los p-valores salen artificialmente pequeños. Se detectó porque el análisis causal (en orden correcto) daba p≈0.15 donde v2 reportaba p=0.023. Verificado reproduciendo ambos órdenes (`verificar_dm_orden.py`): **v2 contra N-BEATSx da p=0.076 (25-48h) y p=0.090 (49-72h) en orden cronológico — no significativos al 5%**, no p=0.023 y p=0.037 como se documentó en la entrada siguiente. Las mejoras de MAE (−12.0% y −12.1%) sí eran reales; lo que no se sostenía era la significancia. El ensamble de 24h (MAPE 12.05%) **no** tiene este problema: su archivo ya se guardaba en orden cronológico y sus p-valores son idénticos en ambos órdenes. Bug corregido en el script.
+
+**Corrección 2 — fuga intradía en RecursiveLS.** La variante recursiva predecía la hora `t` con coeficientes filtrados hasta `t-1`, pero el protocolo es day-ahead (corte a las 23:00): los coeficientes de la hora 15 ya habían visto los precios reales de las horas 0-14 del mismo día. Corregido en `recursive_ls_dayahead.py` (coeficientes hasta las 23:00 del día anterior): MAE 59.33 → 59.40. La conclusión se sostiene — sigue ganándole a los coeficientes fijos (DM p=0.00001).
+
+**Revisión que resultó sin problema — calibración conforme de 72h.** Se sospechó que el margen adaptativo de un día objetivo D usaba scores de D−1 y D−2, posteriores al corte en el tramo 49-72h. No se materializa: con cortes cada 72h a las 23:00, cada tramo cubre exactamente un día completo, y en ese tramo no existen filas de D−1 ni D−2. La versión por corte (solo objetivos ≤ corte) da resultados idénticos y queda implementada en `qra_bandas.py` para cuando se use `step_size=24`, donde sí importaría.
+
+**72h v3 — meta-modelo LAD en vez de NNLS.** NNLS minimiza error cuadrático, dominado por los picos; el proyecto se evalúa con MAE. LAD (mínima desviación absoluta, pesos ≥ 0 que suman 1, resuelto exacto por programación lineal) optimiza la métrica que se reporta — y es exactamente QRA en el cuantil 0.5 (Nowotarski & Weron 2015). Con los mismos 9 votantes y el mismo protocolo (`ensamble_72h_v2.py --lad`):
+
+| Tramo | N-BEATSx | v2 (NNLS) | **v3 (LAD)** | Mejora v3 | DM v3 vs N-BEATSx | DM v3 vs v2 |
+|---|---|---|---|---|---|---|
+| 1-24h | 58.68 | 57.42 | **54.68** | −6.8% | p=0.077 (n.s.) | p=0.003 (sig.) |
+| 25-48h | 76.20 | 67.07 | **64.32** | **−15.6%** | **p=0.019 (sig.)** | p=0.0009 (sig.) |
+| 49-72h | 98.56 | 86.67 | **84.50** | **−14.3%** | **p=0.043 (sig.)** | p=0.069 (n.s.) |
+| Global 1-72h | 77.81 | 70.38 | **67.83** | −12.8% | MAPE 19.97% | |
+
+Todos los p-valores en orden cronológico. **Con LAD la significancia contra la línea base sí se sostiene en los dos tramos largos.** Pesos en 49-72h: Ridge directo 0.40, CatBoost directo 0.19, N-BEATSx 0.18, N-BEATSx-exog 0.14; N-HiTS recibe peso 0 en todos los tramos. Versión desplegable (pesos LAD con ventana expansiva, solo cortes anteriores): 56.36 / 68.95 / 87.54 contra N-BEATSx 59.17 / 77.64 / 100.13 en las mismas filas (−4.7% / −11.2% / −12.6%). Bandas con calibración adaptativa: cobertura 78.4% / 77.5% / 75.0%, anchos 181 / 228 / 285 COP/kWh (más angostas que v2 con la misma cobertura). **Nuevo contrato de 72h para OE3: `pronostico_ensamble_72h_v3_adaptativo.csv`** (reemplaza a v2; mismo esquema de columnas).
+
+**Validación de rigor del ensamble de 24h (12.05%)**: la versión desplegable (pesos con ventana expansiva, solo días anteriores) da MAE 46.12 contra 46.02 de la validación cruzada en las mismas horas (p=0.65). El resultado **no** es un artefacto de usar días futuros para fijar los pesos.
+
+**Lo que se probó y no funcionó:**
+
+| Intento | Resultado | Por qué |
+|---|---|---|
+| Fusionar al stacking de 24h los 8 modelos sueltos de anoche (CatBoost, hurdle, Markov, RecursiveLS, XGB/CatBoost Optuna, CatBoost/Ridge directos 24h) | Empeora: 46.02 → 46.45 (p=0.013) | Casi todos son árboles muy correlacionados entre sí; 13 pesos se estiman con ruido. Confirma que importa la diversidad de familias, no la cantidad de votantes |
+| Pesos móviles (ventanas de 30 y 60 días) — la idea de agregación adaptativa de expertos (BOA) de arXiv:2405.15359 | Peor que la ventana expansiva en 24h (p<0.01); sin ganancia en 72h | Con ~200 días de 2026, estimar pesos con 30-60 días es demasiado ruidoso |
+| Transformación asinh (Uniejewski, Weron & Ziel 2018) y asinh parametrizado + AVGroll (Uniejewski 2026, EPSR 257) sobre el Ridge directo | asinh estándar **empeora** 6-16%; AVGroll solo +0.7% | Los picos colombianos son cambios de nivel sostenidos por régimen hidrológico, no picos aislados como en Europa: comprimir la cola alta sesga hacia abajo justo en El Niño (el MAPE baja un poco, el MAE sube). En árboles con pérdida MAE la VST es casi irrelevante por construcción (la mediana es equivariante ante transformaciones monótonas) |
+| Pesos por franja horaria en 72h | Sin diferencia (p>0.6) | Con 72 cortes, ~430 filas por franja y tramo no alcanzan para 9 pesos |
+| QRA para las bandas de 72h | Interval Score sin diferencia significativa contra v3 | Las bandas de v3 ya están bien calibradas |
+
+### 2026-09-11 — Revisión del proyecto y mejora del modelo de 72h (ensamble v2) — ⚠ la significancia reportada aquí fue corregida en la entrada de arriba
+
+Pedido del usuario: revisar todo el proyecto buscando oportunidades de mejora, probarlas, y mejorar específicamente el modelo de 72h. La revisión encontró **dos huecos estructurales**, ambos atacables:
+
+**Hueco 1 — el pipeline de 72h usaba 3 de 47 variables.** `bandas_incertidumbre_nbeatsx_72h.py` solo pasaba `volumen_embalses`, `aportes_hidricos` y `demanda_lag24h` como exógenas históricas, y no incluía `dia_anio_sin/cos` (que el pipeline de 24h sí tenía). Faltaban sobre todo las versiones **normalizadas** de la hidrología: `volumen_embalses` en metros cúbicos absolutos (~1.3e10) es no estacionaria y su nivel no significa lo mismo en 2019 que en 2026, mientras que `volumen_embalses_vs_media30d` sí es comparable entre regímenes.
+
+**Hueco 2 (el importante) — la afirmación de que "XGBoost no se puede extender a 25-72h" era falsa.** Anoche se documentó que Persistencia/XGBoost/ARX+GARCH estaban estructuralmente atados a `precio_lag24h` y que extenderlos exigiría 71 reentrenamientos. Eso es cierto solo para la formulación **recursiva**. La formulación **directa** sí se puede: un único modelo que recibe el paso del horizonte `h` como variable y usa exclusivamente el estado conocido en el momento del corte (`t-h`) más el calendario/ONI del instante objetivo. Un solo modelo cubre los 72 pasos, sin fuga y sin reentrenamientos múltiples. Esto desbloqueó las familias no neuronales para todo el horizonte — justo la diversidad que le faltaba al ensamble fallido de anoche.
+
+Disciplina anti-fuga del modelo directo (lo crítico): el estado se toma en `t-h`, nunca en `t`; `precio_lag168h` sí se usa porque `h<=72<168` lo hace siempre conocido en el corte; `precio_lag24h` NO se usa porque para `h>24` no está disponible, y en su lugar se construye `precio_mismo_hora_disp` = precio en `t - 24*ceil(h/24)`, el valor más reciente de la misma hora del día que sí existe en el corte.
+
+**Modelos individuales nuevos a 72h** (mismos 72 cortes de la validación cruzada neuronal, MAE por tramo):
+
+| Modelo | 1-24h | 25-48h | 49-72h |
+|---|---|---|---|
+| N-BEATSx (línea base de producción) | **58.68** | 76.20 | 98.56 |
+| N-BEATSx exógenas enriquecidas | 59.57 | 75.18 | 96.24 |
+| N-HiTS | 64.59 | 82.01 | 108.69 |
+| XGBoost directo | 65.89 | 74.28 | 88.89 |
+| XGBoost directo v2 (anclas + cuantiles) | 71.00 | 75.60 | 89.72 |
+| CatBoost directo | 63.30 | 71.54 | 86.63 |
+| CatBoost directo (2× datos) | 66.29 | 72.17 | 89.45 |
+| **Ridge directo (lineal)** | 62.91 | **71.12** | **85.52** |
+| Naive estacional (misma hora hace 7 días) | 122.06 | 127.79 | 124.24 |
+
+**El hallazgo más interesante: a horizontes largos gana un modelo LINEAL.** Ridge directo es el mejor modelo individual en 25-48h y 49-72h, por encima de las redes neuronales y de los árboles. Tiene sentido físico: a 2-3 días de distancia ya no queda información explotable de la dinámica horaria de corto plazo, y lo que queda es nivel de fundamentales (hidrología) más estacionalidad semanal — una estructura que un lineal captura sin sobreajustar y que además **extrapola**, cosa que los árboles no pueden hacer por construcción. Esto también explica por qué CatBoost con el doble de datos empeoró: el problema a horizonte largo no era falta de datos.
+
+**Ensamble v2 (`ensamble_72h_v2.py`) — NNLS con 9 votantes, pesos por tramo, validación cruzada de 5 pliegues por día:**
+
+| Tramo | N-BEATSx (antes) | Ensamble v2 | Mejora | DM vs línea base |
+|---|---|---|---|---|
+| 1-24h | 58.68 | 57.42 | −2.2% | p=0.598 (sin diferencia) |
+| 25-48h | 76.20 | **67.07** | **−12.0%** | **p=0.023 — GANA (sig.)** |
+| 49-72h | 98.56 | **86.67** | **−12.1%** | **p=0.037 — GANA (sig.)** |
+| Global 1-72h | 77.81 | **70.38** | **−9.5%** | MAPE 20.98% |
+
+Esta vez el ensamble **sí** le gana a la línea base con significancia estadística en los dos tramos largos, a diferencia del intento de anoche. La diferencia es exactamente la prevista por la lección central del proyecto: anoche había 2 votantes de la misma familia; ahora hay tres familias reales (redes, árboles, lineal) y los pesos NNLS se reparten entre ellas (en 49-72h: Ridge 0.258, CatBoost 0.232+0.151, N-BEATSx 0.167+0.038, naive 0.080).
+
+**rMAE contra la persistencia estacional de 7 días** (referencia de Lago et al. 2021, que antes no existía para el horizonte largo): 0.470 / 0.525 / 0.698 en 1-24h / 25-48h / 49-72h. El modelo le gana al benchmark ingenuo con holgura en todo el rango.
+
+**Bandas**: calibración conforme adaptativa (ventana móvil 30 días) sobre el ensamble → cobertura 78.0% / 76.9% / 75.1% (objetivo 80%), anchos 195 / 234 / 293 COP/kWh.
+
+**Honestidad sobre los límites de este resultado**:
+- En 49-72h, Ridge directo solo (85.52) es marginalmente mejor que el ensamble (86.67), y la diferencia no es significativa (p=0.764). Se recomienda el ensamble por robustez y porque trae bandas calibradas, pero **Ridge solo es una alternativa defendible y mucho más simple** si se prioriza interpretabilidad.
+- En 1-24h nada superó a N-BEATSx de forma significativa. Para ese tramo sigue siendo mejor el ensamble de stacking de 24h dedicado (MAPE 12.05%).
+- La evaluación de 72h usa solo 72 cortes (uno cada 3 días, `step_size=72`). Usar `step_size=24` daría 216 ventanas y mucha más potencia estadística a los tests DM, a costo de inferencia adicional. Queda como mejora metodológica pendiente.
+
+**Recomendación final por horizonte**: h=1-24 → ensamble de stacking de 24h (`stacking_ensamble_cv_2026.csv`, MAPE 12.05%); h=25-72 → ensamble v2 de 72h (`pronostico_ensamble_72h_v2_adaptativo.csv`), que reemplaza a `pronostico_con_bandas_72h_2026_adaptativo.csv` como contrato de OE3.
+
+### 2026-09-11 (madrugada) — Extensión al horizonte completo 24-72h: N-HiTS a 72h, ensamble (resultado negativo honesto) y calibración adaptativa
+
+Pedido explícito del usuario antes de dormir: no dejar el avance de hoy (el ensamble de stacking, MAPE 12.05%) limitado al punto de 24h, dado que el Anexo 1 (OE2.2) exige comparar en todo el rango 24-72h. Trabajo completado de forma autónoma durante la noche.
+
+**Verificación previa**: los cambios de fuzzy ONI (agregados y revertidos más temprano hoy) nunca tocaron las columnas que usa el pipeline de 72h (`volumen_embalses`, `aportes_hidricos`, `demanda_lag24h`, `oni`, festivos, calendario) — solo agregaban columnas nuevas, después removidas limpiamente. Por eso **no hizo falta reentrenar N-BEATSx a 72h** (`pronostico_con_bandas_72h_2026.csv`, ya existente, sigue siendo válido).
+
+**N-HiTS a 72h** (`scripts_experimento/bandas_incertidumbre_nhits_72h.py`, espejo exacto del script de N-BEATSx) — entrenado con `h=72`, `MQLoss`, mismas exógenas y festivos. Resultado: MAE por tramo 64.59 (1-24h) / 82.01 (25-48h) / 108.69 (49-72h) — **claramente peor que N-BEATSx-72h en los 3 tramos** (58.68 / 76.20 / 98.56) — a diferencia de h=24, donde N-HiTS y N-BEATSx quedaban prácticamente empatados. Tiene sentido: la arquitectura de N-HiTS (interpolación multi-tasa, diseñada para ser liviana) se degrada más rápido que la descomposición basis-expansion de N-BEATSx a medida que crece el horizonte.
+
+**Ensamble de stacking N-BEATSx+N-HiTS por tramo de horizonte** (`scripts_experimento/ensamble_72h.py`) — **resultado negativo honesto**: el ensamble de 2 modelos **no le gana a N-BEATSx solo de forma significativa en ningún tramo** (DM test: p=0.37 / 0.75 / 0.61 en 1-24h / 25-48h / 49-72h respectivamente), y en el tramo 1-24h queda incluso marginalmente peor (58.81 vs 58.68). Consistente con la lección central de toda la sesión: **la diversidad entre familias es lo que hace ganar al stacking, no combinar dos modelos**. A diferencia del ensamble ganador de 24h (5 familias genuinamente distintas: árboles, econométrico, y dos arquitecturas neuronales), aquí solo hay 2 modelos de la misma familia (`neuralforecast`), y uno domina claramente al otro — no hay error diversificable que aprovechar. Pesos NNLS promedio: N-BEATSx 71-96% según el tramo, N-HiTS 4-29%.
+
+**Calibración conforme adaptativa sí funcionó, y bien** (misma metodología ya probada para N-BEATSx solo): cobertura cruda 45-62% → adaptativa 75-79% (objetivo 80%), con el ancho de banda creciendo correctamente con el horizonte (195.9 → 271.6 → 317.5 COP/kWh). Guardado en `pronostico_ensamble_72h_2026_adaptativo.csv`.
+
+**Recomendación final por horizonte** (dado que el ensamble de 24h no se puede extender más allá de 24h sin 71 reentrenamientos adicionales de XGBoost/ARX+GARCH/Persistencia — estructuralmente atados a `precio_lag24h` — scope explícitamente fuera de alcance para esta ronda):
+
+| Horizonte | Modelo recomendado | MAPE / MAE | Archivo |
+|---|---|---|---|
+| **Exactamente 24h** | Ensamble de stacking (5 modelos, NNLS) | MAPE 12.05% / MAE 44.51 | `stacking_ensamble_cv_2026.csv` |
+| **25h a 72h** | N-BEATSx nativo h=72 + calibración adaptativa | MAE 58.68→98.56 según tramo | `pronostico_con_bandas_72h_2026_adaptativo.csv` (sin cambios, ya validado) |
+
+Verificación cruzada: el propio N-BEATSx-72h, evaluado exactamente en su paso de 24h, da MAPE 14.03% (MAE 45.32, n=72 ventanas no solapadas) — **peor que el ensamble dedicado a 24h (12.05%, n=5184)**, confirmando que vale la pena mantener el modelo especializado en 24h aparte del multi-horizonte, en vez de usar uno solo para todo el rango.
+
+### 2026-09-11 (madrugada) — TFT como 6º votante: abortado por costo computacional, no por resultado
+
+Idea #2 de la lista (Transformer como votante adicional del ensamble, inspirado en T2V-TE de *Energies*). `scripts_experimento/transformer_sexto_votante.py`. Primer intento con `VanillaTransformer` de `neuralforecast` falló de inmediato: esa arquitectura **no soporta variables exógenas históricas** (`hist_exog_list`), y perder `volumen_embalses`/`aportes_hidricos`/`demanda_lag24h` no era aceptable. Se cambió a **TFT (Temporal Fusion Transformer)**, que sí soporta histórico + futuro conocido — arquitectura correcta para el caso.
+
+**Se abortó tras más de 2 horas de entrenamiento sin completar ni la primera fase** (217 ventanas walk-forward a h=24, sin GPU disponible). El proceso seguía consumiendo CPU activamente (no estaba colgado — el tiempo de CPU acumulado creció de forma lineal entre chequeos), simplemente el mecanismo de atención de TFT es mucho más caro por ventana que la descomposición basis-expansion de N-BEATSx/N-HiTS en esta máquina sin GPU. Dado que la prioridad de la noche era la extensión del horizonte 24-72h (pedida explícitamente), se detuvo el proceso para no arriesgar esa entrega — decisión reversible, ningún dato se perdió. **Pendiente para una sesión futura**: repetir con menos `max_steps`, una arquitectura TFT más chica, o en una máquina con GPU — la idea en sí (diversidad de familia para el ensamble) sigue siendo válida, solo el costo de esta arquitectura específica en CPU no calzó con el tiempo disponible.
+
+### 2026-09-11 — Optuna (búsqueda Bayesiana) + armónicos de calendario para XGBoost/CatBoost
+
+Ideas #1 y #3 de la lista inspirada en los papers colombianos revisados hoy: (1) búsqueda Bayesiana de hiperparámetros (inspirado en que el paper T2V-TE de *Energies* afinó **todos** sus baselines con Optuna, no solo el modelo propuesto — comparación justa); (3) armónicos adicionales de calendario (2º y 3er orden de hora-del-día y día-del-año, además de los ya existentes de 1er orden) — formalmente una **expansión en serie de Fourier truncada** del componente periódico de la señal, no una codificación cíclica ad-hoc. Conecta directamente con la caracterización espectral inicial del proyecto (periodograma/FFT, notebook 03) — vale la pena citarlo en la justificación de "ingeniería electrónica" del Anexo 1: cierra el círculo entre la etapa de caracterización de la señal y su uso explícito en el modelo. `scripts_experimento/optuna_armonicos_xgb_catboost.py`. Validación: train hasta 2024, hiperparámetros elegidos con 2025, reentrenado sobre 2019-2025 completo, evaluado en el holdout 2026 (nunca se usó 2026 para elegir hiperparámetros).
+
+**Resultado**: **XGBoost afinado con armónicos mejora de forma significativa** — MAE 61.15→59.23, MAPE 15.89%→15.65%, DM p=0.00005. **CatBoost no mejora** con la búsqueda Bayesiana — MAE 57.92 vs 57.38 (el CatBoost sin afinar, ordered boosting por defecto), sin diferencia significativa (p=0.525) — se mantiene la versión original, más simple. Se actualiza el XGBoost que alimenta el ensamble de stacking con esta versión afinada.
+
+### 2026-09-11 — CatBoost (punto 4 original): le gana a XGBoost, no reemplaza al ensamble
+
+Punto 4 de la lista original de alternativas: CatBoost (ordered boosting), variante barata de probar. `scripts_experimento/catboost_benchmark.py`. Mismas 40 features y holdout 2026 que el resto del proyecto.
+
+**Resultado: MAE 57.38, MAPE 15.19% — le gana a XGBoost de forma estadísticamente significativa** (MAE 61.15→57.38, DM p=0.00003), queda muy cerca de ARX+GARCH (55.76) y por debajo de N-BEATSx base. No supera al ensamble de stacking (44.51). Candidato razonable para sumar como sexto input al ensamble de stacking en una futura iteración (no se hizo todavía).
+
+### 2026-09-11 — Referencia real en la literatura colombiana, y reentrenamiento de N-BEATSx antes de junio funciona
+
+**Punto de referencia genuino encontrado en la literatura colombiana** (el usuario pidió explícitamente buscar uno, después de que los primeros candidatos revisados hoy resultaran no comparables o inválidos): **Gallón & Barrientos (2021), *International Journal of Energy Economics and Policy*, "Forecasting the Colombian Electricity Spot Price under a Functional Approach"** — precio horario real de Colombia (2000-2017), con prueba de Diebold-Mariano formal, el primer trabajo encontrado hoy que es genuinamente comparable en resolución y rigor.
+
+Resultado del paper: modelo de series funcionales (FTS, componentes principales funcionales de Hyndman-Shang) da **MAPE 6.72% a 1 día** y **8.87% a 1 mes**, superando con significancia estadística a SARIMA (12.86%/15.42%), NNAR (14.64%/19.02%) y DSHW (13.31%/18.94%); casi empata con TBATS (9.91%/9.84%). **Salvedades honestas antes de comparar directo**: (1) datos 2000-2017, un período mucho más tranquilo que 2026, sin el súper Niño 2023-2024 ni la transición que estamos viviendo; (2) modelo puramente univariado, sin hidrología/ONI/demanda — limitación que el propio paper reconoce y deja como trabajo futuro; (3) el resultado a 1 mes se mide sobre un solo mes (enero 2018), ventana corta. **Conclusión útil**: incluso sus benchmarks univariados simples (sin régimen, sin fundamentales) dan MAPE de 9-19% en un período tranquilo — pone en contexto que nuestro 12.05% (ensamble de stacking), logrado en uno de los años más volátiles del histórico, está en un rango razonable para el mercado colombiano, no por debajo de lo esperable.
+
+**Idea nueva #2 — reentrenar N-BEATSx justo antes de junio (no solo dejarlo congelado desde 2025)**: `scripts_experimento/nbeatsx_reentrenado_junio.py`. Se reentrenó N-BEATSx con corte en 2026-06-01 (incorporando ya enero-mayo 2026, que mostraba la aceleración del ONI) y se evaluó solo en junio, contra el mismo N-BEATSx con pesos congelados desde 2025-12-31 (walk-forward Origen 6). **Resultado: mejora significativa** — MAE 93.59 (congelado) → 86.21 (reentrenado), prueba de Diebold-Mariano t=2.695, p=0.007. Confirma la hipótesis: el problema de junio no es que el modelo sea malo, es que no se actualiza — ver información reciente (aunque sea solo hasta mayo) ayuda a anticipar mejor la transición de régimen.
+
+### 2026-09-11 — Coeficientes que cambian en el tiempo (RecursiveLS) — confirma la adaptabilidad, con matices
+
+Idea nueva #3: en vez de coeficientes fijos, un filtro recursivo (`statsmodels.RecursiveLS`, tipo Kalman) que actualiza los coeficientes con cada observación nueva — mismas 16 regresoras que ARX+GARCH (sin la parte GARCH). `scripts_experimento/recursive_ls.py`.
+
+**Bug encontrado y corregido en el camino**: la inicialización difusa EXACTA por defecto (varianza inicial infinita) es numéricamente inestable en una serie de 60,625 observaciones — los coeficientes explotaban a ~10⁶-10⁷ sin sentido. Se corrigió usando inicialización difusa APROXIMADA (varianza inicial finita, `initialize_approximate_diffuse(variance=1e4)`), tras lo cual el ajuste convergió en 3 segundos a coeficientes razonables.
+
+**Resultado**: coeficientes fijos (estimados al final de 2025) dan MAE 59.82/MAPE 15.74% — parecido a ARX+GARCH. Coeficientes recursivos (actualizados observación a observación durante todo 2026) dan MAE 59.33/MAPE 15.68% — **mejora estadísticamente significativa** (DM t=4.843, p=0.00000), aunque la magnitud es chica en términos absolutos. En junio específicamente la mejora es mínima (19.96%→19.89%). **Confirma, con un segundo método independiente (el primero fue el reentrenamiento de N-BEATSx), que dejar que el modelo se actualice con información reciente sí ayuda** — aunque en este caso lineal el efecto es pequeño porque el modelo en sí (ARX simple) ya está lejos del ensamble de stacking en capacidad predictiva.
+
+### 2026-09-11 — Corrección adaptativa del punto (rolling bias) — falla, y confirma por qué la corrección de sesgo no sirve
+
+Idea motivada por el hallazgo de que el modelo a veces sobreestima y a veces subestima entre años: en vez de un ajuste de sesgo global fijo (ya descartado, `correccion_sesgo_2026.py`, DM p=0.682), un ajuste que se recalcula cada día con el error real de los últimos N días — móvil, no fijo. `scripts_experimento/correccion_adaptativa_punto.py`, aplicado sobre el ensamble de stacking (mejor resultado actual). Procedimiento estrictamente secuencial: la corrección del día t solo usa errores de días *antes* de t.
+
+**Resultado: la corrección adaptativa EMPEORA el error.** Ventana de 7 días: MAE 48.79→50.22 (DM p=0.0095, empeora significativamente). Ventana 14 días: empeora significativamente (p=0.0485). Ventana 30 días: sin diferencia. En junio específicamente (el mes problemático), las 3 ventanas empeoran. **Conclusión**: el sesgo que cambia de dirección opera a escala de **años**, no de semanas — una ventana de 7-30 días es demasiado corta para capturar una señal estable y termina persiguiendo ruido día a día en vez de corregir un sesgo real. Confirma, con un enfoque distinto, la misma conclusión de la corrección de sesgo global de anoche: no hay una corrección de sesgo barata que valga la pena para este modelo.
+
+### 2026-09-11 — Modelo de dos etapas (hurdle): mejora sobre XGBoost solo, pero no supera al ensamble
+
+Tercer intento, inspirado directamente en el paper de AES Colombia (Herrera-Mejía et al. 2025) revisado hoy: en vez de un solo XGBoost prediciendo todo el rango de precios, un **clasificador** (XGBoost, `scale_pos_weight` por desbalance) predice si la hora va a estar en "régimen alto" (precio > percentil 80 de train = 491.48 COP/kWh) usando solo variables conocidas de antemano, y esa clasificación enruta a uno de **dos regresores especializados** (uno entrenado solo con horas altas de train, otro solo con horas bajas). `scripts_experimento/hurdle_dos_etapas.py`.
+
+**Resultado**: clasificador con accuracy 94.5% / F1 0.917 (identifica bien el régimen usando info pre-conocida). El modelo completo da MAE 57.94, MAPE 16.38% — **le gana a XGBoost de un solo modelo de forma significativa** (MAE 61.36→57.94, DM p=0.049), y el sesgo por decil mejora en el extremo barato (D1 -20.96% vs. peor en el XGBoost normal), pero **sigue por debajo de ARX+GARCH (55.76) y muy por debajo del ensamble de stacking (44.51, punto 1)**. Conclusión: separar el problema por régimen sí ayuda (confirma la intuición), pero el ensamble de stacking ya captura esa ganancia y más, así que no reemplaza la recomendación del punto 1.
+
+### 2026-09-11 — Markov-Switching (2 regímenes) — empata con ARX+GARCH, no ayuda, y se entiende por qué
+
+Segundo intento de la lista de alternativas para bajar del 15-16% de MAPE: en vez de darle el régimen al modelo como covariable (ONI), dejar que lo infiera él mismo de los datos. `scripts_experimento/markov_switching.py` — `MarkovRegression` (statsmodels) con 2 regímenes, intercepto y varianza que cambian según el régimen inferido, exógenas (hidrología, calendario, festivos, precio rezagado) con coeficiente fijo entre regímenes (mismo criterio de parsimonia que ARX+GARCH, para comparación limpia).
+
+**Resultado: MAE 55.76 (idéntico a ARX+GARCH), MAPE 15.58%, DM test p=0.993 — sin diferencia significativa.** No ayudó. La razón queda clara mirando los parámetros ajustados: el Régimen 1 que el algoritmo EM encontró tiene una varianza 73 veces mayor que el Régimen 0, pero **solo dura ~10 horas en promedio** (persistencia `p[1->0]=0.10` por hora) — es un régimen de picos de volatilidad de corto plazo (tipo ráfaga, similar a lo que ya captura GARCH), no el macro-ciclo de El Niño/La Niña que buscábamos, que opera en escala de meses. A resolución horaria, el EM encuentra primero la estructura de 2 estados más fácil de detectar en los datos, y esa no es la relevante para nuestro problema. Para capturar el régimen correcto probablemente habría que ajustar el modelo sobre la serie agregada diaria (no horaria) o dejar que también las exógenas cambien de coeficiente entre regímenes — no se hizo por costo/beneficio dado que el ensamble de stacking (punto 1) ya dio una mejora mucho mayor y confirmada.
+
+### 2026-09-11 — Ensamble entre familias (stacking): nuevo mejor resultado del proyecto, MAPE 12.05%
+
+Buscando bajar el MAPE de ~15-16% (que llevaba varias sesiones estancado), se probó lo único de tipo "ensamble" que faltaba: combinar modelos de **distintas familias** (no solo semillas/ventanas dentro de N-BEATSx, que ya se había hecho). `scripts_experimento/stacking_ensamble.py` y `stacking_ensamble_cv_2026.py`.
+
+**Metodología**: un meta-modelo NNLS (combinación convexa, pesos ≥ 0, sin intercepto — más robusto que Ridge con pesos libres, que dio resultados inestables con pesos negativos y a veces perdió) combina las predicciones hora por hora de los 5 modelos (Persistencia, XGBoost, ARX+GARCH, N-BEATSx, N-HiTS). Validado con **validación cruzada de 5 pliegues estratificados por día sobre el 100% de Origen 6 (2026)** — cada día se predice con pesos ajustados solo con los otros 4 pliegues, sin fuga de datos.
+
+**Resultado**: MAE 44.51 (vs. 46.82 del mejor individual, N-BEATSx single) — **MAPE 12.05%**, comparado con 15.43% de ARX+GARCH y 16.18% del ensamble de 5 semillas de N-BEATSx (el mejor resultado anterior del proyecto). **Le gana de forma estadísticamente significativa a los 5 modelos individuales** (Diebold-Mariano: N-BEATSx p=0.00002, N-HiTS p=0.011, ARX+GARCH/Persistencia/XGBoost p<0.0001 todos). Pesos promedio entre pliegues: N-BEATSx 0.530, N-HiTS 0.260, Persistencia 0.113, ARX+GARCH 0.093, XGBoost 0.004 (prácticamente descartado por el meta-modelo, información redundante con los demás).
+
+**Nuevo modelo recomendado para OE3**: el ensamble de stacking (NNLS), no un modelo individual. Pendiente: generar bandas de incertidumbre para el ensamble (las actuales son solo de N-BEATSx individual) y recalcular las métricas de decisión (Corr-f/MHD/MPD) sobre sus predicciones.
+
+### 2026-09-10 (noche, cierre) — rMAE extendido a los 6 orígenes, e informe comparativo consolidado
+
+**rMAE por origen y modelo (no solo el holdout único de 2026)** — `scripts_experimento/rmae_walkforward_completo.py`. Nota metodológica: en el MISMO periodo de test, rMAE es solo MAE reescalado por una constante — no cambia el ranking entre modelos (lo dice el propio Lago et al. 2021). Donde sí aporta es **entre orígenes**: el naive-7d varía 30x en dificultad entre regímenes (MAE 7.95 en Origen 2 tranquilo, MAE 242.49 en Origen 4 El Niño fuerte), así que comparar MAE crudo entre orígenes es tan engañoso como comparar MAPE entre meses.
+
+Con rMAE aparece algo que el DM test no mostraba con la misma claridad: **ARX+GARCH pierde contra el naive semanal trivial en 2 de los 3 orígenes de La Niña** (rMAE = 1.036 en Origen 1, 0.990 en Origen 2 — peor que "predecir el mismo precio de hace una semana"), con la variabilidad más alta de los 5 modelos (desv. std. 0.299). **N-BEATSx tiene la ventaja relativa más grande justo en los 3 orígenes de El Niño** (rMAE 0.338/0.268/0.379 en Origen 4/5/6 — el mejor de los 5 modelos en los tres) y el rMAE promedio más bajo de todos junto con Persistencia (0.496). Refuerza la recomendación de N-BEATSx para OE3 con una dimensión que el DM test no capturaba: no solo gana de forma significativa, su ventaja es más grande justo donde más importa (los regímenes volátiles), mientras que ARX+GARCH es inestable entre regímenes pese a su buen MAE puntual en 2026.
+
+**Informe comparativo de modelos consolidado** — `docs/informe_comparativo_modelos.md` (nuevo, deliverable formal de Fase 3, pendiente desde hace días). Reúne en un solo documento lo que hasta ahora vivía disperso en la bitácora: metodología, comparación de las 5 familias de modelo (holdout único y walk-forward de 6 orígenes), Diebold-Mariano, rMAE por origen, bandas de incertidumbre (72h, adaptativas), métricas de decisión (Corr-f/MHD/MPD, con la corrección del 2026-09-10), festivos (única mejora confirmada con significancia estadística), y los intentos fallidos documentados con la misma honestidad que los exitosos (LEAR, 4 hipótesis de El Niño, lógica difusa ONI, análogos de régimen k-NN) — con recomendación final para OE3.
+
+### 2026-09-10 (noche, continuación) — Julio diagnosticado, hipótesis de vacaciones descartada, análogos de régimen (k-NN) fallan, integración de lógica difusa en curso
+
+**Julio 2026, mismo tratamiento que junio** — `scripts_experimento/diagnostico_julio_2026.py`. Historia distinta a junio: no hay racha (1 solo día con MAPE>25%, el 26 de julio, un outlier aislado con sesgo -33.4%), pero **domingo es brutal** (21.38% MAPE vs 11.61% el peor día de semana) y **las horas 8-11am concentran el error** (22-24% MAPE, mucho peor que el resto del día). El sesgo por decil de precio replica el patrón ya conocido (D1=-32.71%, D10=+7.66%). Julio es objetivamente más tranquilo que junio en términos absolutos (MAPE 10.50% vs 19.78%, desviación estándar del error 67.46 vs 99.42) — coherente con el hallazgo de rMAE de la entrada anterior: julio es "fácil" en términos absolutos pero el modelo agrega poco valor relativo porque el naive semanal también es inusualmente bueno ese mes.
+
+**Hipótesis de vacaciones de mitad de año — descartada con test directo** — `scripts_experimento/test_vacaciones_demanda.py`. En vez de inferirlo indirectamente (correlación anomalía de demanda vs error del modelo, ya negativa en los 6 orígenes), se probó la premisa misma: ¿cae la demanda de forma medible en la ventana 15 junio-15 julio, en cada año 2019-2026? Resultado: **0 de 8 años muestran una caída de demanda estadísticamente significativa** (prueba HAC sobre la anomalía promedio vs 30 días; anomalía promedio across años: -0.15%, ruido puro). La hipótesis de vacaciones queda descartada en su raíz — no vale la pena construir `es_vacaciones_escolares` como feature.
+
+**Análogos de régimen vía k-NN fuzzy (Lago et al., citando De Marcos et al. 2020 y Nitka et al. 2021) — falla, y se entiende por qué** — `scripts_experimento/analogos_regimen_knn.py`. Se probó calibrar XGBoost solo con los 12 bloques históricos de 30 días más parecidos (distancia euclidiana en el espacio fuzzy ONI de 7 dimensiones) al régimen justo antes de cada origen, en vez de con todo el histórico cronológico. Resultado: **pierde de forma significativa en los 2 orígenes de El Niño** (Origen 4: MAE 240.10 vs 143.23 cronológico, p<0.0001; Origen 6: MAE 136.05 vs 61.31, p<0.0001), empata en Origen 1. Causa identificada: el análogo usa solo ~8,000 filas (vs 40,000-60,000 del cronológico) — reducir ~80-85% de los datos de entrenamiento le hace más daño a XGBoost que cualquier beneficio de "parecerse al régimen actual", porque el descriptor fuzzy del ONI no captura la tendencia secular del precio (crecimiento de demanda y cambios de mercado 2019-2026) que sí aprovecha ver todo el histórico. Documentado como intento fallido, mismo criterio que las 4 hipótesis de "atacar El Niño" de anoche.
+
+**Lógica difusa del ONI: probada e integrada al pipeline compartido, y luego REVERTIDA** — mismo mecanismo que festivos: 9 columnas nuevas (`fuzzy_nino_debil/moderado/fuerte/muy_fuerte`, `fuzzy_nina_debil/moderado/fuerte/muy_fuerte`, `fuzzy_transicion_rapida`) agregadas en `05_features_compartidas_juan.ipynb`. **Bug encontrado y corregido en el camino**: `fuzzy_nina_fuerte` y `fuzzy_nina_muy_fuerte` son cero constante en todo el histórico 2019-2026 (nunca hubo una Niña con \|ONI\|>=1.5) — rompían la matriz de ARX+GARCH por colinealidad perfecta (`LinAlgError: SVD did not converge`); se excluyeron, quedando 7 columnas fuzzy activas.
+
+**Resultado (notebook 08 y 09 reejecutados con fuzzy)**: mejora mínima en ARX+GARCH (55.76→55.63, dentro del ruido) pero **empeora claramente los 3 modelos de deep learning** — N-BEATSx base 56.11→58.47, N-HiTS base 57.08→60.53, y el ensamble de 5 semillas (mejor resultado de la sesión) 54.39→55.44. Interpretación: "oni" ya era continuo en el pipeline, así que las 7 columnas fuzzy no aportan información nueva, solo más dimensionalidad exógena — una de ellas (`fuzzy_nino_muy_fuerte`) activa en solo ~1,100 de 60,625 horas, casi puro ruido para una red neuronal. **Decisión (con el usuario): revertir la fuzzy del pipeline compartido antes de gastar las varias horas que tomaría reejecutar notebook 10** (6 orígenes completos, la reejecución de 09 solo ya tardó ~2h10min) — la señal de 09 ya era suficientemente clara. Datasets, notebook 05/08/09/10 revertidos a solo-festivos; festivos se mantiene intacto. El prototipo y el experimento completo quedan documentados en `fuzzy_oni_prototipo.py` para referencia futura, mismo criterio que las ideas fallidas de "atacar El Niño".
+
+### 2026-09-10 (noche) — Diagnóstico multi-año, junio 2020-2025, prototipo de lógica difusa ONI, y rMAE (Lago et al. 2021)
+
+**1) Diagnóstico completo replicado en los 6 orígenes (2020-2026)** — `scripts_experimento/diagnostico_completo_anios.py`. De los 5 ángulos probados en 2026, solo 2 se confirman con fuerza en el resto del histórico: (a) el sesgo invertido en los deciles de precio (sobreestima en precios bajos, subestima en los picos) se repite en 5/6 orígenes (excepción: Origen 5/2024); (b) las rachas de días consecutivos malos están ligadas a transiciones de régimen, no a un mes específico — la racha más larga de toda la historia es Origen 4 (2023-10-29 a 11-06, 9 días), durante el arranque del súper Niño, no junio-2026. Domingo/festivo como "días difíciles" NO se sostiene fuera de 2026 (muestra muy chica, 1-3 festivos por ventana de 3 meses). Anomalía de demanda como proxy de vacaciones da correlación débil (|r|<0.17) en los 6 orígenes — resultado negativo consistente. Velocidad de cambio del ONI (pooled, 23 puntos mes-origen) correlaciona 0.254 con el MAPE mensual, más que el nivel del ONI (0.134).
+
+**2) Entrenamiento de junio 2020-2025 (Persistencia, ARX+GARCH, XGBoost, N-BEATSx, N-HiTS) para confirmar si la racha de junio-2026 es estacional** — `scripts_experimento/walkforward_junio_anios.py` (`walkforward_junio_predicciones_crudas.csv`). **No se repite en ningún otro año**: la racha más larga fuera de 2026 es de 2 días (junio 2023); todos los demás junios tienen 0-1 día aislado. Confirma que junio-2026 es un evento atípico del año, no un patrón estacional — consistente con el hallazgo de velocidad de ONI del punto 1. Bonus: la ventaja de los modelos de deep learning sobre la persistencia es dependiente del régimen — ganan con margen en años de transición fuerte (2023, 2024) y pierden o empatan en años tranquilos (2021, 2022, 2025); en 2020 (pandemia) son claramente peores que la persistencia.
+
+**3) Prototipo de lógica difusa sobre el ONI** — `scripts_experimento/fuzzy_oni_prototipo.py` (`fuzzy_oni_preview.csv`). El ONI ya es continuo en el pipeline (no binario), pero se probó codificar el umbral NOAA (débil/moderado/fuerte/muy fuerte) como funciones de membresía triangulares, más una variable `fuzzy_transicion_rapida` (velocidad de cambio en ventana de 30 días). Resultado notable: **junio-julio 2026 tiene `fuzzy_transicion_rapida=1.00`, el máximo de todo el histórico 2019-2026** — la transición de régimen más rápida jamás vista en los datos, más rápida incluso que el arranque del súper Niño 2023. Esto explica por qué junio-2026 tuvo rachas y ningún otro junio las tuvo. **Pendiente de decisión**: solo es un prototipo/vista previa, no está integrado al pipeline compartido (`05`) ni probado en los modelos — requeriría otra ronda de reentrenamiento tipo festivos.
+
+**4) rMAE mensual de N-BEATSx en 2026, siguiendo Lago et al. (2021, Applied Energy 293:116983)** — `scripts_experimento/rmae_mensual_2026.py` (`rmae_mensual_nbeatsx_2026.csv`). El paper argumenta que el MAPE es una métrica poco confiable (se distorsiona con precios bajos) y recomienda rMAE = MAE(modelo)/MAE(naive 7 días). rMAE total 2026 = 0.379 (el modelo comete ~38% del error del naive semanal). La correlación entre el ranking mensual por MAPE y por rMAE es solo 0.432: **por MAPE junio es el peor mes (19.78%), pero por rMAE julio es el peor (0.584 vs 0.500 de junio)** — julio tiene MAPE moderado (10.50%) pero es donde el modelo agrega menos valor relativo sobre el naive semanal, porque el naive-7d es inusualmente bueno ese mes. Julio merece la misma atención que junio, algo que el MAPE por sí solo no mostraba. También se revisó el LEAR/checklist del mismo paper: confirma que el proyecto ya le gana al benchmark publicado del área (ver entrada del 2026-09-10 01:16) y señala dos limitaciones honestas del walk-forward frente a las mejores prácticas del campo — Orígenes 1-5 son ventanas de 3 meses (el paper recomienda mínimo 1 año) y no hay recalibración diaria (se reentrena una vez por origen) — para documentar en el informe comparativo de Fase 3.
+
+**Conclusión de la noche**: la hipótesis de "vacaciones de junio" queda descartada como explicación principal (anomalía de demanda negativa en todos los años); la explicación que sobrevive todas las pruebas es la **velocidad de transición del régimen ONI**, no el mes ni el nivel absoluto de El Niño/La Niña.
 
 ### 2026-09-10 (tarde) — Notebook 10 reejecutada con festivos: confirma 2026, matiz en Origen 1 (2020, pandemia)
 

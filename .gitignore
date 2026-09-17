@@ -208,3 +208,9 @@ __marimo__/
 
 # PyTorch Lightning training logs/checkpoints (neuralforecast)
 lightning_logs/
+
+# Logs internos de entrenamiento de CatBoost
+catboost_info/
+
+# Logs de scripts_experimento (no son artefactos del proyecto)
+logs_*.txt
