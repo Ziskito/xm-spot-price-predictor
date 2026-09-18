@@ -139,11 +139,14 @@ doc.add_page_break()
 # =====================================================================
 doc.add_heading("1. Objetivo y alcance", level=1)
 p("El proyecto pronostica el precio de bolsa horario del mercado eléctrico colombiano, operado "
-  "por XM. Colombia tiene una matriz de generación aproximadamente 70-74% hidroeléctrica, lo que "
-  "hace que el precio dependa fuertemente del régimen hidrológico (nivel de embalses, aportes de "
-  "caudal) y de su modulación por el fenómeno ENSO (El Niño / La Niña). El periodo de prueba de "
-  "este proyecto (2026) coincide con un episodio de El Niño en transición, lo que hace la tarea "
-  "más difícil que en años hidrológicamente tranquilos.")
+  "por XM. Colombia tiene una matriz de generación aproximadamente 70-74% hidroeléctrica — 72% "
+  "según la Agencia Internacional de Energía (IEA, Colombia 2023 — Energy Policy Review) y 74% "
+  "según datos de generación de 2025 (lowcarbonpower.org); la propia IEA aclara que ronda dos "
+  "tercios en la última década, con fluctuaciones de hasta 10 puntos porcentuales entre años según "
+  "el ciclo El Niño/La Niña —, lo que hace que el precio dependa fuertemente del régimen "
+  "hidrológico (nivel de embalses, aportes de caudal) y de su modulación por el fenómeno ENSO (El "
+  "Niño / La Niña). El periodo de prueba de este proyecto (2026) coincide con un episodio de El "
+  "Niño en transición, lo que hace la tarea más difícil que en años hidrológicamente tranquilos.")
 p("Se construyeron dos productos de pronóstico independientes pero relacionados:")
 bullet("Horizonte de 24 horas (día siguiente): un pronóstico para las 24 horas del día calendario "
        "siguiente, emitido con un corte a las 23:00 del día anterior — el protocolo estándar "
@@ -683,6 +686,10 @@ refs = [
  "Functional Approach. International Journal of Energy Economics and Policy, 11(1).",
  "Gneiting, T., Raftery, A. E. (2007). Strictly Proper Scoring Rules, Prediction, and Estimation. "
  "Journal of the American Statistical Association, 102(477).",
+ "International Energy Agency (2023). Colombia 2023 — Energy Policy Review. IEA, París. "
+ "(Hidroelectricidad = 72% de la generación).",
+ "Low Carbon Power (2025). Colombia Electricity Generation Mix. lowcarbonpower.org. (Datos de "
+ "generación 2025: 74% hidro, 11% gas, 5% solar).",
  "Herrera-Mejía, L. et al. (2025). Estudio de AES Colombia sobre clasificación de régimen de "
  "oferta de plantas hidroeléctricas individuales bajo riesgo de sequía. Smart Energy, Elsevier, "
  "diciembre 2025. Título exacto y volumen pendientes de verificar contra el PDF original.",
