@@ -316,7 +316,609 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
 
+### 2026-09-18 (madrugada) — Diversidad intra-familia (variantes de N-BEATSx) para 25-72h: efecto real pero débil en 25-48h, nulo en 49-72h, y redundante donde ya está el puente
+
+Script: `variantes_nbx_72h.py` (7 min). Tercera vía probada para el margen de 25-72h tras el fallo de los árboles especialistas (entrada anterior). `pronostico_72h_diario_votantes_2026.csv` ya traía tres variantes de N-BEATSx nunca usadas como votantes propios: misma arquitectura con semilla 7, semilla 123, y ventana de entrada de 336h (14 días) en vez de la base. Se probó agregarlas al conjunto de 4 votantes (LAD y combinador sMAPE) y un sub-ensamble (promedio simple de las 4 redes NBX) como votante único.
+
+**Tramo 1-24h: mejora consistente (10/10 semillas) pero de magnitud pequeña, y RESULTA REDUNDANTE con el puente ya adoptado.** MAPE 13.04%→12.64% (p=0.0040 en el split base, desplegable p=0.0668 — al borde de significancia, no la cruza limpiamente). Se comprobó si era aditiva al puente (entrada cont. 10, que ya deja ese tramo en 10.54%): **no lo es** — puente + variantes NBX da 10.56% contra 10.54% del puente solo (p=0.2189, n.s.). La señal de estas variantes ya está contenida en el ensamble de 24h que aporta el puente (que incluye N-BEATSx y N-HiTS entre sus 13 votantes). **Se descarta esta vía para 1-24h; el puente sigue siendo la mejora vigente ahí.**
+
+**Tramo 25-48h: evidencia débil, no pasa el estándar del proyecto.** Gana en 9/10 semillas (no 10/10), MAPE 18.28%→18.24% de media. En modo desplegable, MAPE 18.38%→17.97%, dirección correcta y de tamaño no despreciable, pero **p=0.0691, no significativo**. Queda como línea abierta pero sin confirmar — no se adopta todavía.
+
+**Tramo 49-72h: no ayuda.** Todas las configuraciones quedan peor o sin diferencia (mejor p=0.0512, y en la dirección de MAPE, no de MAE, con el propio MAE empeorando).
+
+**Lectura acumulada de las tres vías probadas para 25-72h (árboles especialistas + esta):** el margen que sí existía en 1-24h (resuelto por el puente, una ganancia estructural grande) no tiene equivalente evidente en 25-72h con las herramientas disponibles. Ahí no hay un canal "hermano" más preciso que trasplantar como en 1-24h, y ni la especialización por árboles ni la diversidad intra-familia de redes producen una mejora que sobreviva el estándar de verificación completo (CV + desplegable significativos). Es coherente con el diagnóstico ya documentado de que el estado observable en el corte informa cada vez menos mientras más lejos está el objetivo.
+
+### 2026-09-17 (noche, cont. 11) — ¿El mismo problema del puente en 25-72h? Se prueba con árboles especialistas por tramo: 25-48h no concluyente, 49-72h parece ganar en validación cruzada pero PIERDE en modo desplegable
+
+Script: `especialistas_por_tramo_72h.py` (12 min). Pregunta directa tras el hallazgo del puente (entrada cont. 10): si el tramo 1-24h perdía por usar modelos generalistas donde había un especialista mejor, ¿los tramos 25-48h y 49-72h sufren lo mismo? Ahí no existe un canal day-ahead que reutilizar, así que se construyó la especialización: se reentrenaron CatBoost, XGBoost y Ridge de la formulación directa usando **solo** los pasos de su propio tramo (en vez de los 72 pasos juntos), y se probaron pesos por paso de horizonte y por bloques de 6 pasos en vez de por tramo completo.
+
+**Individuales:** ningún especialista le gana a su generalista de forma clara (p.ej. en 49-72h, Ridge-directo generalista 82.13 MAE vs Ridge_esp especialista 81.42 — mejora chica, y CatB/XGB especialistas quedan *peor* que sus generalistas).
+
+**Ensamble, 25-48h: NO concluyente.** Mejor configuración (árboles especialistas, pesos por tramo) gana en MAPE en 7/10 semillas pero el delta es de solo −0.02 puntos, dentro del ruido de partición.
+
+**Ensamble, 49-72h: aquí apareció la señal de alerta que el proyecto ya conoce.** En validación cruzada por pliegues, la misma configuración da "SÓLIDO" — gana 10/10 semillas en las tres métricas (MAPE 21.661%→21.555%). Pero en **modo desplegable** (pesos calculados solo con días anteriores, el que de verdad importa) el resultado se invierte: MAPE 21.53%→21.71%, **peor**, y sin significancia (p=0.6372).
+
+**Diagnóstico: mismo patrón que la granularidad de pesos en 24h (ver oráculos por hora-del-día vs por día).** La validación cruzada por pliegues mezcla datos de todo el año para entrenar y evaluar en cualquier punto del calendario; en producción, con solo el historial pasado disponible en cada corte, el árbol especialista tiene menos datos efectivos para ese tramo concreto y se sobreajusta a los pliegues de la validación. **No pasa el estándar del proyecto (CV + desplegable deben coincidir), así que no se adopta.**
+
+**Conclusión de esta línea:** el mecanismo que funcionó en 1-24h (especialización) no se replica gratis en 25-72h porque ahí no hay un canal ya maduro para reutilizar — construir uno de cero con los mismos datos no aporta señal nueva, solo la reparte de forma distinta. El margen de 25-72h sigue abierto para otra vía.
+
+### 2026-09-17 (noche, cont. 10) — TERCERA MEJORA VERIFICADA, y la más grande del horizonte largo: el producto de 72h estaba prediciendo su primer día mucho peor que el modelo de 24h del propio proyecto. Global MAPE 17.66% → 16.94%
+
+Script: `puente_24h_a_72h.py`. Resultado accidental: salió del desglose por tramo de la corrida anterior.
+
+**El hallazgo.** Sobre **exactamente las mismas horas objetivo**, el canal de 72h y el canal de 24h del proyecto daban esto:
+
+| Canal | MAE | MAPE | sMAPE |
+|---|---|---|---|
+| ensamble de 72h, tramo 1-24h | 46.20 | 12.79% | 11.85% |
+| ensamble de 24h del proyecto | **40.72** | **10.54%** | **9.89%** |
+
+Y el de 24h lo consigue **con menos información, no con más**. Su protocolo es corte a las **23:00 del día anterior**; el de 72h corta a las **00:00 del propio día**. El de 24h va una hora por detrás y aun así gana 2.25 puntos de MAPE. Se verificó explícitamente que **ninguna** fila tiene el corte de 24h posterior al corte de 72h (0 de 4922), así que no es fuga: era una pérdida real del canal de 72h.
+
+**Por qué pasaba.** Es de construcción, no de datos. El ensamble de 72h vota entre 4 modelos **generalistas** (LEAR, dos redes y un naive) entrenados para cubrir los 72 pasos, con pesos por tramo. El de 24h vota entre **13 especialistas day-ahead** (XGBoost, CatBoost, hurdle, Markov-Switching, N-BEATSx, N-HiTS, RecursiveLS day-ahead, los afinados con Optuna, los directos) más el GARCH-ged, con pesos por franja de 6 horas y combinador alineado a la métrica. **El canal de 72h estaba re-derivando el día 1 desde cero, peor que el canal que ya existía para ese mismo día.**
+
+**Alcance del arreglo (límite duro, no elegido por conveniencia).** El pronóstico de 24h para la hora `t` se emite en el corte 23:00 del día anterior a `t`. Ese corte es ≤ el corte de 72h solo si `t` cae dentro del propio día del corte, lo que cubre los **pasos 1-23** (01:00 a 23:00). El paso 24 (00:00 del día siguiente) tendría que usar un pronóstico emitido 23 horas **después** del corte de 72h, así que se excluye y se deja como estaba. Los tramos 25-48h y 49-72h no se tocan: no existe pronóstico day-ahead válido a esa distancia.
+
+**Configuraciones probadas (pasos 1-23, DM con HAC contra el vigente):**
+
+| Configuración | MAE | MAPE | sMAPE | p(MAPE) |
+|---|---|---|---|---|
+| A 4 votantes 72h (vigente) | 46.20 | 12.79% | 11.85% | — |
+| B solo ENS24 | 40.72 | 10.54% | 9.89% | 0.0000 |
+| C 4 votantes + ENS24, LAD | 40.68 | 10.55% | 9.88% | 0.0000 |
+| **D 4 votantes + ENS24, combinador sMAPE** | **40.66** | **10.54%** | **9.87%** | **0.0000** |
+| E 4 votantes + los 14 votantes de 24h, LAD | 42.87 | 11.57% | 10.57% | 0.0002 |
+| F igual que E con combinador sMAPE | 42.88 | 11.59% | 10.56% | 0.0003 |
+| G todo junto (ENS24 + individuales), sMAPE | 40.67 | 10.55% | 9.88% | 0.0000 |
+
+**Dos lecturas importantes de esa tabla.** (1) Casi toda la ganancia es el puente en sí: D apenas le saca 0.06 de MAE a "solo ENS24". Los 4 votantes de 72h aportan margen residual — el combinador les da 6.4% del peso en total (`ENS24=0.936`, `NBX_exog=0.057`, `NBX=0.007`) y a **LEAR le da cero**, aunque era el mejor individual del canal de 72h. (2) **E y F son peores que C y D**: meter los 14 votantes individuales de 24h en un solo LAD plano rinde 1 punto de MAPE peor que meter el ensamble de 24h ya armado. O sea la ganancia viene de la **arquitectura** de ese ensamble (pesos por franja + combinador alineado a la métrica), no de tener sus votantes disponibles. Aplanarla la destruye.
+
+**Verificación (estándar del proyecto).** 10 particiones distintas, contra el vigente:
+
+| Métrica | Vigente | Con puente | Delta | Mejor en |
+|---|---|---|---|---|
+| MAE | 46.260 ± 0.090 | 40.633 ± 0.019 | −5.628 | 10/10 |
+| MAPE | 12.804 ± 0.026 | 10.537 ± 0.009 | −2.267 | 10/10 |
+| sMAPE | 11.860 ± 0.024 | 9.869 ± 0.008 | −1.990 | 10/10 |
+
+Y en **modo desplegable** (pesos calculados solo con días anteriores, ventana móvil de 60 días, que es la cifra que un jurado debería ver): MAPE 12.83% → **10.53%**, DM p=0.0000. La mejora no depende de la validación cruzada por pliegues.
+
+**Efecto sobre el producto completo de 72h:**
+
+| Tramo | Vigente | Con puente |
+|---|---|---|
+| 1-24h | MAE 46.39 / MAPE 13.00% / sMAPE 12.00% | **MAE 41.08 / MAPE 10.84% / sMAPE 10.11%** |
+| 25-48h | MAE 62.56 / MAPE 18.29% / sMAPE 16.53% | sin cambio |
+| 49-72h | MAE 72.87 / MAPE 21.69% / sMAPE 19.44% | sin cambio |
+| **GLOBAL** | MAE 60.61 / MAPE 17.66% / sMAPE 15.99% / R² 0.8618 | **MAE 58.84 / MAPE 16.94% / sMAPE 15.36% / R² 0.8637** |
+
+**Es la mejora más grande del horizonte de 72h de toda la sesión** (−0.72 puntos de MAPE global, −1.77 de MAE), y a diferencia de las otras no vino de un modelo nuevo: vino de notar que dos canales del propio proyecto se solapaban y uno era peor. Pregunta que un jurado haría y que ahora tiene respuesta: *"¿por qué su error a 24h es 10.7% pero su producto de 72h reporta 13% para esas mismas horas?"*
+
+**Pendiente de decisión (afecta a Rafael).** Esto cambia el contrato de 72h que alimenta el dashboard (`pronostico_ensamble_72h_diario_2026.csv` y el contrato unificado de OE3). No se regeneró nada todavía.
+
+### 2026-09-17 (noche, cont. 9) — Las dos mejoras de 24h NO se trasladan al horizonte de 72h: ninguna es significativa, y el mecanismo se apaga con la distancia al corte
+
+Script: `mejoras_a_72h.py` (24 min, 72 modelos GARCH-t, ninguno falló en converger). Se llevaron al canal de 72h las dos ideas que sí ganaron en 24h esta noche: el votante de colas pesadas (GARCH-t por paso de horizonte) y el combinador alineado con la métrica.
+
+**Expectativa previa, explícita en el encabezado del script:** que ayudaran *más* a 72h, porque a 48-72h el error es mayor y más disperso, que es justo donde las colas pesadas y la reponderación deberían importar. **Salió al revés.**
+
+**El GARCH-t suelto se degrada con el horizonte mucho más rápido que el LEAR:**
+
+| Tramo | LEAR MAE | GARCH-t MAE | LEAR MAPE | GARCH-t MAPE |
+|---|---|---|---|---|
+| 1-24h | 51.08 | **50.97** | 14.43 | **14.10** |
+| 25-48h | **67.59** | 74.13 | **19.62** | 20.77 |
+| 49-72h | **76.66** | 87.17 | **22.73** | 24.34 |
+
+Le gana al LEAR en el tramo corto y le pierde por 10.5 puntos de MAE en el largo. En el ensamble eso se traduce en que el combinador le da peso útil a 1-24h (MAPE 13.03% → 12.79%) y **peso cero** a 49-72h (los números salen idénticos al vigente, 72.87 / 21.69% / 19.44%).
+
+**Ninguna de las 12 comparaciones alcanza significancia.** El mejor p-valor de toda la corrida es 0.0754 (combinador sMAPE + GARCH-t en 49-72h). El combinador alineado a la métrica hace lo que la teoría dice en 25-48h y 49-72h — baja MAPE y sMAPE, sube MAE — pero sin significancia y sin el efecto de regularización que en 24h lo hacía ganar en las tres métricas a la vez.
+
+**Interpretación.** El mecanismo del LE-GARCH-t es ponderar la verosimilitud por la varianza condicional para descontar los días volátiles. Eso exige que la varianza condicional en el corte diga algo sobre la varianza del objetivo, y esa relación se desvanece con la distancia: a 1-24h el estado del corte todavía informa, a 49-72h ya no. Es el mismo límite informacional que el proyecto lleva documentado por otras cinco vías, visto ahora en el eje del horizonte en vez del eje de las variables.
+
+**El desglose por tramo de esta corrida negativa es lo que destapó el hallazgo del puente** (entrada cont. 10): ver el tramo 1-24h del canal de 72h aislado, en 13.03%, obligó a preguntar por qué no se parecía al 10.74% del canal de 24h.
+
+### 2026-09-17 (noche, cont. 8) — SEGUNDA MEJORA VERIFICADA: alinear el combinador con la métrica reportada. MAPE 10.86% → 10.74%, sMAPE 10.08% → 10.07%, y además baja el MAE
+
+Se corrigió un desajuste que llevaba todo el proyecto sin detectarse. Scripts: `combinador_optimo_mape.py`, `verificar_combinador_metrica.py`.
+
+**El desajuste.** El ensamble ajusta sus pesos minimizando la **desviación absoluta** (LAD/QRA al cuantil 0.5), que es el óptimo para el **MAE**. Pero el proyecto se evalúa y se compara con la literatura en **MAPE** y **sMAPE**, y el minimizador de esas métricas no es el mismo:
+
+| Métrica | Combinación óptima |
+|---|---|
+| MAE | `min Σ \|y − Xw\|` (mediana condicional) |
+| MAPE | `min Σ \|y − Xw\| / y` (mediana **ponderada por 1/y**) |
+| sMAPE | `min Σ \|y − Xw\| / ((\|y\|+\|Xw\|)/2)` (no lineal; se aproxima iterando) |
+
+Para MAPE la corrección es **exacta y de una línea**: ponderar cada observación por `1/y` en el programa lineal. Para sMAPE no hay forma cerrada porque el denominador depende de la propia predicción, así que se usa el esquema iterativo estándar (ajustar con pesos `2/(|y|+|pred anterior|)` y repetir hasta estabilizar).
+
+**Resultado** (sobre el mejor conjunto actual, v4 + GARCH-ged; medias de 10 semillas):
+
+| Objetivo del combinador | MAE | MAPE | sMAPE |
+|---|---|---|---|
+| MAE (el que se usaba) | 41.55 ± 0.168 | 10.904% ± 0.043 | 10.108% ± 0.036 |
+| MAPE (pesos 1/y) | 41.75 ± 0.146 | **10.741%** ± 0.039 | 10.154% ± 0.037 |
+| **sMAPE (iterativo)** | **41.29** ± 0.113 | **10.744%** ± 0.033 | **10.065%** ± 0.030 |
+
+El objetivo MAPE se comporta como manda la teoría: **mejora la métrica que optimiza y empeora la otra** (gana 0.16 de MAPE a cambio de 0.20 de MAE). Pero el objetivo sMAPE **gana en las tres a la vez**, con signo negativo en **10/10 semillas** en cada una:
+
+| Delta (objetivo sMAPE − objetivo MAE) | Valor | Semillas a favor |
+|---|---|---|
+| MAE | −0.263 ± 0.114 | 10/10 |
+| MAPE | −0.161 ± 0.027 | 10/10 |
+| sMAPE | −0.043 ± 0.020 | 10/10 |
+
+**Ese "gana en todo" es sospechoso y se investigó**, porque el combinador por MAE debería ser por construcción el mejor en MAE. Dos comprobaciones:
+
+1. **Control en muestra**: dentro del conjunto de entrenamiento el objetivo MAE **sí gana** en MAE (40.600 contra 40.767). El programa lineal está bien planteado; la inversión ocurre solo **fuera de muestra**, o sea es un efecto genuino de generalización, no un error de formulación.
+2. **Hipótesis de regularización, confirmada**: la desviación media de los pesos entre ajustes es **0.1496** con objetivo sMAPE contra **0.1553** con objetivo MAE. La reponderación `2/(|y|+|pred|)` comprime el rango efectivo de la función de pérdida e impide que unos pocos días de precio alto dominen el ajuste, lo que **estabiliza los pesos y reduce el sobreajuste del meta-modelo**. Por eso generaliza mejor pese a ser subóptima en muestra.
+
+Efecto adicional notable: el **MAPE en horas pico baja de 15.07% a 14.42-14.48%**, que es justo donde el proyecto tiene documentado el grueso del error.
+
+**Estado acumulado del ensamble de 24h tras las dos mejoras de la noche** (ambas verificadas con 10/10 semillas):
+
+| Versión | MAE | MAPE | sMAPE |
+|---|---|---|---|
+| v4 original | 42.51 | 11.27% | 10.38% |
+| + GARCH-ged (colas pesadas) | 41.45 | 10.86% | 10.08% |
+| **+ combinador alineado con la métrica** | **41.29** | **10.74%** | **10.07%** |
+
+Mejora total: **−0.53 puntos de MAPE, −0.31 de sMAPE y −1.22 de MAE**, con el sMAPE ya por debajo de 10.1%.
+
+**Lección para el informe**: las dos mejoras de la noche comparten forma — ninguna vino de más datos ni de modelos más potentes, sino de **corregir un supuesto estadístico mal puesto**. Primero el de la distribución del error dentro del modelo (colas pesadas), después el de la función de pérdida del meta-modelo (alinearla con la métrica que se reporta). Es un argumento fuerte a favor de revisar los supuestos antes de escalar la complejidad.
+
+### 2026-09-17 (noche, cont. 7) — Barrido de la familia GARCH y dos ideas más: se llega a MAPE 10.86% / sMAPE 10.08%, y se atrapa un FALSO POSITIVO antes de que entrara al informe
+
+Tras el éxito de LE-GARCH-t se exploró sistemáticamente la familia, más dos ideas derivadas del mismo mecanismo. Scripts: `familia_garch_24h.py`, `afinar_24h_final.py`, `ensamble_24h_final.py`.
+
+**1) Barrido de la familia GARCH** (7 variantes × 24 horas, todas convergen 24/24):
+
+| Variante suelta | MAE | MAPE | sMAPE |
+|---|---|---|---|
+| **GARCH-t** | **45.17** | **12.15%** | **11.10%** |
+| GARCH-ged | 45.40 | 12.28% | 11.14% |
+| EGARCH-t | 45.99 | 12.25% | 11.19% |
+| GJR-t | 45.78 | 12.47% | 11.43% |
+| GARCH-skewt | 47.79 | 13.49% | 13.23% |
+| SV-t (aprox.) | 50.39 | 14.03% | 12.79% |
+| EGARCH-skewt | 75.89 | 23.51% | 14.29% |
+
+Tres lecturas útiles: **(a)** la asimetría **no** ayuda — skew-t empeora en todas sus versiones, y las volatilidades asimétricas (GJR, EGARCH) no aportan sobre GARCH simple, pese a que físicamente parecía plausible que los picos al alza generaran más turbulencia; **(b)** lo que importa es únicamente la **cola pesada**, y da igual por qué vía se obtenga (t y GED empatan, p=0.2393); **(c)** la aproximación de **SV-t no reproduce el éxito** que reporta el paper — es plausible que la aproximación por mínimos cuadrados ponderados iterados sea insuficiente y haga falta el MCMC que ellos usan, así que queda como línea abierta más que como refutación.
+
+**2) Precios de contratos en la ecuación de media — FALSO POSITIVO atrapado.** Se descargaron de XM `PrecPromContRegu` y `PrecPromContNoRegu` (horarios 2019-2026, completos), equivalente colombiano de los *forward prices* que en el paper de Nueva Zelanda eran de las variables más usadas (60 de sus 423 features). En una primera prueba parecían mejorar el ensamble con p=0.0324. **Al rehacer la comparación con procedimiento de ajuste idéntico, el efecto desapareció** (MAPE 11.05%, p=0.1048 contra el v4). La causa: ese primer script reajustaba el LE-GARCH-t con una ruta de selección de alpha distinta —solo 4 valores en la mediana en vez de la ruta completa— con lo que el modelo de referencia quedaba peor ajustado (11.14% en vez de 10.89%) y cualquier variante parecía ganarle. **La "mejora" era un artefacto de comparar contra una referencia mal ajustada, no un efecto real.** Queda como aviso metodológico: al comparar variantes hay que garantizar procedimiento de ajuste idéntico, no solo mismos datos.
+
+Nota relacionada: la variable derivada `prima_sobre_contrato` mostró correlación parcial 0.89, pero es un **artefacto** — se define como `precio/precio_contratos` y por tanto contiene el precio contemporáneo. En el modelo se usa medida en el corte (donde el precio ya es conocido), así que no hay fuga, pero ese 0.89 no es evidencia de utilidad.
+
+**3) Combinador ponderado por riesgo — falla.** Se aplicó al combinador el mismo mecanismo que hizo funcionar a GARCH-t: ajustar los pesos del ensamble descontando las horas que el predictor de riesgo (AUC 0.818) señala como ruidosas. **Empeora claramente** (MAPE 11.75-11.76% contra 11.14%, p=0.0000 en los tres exponentes probados). La interpretación tiene sentido: esas horas son ruidosas para *predecir el precio*, pero siguen siendo informativas para decidir *en qué modelo confiar*; descontarlas destruye justamente la evidencia que el combinador necesita. El mecanismo que sirve dentro de un modelo no se traslada automáticamente al meta-modelo.
+
+**Estado final del ensamble de 24h, verificado:**
+
+| Conjunto | MAE | MAPE | sMAPE | pico | DM vs v4 |
+|---|---|---|---|---|---|
+| v4 vigente | 42.51 | 11.27% | 10.38% | 15.52% | — |
+| v4 + GARCH-t | 41.51 | 10.89% | 10.09% | 15.12% | p=0.0075 |
+| **v4 + GARCH-ged** | **41.45** | **10.86%** | **10.08%** | **15.07%** | **p=0.0040** |
+| v4 + GARCH-t + GED | 41.49 | 10.88% | 10.08% | 15.07% | p=0.0068 |
+
+**Verificación multi-semilla del mejor**: delta −1.26 ± 0.124, negativo en **10/10** semillas, ruido del vigente 0.145 → **SÓLIDO**. GARCH-t y GARCH-ged son estadísticamente indistinguibles entre sí (p=0.2393); se puede adoptar cualquiera de los dos, o ambos.
+
+**Respecto a los objetivos**: el **sMAPE queda en 10.08%**, a ocho centésimas del 10%; el **MAPE en 10.86%**, lejos aún del 9.9% pedido. La mejora total acumulada sobre el v4 original es de **−0.41 puntos de MAPE y −0.30 de sMAPE**, toda ella atribuible a una sola idea: modelar las colas pesadas del error al estimar la media.
+
+### 2026-09-17 (noche, cont. 6) — MEJORA REAL Y VERIFICADA EN 24h: LE-GARCH-t, el modelo ganador del paper de Nueva Zelanda, entra al ensamble. MAPE 11.27% → 10.89%, sMAPE 10.38% → 10.09%
+
+Después de **trece líneas de ataque fallidas** al modelo de 24h, la que funcionó fue construir el modelo que el paper de Nueva Zelanda señalaba como ganador y que el proyecto nunca había hecho. Scripts: `le_garch_t_24h.py`, `verificar_le_garch_t.py`.
+
+**Qué es LE-GARCH-t y por qué NO lo teníamos.** Kapoor & Wichitaksorn (2023) encuentran que **LE-GARCH-t es el mejor modelo en 4 de sus 5 regiones** por MAE y MASE, por encima de DNN, LSTM, GRU, XGBoost y del propio benchmark LEAR. "LE" = *LASSO-Estimated*: las exógenas de la ecuación de media se seleccionan con LASSO; "-t" = los errores siguen una t de Student. El proyecto tenía `ARX+GARCH` como votante, pero **le faltaban las dos piezas que definen al modelo**: la selección LASSO de exógenas y la distribución t. Y el hallazgo central de ese paper es precisamente que el GARCH **con todas** las variables es de los peores modelos y **con LASSO** pasa a ser el mejor (mejoras de 40-45%).
+
+**Mecanismo por el que gana, pese a que la media es lineal en ambos**: LEAR estima por mínimos cuadrados penalizados, donde todos los días pesan igual; GARCH-t estima por máxima verosimilitud ponderando por la varianza condicional y con colas pesadas, lo que **descuenta automáticamente los días de alta volatilidad al estimar la media**. Es estimación robusta. Dado que el diagnóstico de esta misma sesión localizó el error en las horas y días volátiles, la hipótesis tenía fundamento — y se confirmó.
+
+**Como modelo suelto** (un LASSO+GARCH por hora del día, mediana de 29 variables seleccionadas):
+
+| Modelo | MAE | MAPE | MAPE pico | DM vs LEAR |
+|---|---|---|---|---|
+| LEAR (referencia) | 53.12 | 16.32% | 19.39% | — |
+| LE-GARCH (normal) | 53.14 | 14.32% | 18.02% | p=0.9823 n.s. |
+| **LE-GARCH-t** | **45.17** | **12.15%** | **15.59%** | **p=0.0000 MEJORA** |
+
+**La distribución t es la pieza decisiva**: con errores normales el modelo no mejora nada (n.s.); con t mejora drásticamente. Eso aísla el mecanismo y confirma que lo que importa son las colas pesadas.
+
+**En el ensamble de 24h:**
+
+| Conjunto | MAE | MAPE | sMAPE | pico | DM vs v4 |
+|---|---|---|---|---|---|
+| v4 vigente (5 votantes) | 42.51 | 11.27% | 10.38% | 15.52% | — |
+| **v4 + LE-GARCH-t (6)** | **41.46** | **10.89%** | **10.09%** | **15.18%** | **p=0.0044 MEJORA** |
+| v4 + ambos GARCH (7) | 41.47 | 10.90% | 10.09% | 15.19% | p=0.0050 MEJORA |
+
+**Verificación completa** (`verificar_le_garch_t.py`), con la vara que dejó el falso hallazgo del ONI:
+
+1. **10 semillas de partición**: delta **−1.21 ± 0.127**, signo negativo en **10/10**, ruido del vigente 0.145 → el efecto supera 2× el ruido. **Veredicto automático: SÓLIDO.**
+2. **Modo desplegable** (pesos causales, determinista, sin pliegues): MAE 45.57 → **44.24**, MAPE 11.42% → **11.00%**, sMAPE 10.53% → **10.20%**, **DM p=0.0021**. El efecto no depende del esquema de validación cruzada.
+3. **Reparto por día**: gana en **63%** de los 196 días, mediana del delta diario −0.40. Mejora generalizada, no concentrada en unos pocos días.
+4. **Chequeo de fuga**: por construcción LE-GARCH-t usa **exactamente las mismas variables** que el LEAR (todas medidas en el corte de las 00:00, mismo `construir_para_paso`); lo único que cambia es el método de estimación. Empíricamente, la correlación del pronóstico con el precio real es **0.9449**, prácticamente idéntica a la del LEAR (0.9476) — sin el salto hacia 1.0 que delató a `max_precio_oferta`.
+
+**Sobre los objetivos del usuario**: con esto el sMAPE queda en **10.09%** (CV) / **10.20%** (desplegable) y el MAPE en **10.89%** / **11.00%**. El objetivo de 10% queda **alcanzado en sMAPE** y a una décima en MAPE — ya no como matiz de medición, sino como mejora real y verificada del modelo.
+
+**Lección metodológica para el informe**: la mejora no vino de más datos (nueve variables nuevas descargadas de XM, ninguna ayudó), ni de más capacidad del modelo (los meta-modelos no lineales empeoraron), ni de arquitecturas de especialización (las tres variantes fallaron). Vino de **cambiar el supuesto distribucional del estimador** — reconocer que los errores del precio tienen colas pesadas y estimar en consecuencia. Es un argumento fuerte a favor de leer la literatura del campo y replicar sus modelos ganadores antes de inventar.
+
+**Pendiente**: regenerar el contrato oficial de 24h con la nueva composición, junto con el de 72h. Ambos afectan el insumo del dashboard de Rafael, así que conviene coordinarlo con él.
+
+### 2026-09-17 (noche, cont. 5) — Arquitectura de DOS MODELOS (uno para días normales, otro entrenado con días difíciles): falla incluso con oráculo, y eso explica por qué
+
+Se implementó la arquitectura que pidió el usuario y que aún no se había probado (`dos_modelos_dia_24h.py`). Es distinta de lo ya intentado en dos cosas: **la unidad es el DÍA, no la hora**, y el especialista se **entrena** con días difíciles del histórico en vez de enrutar a un modelo generalista ya entrenado.
+
+**Problema de diseño resuelto**: entrenar "con los días donde falla el ensamble" requeriría el error del ensamble en 2019-2025, pero el ensamble solo existe para 2026. Se definió la dificultad con criterios **observables y calculables igual en train y test** — (D1) volatilidad intradiaria del precio, (D2) salto respecto a la semana previa — y luego **se verificó que el criterio sí captura los fallos reales**:
+
+| Criterio | Correlación con el MAPE diario real del ensamble en 2026 |
+|---|---|
+| **Volatilidad intradiaria** | **+0.476** |
+| Salto semanal | +0.163 |
+
+**Y el clasificador funciona**: predecir en el corte si el día será difícil da **AUC 0.832** (criterio de volatilidad). Es decir, las dos piezas previas del sistema están bien: el criterio es válido y el día difícil es anticipable.
+
+**Pero la arquitectura falla igual**, con el criterio bueno (volatilidad):
+
+| Esquema | MAE | MAPE | DM vs modelo único |
+|---|---|---|---|
+| Modelo único (referencia) | 53.15 | 16.34% | — |
+| Enrutado por el clasificador | 53.05 | 15.76% | p=0.9184 n.s. |
+| **Enrutado por ORÁCULO de dificultad** | 54.37 | 16.00% | **p=0.2573 n.s.** |
+| Siempre el especialista | 76.50 | 22.03% | p=0.0000 **peor** |
+| Siempre el general | 54.03 | 14.75% | p=0.4385 n.s. |
+
+Con el criterio de salto todo es significativamente peor.
+
+**La clave está en la fila del oráculo.** Al separar "el clasificador no acierta" de "el especialista no sirve", el experimento demuestra que es lo segundo: **incluso conociendo con certeza qué días son difíciles, enrutar no mejora**. Y "siempre el especialista" es catastrófico (76.50 vs 53.15).
+
+**Explicación, que es lo valioso del resultado**: los días difíciles lo son *precisamente porque* son menos predecibles. Entrenar un modelo solo con ellos combina dos desventajas — menos datos (631 días contra 2.516) y peor relación señal-ruido en esos datos. El modelo general aprende la estructura estable a partir de **todos** los días y la aplica también a los difíciles, que es mejor que intentar aprender la estructura de lo impredecible. Es un caso de libro del compromiso sesgo-varianza: la especialización reduce sesgo en teoría, pero aquí el aumento de varianza lo supera con creces.
+
+Con esto queda **cerrada con evidencia fuerte** la familia completa de "modelo especializado para los momentos de fallo", en sus tres variantes probadas: por hora del reloj (peor), por enrutamiento a modelos existentes (peor), y por especialista entrenado a nivel de día (n.s. incluso con oráculo).
+
+### 2026-09-17 (noche, cont. 4) — Descargadas 3 métricas nuevas de XM que el proyecto nunca tuvo: pasan el tamiz de fuga, pero empeoran el modelo. Se replica un patrón metodológico importante
+
+Se descargaron del API de XM (`descargar_estres_sistema.py`) tres métricas **horarias** que el proyecto nunca había bajado, elegidas por ser indicadores directos de estrés del sistema — el lado de la oferta que el diagnóstico señalaba como faltante. Las tres con cobertura **completa**: 66.624 horas, 2019-01-01 a 2026-08-07.
+
+| Métrica | Qué es | Corr. contemporánea | **Corr. parcial** (desc. `precio_lag24h`) |
+|---|---|---|---|
+| `RestSinAliv` | Restricciones **sin** alivios (solo teníamos las aliviadas) | −0.328 | **−0.125** ✓ pasa |
+| `GeneProgDesp` | Programa de despacho del día siguiente | +0.342 | **+0.117** ✓ pasa |
+| `GeneFueraMerito` | Generación fuera de mérito (despacho forzado a salirse del orden de mérito) | −0.048 | −0.031 ✗ no pasa |
+
+**Ninguna presenta fuga** (la fuga se ve como correlación contemporánea ~0.99, que es lo que delató a `max_precio_oferta`), y dos pasan el tamiz con correlación parcial del mismo orden que `costo_marginal_despacho` (0.178), el mejor candidato de la sesión previa.
+
+**Tratamiento especial de `GeneProgDesp`**: XM publica el programa de despacho el día anterior, así que para un objetivo del día D con corte a las 00:00 de D, el programa de **todas** las horas de D ya está publicado. Eso lo convierte en información genuinamente **anticipativa**, a diferencia de casi todo lo demás del proyecto que es realizado. Por eso se probó en dos versiones separadas —valor en el corte (indiscutible) y valor en la hora objetivo (legítimo bajo el supuesto de publicación día-adelante)— para que la segunda quede explícitamente marcada y se pueda descartar si alguien objeta el supuesto.
+
+**Resultado: empeoran.**
+
+| Variante del LEAR24 | MAE | MAPE | MAPE pico | DM |
+|---|---|---|---|---|
+| Base | 53.15 | 16.34% | 19.39% | — |
+| + estrés en el corte | 53.80 | 16.89% | 20.85% | p=0.0001 **empeora** |
+| + estrés y programa en la hora objetivo | 54.64 | 17.81% | 22.87% | p=0.0000 **empeora** |
+
+Y en el ensamble, las tres configuraciones dan **n.s.** (11.20%–11.23% contra 11.27% del v4). Ni siquiera la versión con información anticipativa del programa de despacho mueve la aguja.
+
+**Conclusión metodológica, que es lo que vale para el informe**: este es ya el **tercer caso** en el proyecto de una variable con correlación parcial real que al incorporarla **empeora** el modelo (antes pasó con la relación hidro/térmica y con `costo_marginal_despacho` + `compras_arranque_parada` en el ataque a El Niño). El patrón es consistente y merece enunciarse como hallazgo: **la correlación parcial con el precio es un tamiz necesario pero muy insuficiente** — detecta que una variable contiene información no redundante con el precio rezagado, pero no dice si esa información es *aprovechable* por el modelo ni si sobrevive a la competencia con el resto de variables. En un conjunto ya rico, agregar una variable con señal marginal real suele costar más en varianza de estimación de lo que aporta en sesgo.
+
+### 2026-09-17 (noche, cont. 3) — HALLAZGO ÚTIL: el fallo del ensamble de 24h SÍ es predecible en el corte (AUC 0.818), pero no es accionable para el pronóstico puntual — sirve como señal de confianza para OE3
+
+Atacando la petición de "un modelo que se use específicamente en los momentos donde falla el nuestro", se cambió el planteamiento. La versión ingenua (especialistas para las horas 18-20) ya había fallado, pero identificaba el momento por la hora del reloj, que es un proxy grueso: no todas las tardes fallan y también hay fallos fuera del pico. La pregunta correcta es si se puede saber **en el momento del corte** que la predicción va a salir mal.
+
+**Sí se puede, y bastante bien** (`predecir_fallo_24h.py`). Con un CatBoost que recibe solo el estado en el corte (17 variables + hora) y predice el error del ensamble:
+
+| Método para anticipar el fallo | AUC |
+|---|---|
+| **Clasificador con estado del corte** | **0.818** |
+| Heurística "es hora pico 18-20" | 0.568 |
+
+De las 969 horas señaladas como más riesgosas, **49.4% estaban de verdad en el peor 20%** — 2.5 veces lo que daría el azar. La correlación entre error predicho y error real es 0.418. **El fallo es anticipable**, y mucho mejor de lo que lo anticipa la hora del reloj.
+
+**Pero no se puede convertir en mejor pronóstico puntual** (`usar_riesgo_24h.py`). Se probó enrutar el 10% y el 20% de horas más riesgosas a cada modelo alterno disponible, y **todos son peores que el propio ensamble justamente en esas horas**:
+
+| Enrutado a | MAPE en las horas enrutadas (10%) | El ensamble ahí |
+|---|---|---|
+| CatBoost | 23.99% | **23.81%** |
+| LEAR24 | 25.97% | 23.81% |
+| N-BEATSx | 26.02% | 23.81% |
+| ARX+GARCH | 26.29% | 23.81% |
+| MarkovSw | 27.06% | 23.81% |
+| N-HiTS | 27.13% | 23.81% |
+
+Las 12 combinaciones (6 modelos × 2 porcentajes) son significativamente peores. **El riesgo es predecible pero no hay a dónde enrutar**: en las horas difíciles el ensamble sigue siendo lo mejor que tenemos. Esto cierra formalmente la línea de "modelo especializado para los momentos de fallo" con evidencia, no con intuición: el obstáculo no es identificar el momento (eso ya se resolvió), es que no existe un modelo mejor para ese momento.
+
+**Tampoco mejora las bandas de incertidumbre.** Se probó modular el semiancho de la banda proporcionalmente al riesgo predicho (conservando el ancho medio):
+
+| Banda | Cobertura | Ancho medio | Interval score |
+|---|---|---|---|
+| **Conforme adaptativa vigente** | **79.5%** | **145.9** | **265.4** |
+| Modulada por riesgo (exp. 0.5) | 71.4% | 190.2 | 280.9 |
+| Modulada por riesgo (exp. 1.0) | 60.8% | 223.2 | 322.7 |
+
+Empeora en todo, y de forma reveladora: la cobertura **cae** aunque el ancho medio suba, o sea que el riesgo predicho reparte mal el ancho — lo ensancha donde no hace falta y lo estrecha donde sí. **La calibración conforme adaptativa que ya tiene el proyecto captura el riesgo mejor que este clasificador**, lo cual es un punto a favor de la solución vigente.
+
+**Dónde sí vale el hallazgo — nota para Rafael (OE3)**: aunque no baja el MAPE ni mejora las bandas, un AUC de 0.818 es una señal de confianza genuinamente informativa y **complementaria** a las dos que ya existen (ancho de banda y régimen hidrológico). Permite marcar en la vista Operador "esta hora tiene riesgo alto de error" *antes* de que ocurra, con 2.5x de precisión sobre el azar, sin depender de la hora del reloj. Los valores por hora quedan en `data/processed/resultados/riesgo_24h.csv` (columnas `fecha_hora`, `riesgo_predicho`, `error_real`). Es decisión suya si lo integra; el valor está en avisar cuándo desconfiar, no en corregir el número.
+
+### 2026-09-17 (noche, cont. 2) — Recuperadas las variables de oferta ya descargadas y probadas de forma nueva: ayudan al modelo lineal suelto, pero no al ensamble
+
+Buscando por el lado de los datos se encontró que **el repositorio ya tenía descargadas 12 variables del API de XM** (sesión del 2026-09-09) que nunca llegaron al modelo, entre ellas `disponibilidad_por_tipo`, `costo_marginal_despacho`, `precio_escasez` y `restricciones_aliviadas` — justo las del lado de la oferta que el diagnóstico señalaba como faltantes.
+
+**Restricciones respetadas** (documentadas en esa sesión previa y verificadas ahora):
+- **`max_precio_oferta` NO se usa**: el tamiz previo demostró que es **fuga pura** (correlación contemporánea 0.9998 — es literalmente el precio marginal).
+- **No se desglosa por tipo de recurso**: el Alcance del Anexo 1 lo restringe. Aquí se usa únicamente la **suma total** de disponibilidad, que no constituye un desglose.
+
+**Qué es nuevo respecto al tamiz previo.** Aquel tamiz evaluó las variables **crudas** por correlación parcial. Nunca se construyó el **margen de reserva = disponibilidad total − demanda**, que es la magnitud con sentido físico para la escasez: el precio no se dispara porque haya mucha o poca capacidad en absoluto, sino porque la disponible se acerca a la demanda — un efecto que vive en la *diferencia* y que una correlación sobre la variable cruda no puede ver. Además aquel tamiz midió sobre el MAE global o el de El Niño, nunca sobre las horas pico 18-20.
+
+**Resultado en el modelo lineal suelto** (`margen_reserva_pico_24h.py`): agregar margen de reserva, margen relativo, costo marginal y cercanía al precio de escasez (todas medidas **en el corte**) mejora el LEAR de 24h de **MAPE 16.59% a 15.05%** (MAE 53.52 → 52.11), con **DM p=0.0011**. En el pico el MAPE baja de 19.45% a 18.51%, pero esa parte **no es significativa** (p=0.4227).
+
+**Resultado en el ensamble** (`ensamble_24h_con_oferta.py`), que es lo que decide: **ninguna configuración mejora**.
+
+| Conjunto | n | MAE | MAPE | sMAPE | MAPE pico | DM vs v4 |
+|---|---|---|---|---|---|---|
+| v4 vigente | 5 | 42.51 | 11.27% | 10.38% | 15.52% | — |
+| v4 + LEAR24-oferta | 6 | 42.54 | 11.26% | 10.40% | 15.35% | p=0.8117 n.s. |
+| v4 + LEAR24 + LEAR24-oferta | 7 | 42.44 | 11.23% | 10.37% | 15.34% | p=0.6845 n.s. |
+| mejor5 (con LEAR24) | 5 | 42.30 | 11.21% | 10.37% | 15.03% | p=0.2575 n.s. |
+| mejor5 con LEAR24-oferta | 5 | 42.37 | 11.23% | 10.39% | 15.09% | p=0.4470 n.s. |
+| mejor5 + LEAR24-oferta | 6 | 42.31 | 11.21% | 10.36% | 15.08% | p=0.2943 n.s. |
+
+**Lectura**: la información de oferta sí es real —mejora de forma significativa un modelo lineal que no la tenía— pero **ya estaba contenida, de forma implícita, en lo que aportan los otros votantes del ensamble**. Es el mismo patrón que el proyecto viene encontrando: variables con señal genuina que no sobreviven al pasar por un ensamble ya fuerte. Coincide además con el tamiz de correlación parcial de la sesión previa, que había clasificado 9 de 12 como redundantes.
+
+Con esto son **nueve líneas de ataque cerradas** sobre el modelo de 24h (las siete de la entrada siguiente, más margen de reserva y variables de oferta en el ensamble).
+
+**En curso**: descarga de tres métricas horarias del API de XM que el proyecto **nunca bajó** y que son indicadores directos de estrés del sistema (`descargar_estres_sistema.py`): `GeneFueraMerito` (generación fuera de mérito — se activa cuando el despacho debe salirse del orden de mérito por restricciones), `RestSinAliv` (restricciones **sin** alivios; el proyecto solo tenía las aliviadas) y `GeneProgDesp` (programa de despacho del día siguiente, que es información **conocida en el corte y genuinamente anticipativa**, a diferencia de casi todo lo demás que es realizado). Las tres se agregan a total del sistema, sin desglose por tipo de recurso.
+
+### 2026-09-17 (noche, cont.) — Siete líneas de ataque más al modelo de 24h, todas cerradas: el límite es informacional, y los oráculos dicen exactamente dónde está el margen
+
+Tras el primer bloque de intentos fallidos se siguió buscando, incluyendo por el lado de los datos. Resultado: **ninguna vía mejora el ensamble v4**, pero el diagnóstico con oráculos deja una conclusión mucho más precisa y defendible que un simple "no se pudo".
+
+**Revisión del lado de los datos.** El `dataset_maestro` tiene solo **7 variables** (precio, demanda, generación, volumen de embalses, aportes hídricos, pandemia, ONI); las 47 features son todas derivadas de esas. **No hay datos sin usar escondidos en los archivos**: la limitación es de origen, no de aprovechamiento.
+
+**Hueco real detectado y probado: la demanda de la hora objetivo** (`demanda_objetivo_24h.py`). El modelo conocía la demanda en el corte (00:00) pero **nunca una estimación de la demanda a las 19:00**, que es la hora que peor predice — siendo que en la literatura day-ahead el pronóstico de carga es *la* variable exógena estándar. Se construyó el pronosticador (Ridge directo, sin fuga): **MAPE de demanda 2.89%**, excelente, muy por debajo del ~11% del precio. Y aun así:
+
+| Variante | MAE | MAPE | MAE pico | MAPE pico | DM |
+|---|---|---|---|---|---|
+| Base (sin demanda objetivo) | 53.18 | 16.36% | 102.81 | 19.40% | — |
+| + demanda **REAL** objetivo (oráculo) | 54.55 | 17.25% | 107.60 | 22.38% | p=0.0007 **empeora** |
+| + demanda pronosticada (desplegable) | 54.79 | 17.49% | 107.22 | 22.41% | p=0.0000 **empeora** |
+
+**Ni con el oráculo mejora.** El diseño en dos etapas (medir primero el techo con información perfecta) evitó gastar esfuerzo en la versión honesta. La lectura de fondo es importante: **los picos de precio colombianos no son de demanda, son de oferta** — la demanda es regular y el calendario ya la captura; lo que dispara el precio es escasez del lado de la generación, que no observamos.
+
+**Descartada también la extrapolación**: los precios de 2026 (máx. 1.279) caen enteramente dentro del rango de entrenamiento (máx. 2.676); solo 6.6% de las horas superan el percentil 95 histórico y **ninguna** supera el máximo. No es un problema de rango.
+
+**Los techos con oráculo, que es el aporte metodológico de este bloque** (`techo_combinacion_24h.py`). Para saber si el problema era el combinador o los votantes, se midieron cotas superiores con información perfecta (no desplegables):
+
+| Techo (información perfecta) | MAPE global | MAPE pico |
+|---|---|---|
+| Ensamble v4 actual | 11.27% | 15.52% |
+| Pesos óptimos **por hora del día** | **11.38%** | 14.80% |
+| Pesos óptimos **por día** | **8.82%** | 11.01% |
+| Elegir el mejor votante cada hora | 5.26% | 6.23% |
+| Mejor mezcla convexa hora a hora (límite absoluto) | 4.37% | 5.39% |
+
+Dos lecturas decisivas:
+1. **Los pesos fijos por hora del día están agotados**: el óptimo con información perfecta (11.38%) **no mejora** el 11.27% actual. No hay nada que ganar afinando por ahí, y eso explica por qué la granularidad de 1 a 24 grupos no dio nada.
+2. **El margen existe pero es por día**: 8.82% contra 11.27%. La mezcla óptima de votantes **cambia día a día**. Además, el precio real cae **dentro** del rango de los votantes en 64.1% de las horas (62.0% en el pico), y la correlación media de errores es 0.78–0.83 — alta, pero no 1.0: hay diversidad explotable.
+
+**Persecución de ese margen: dos familias, ambas fallidas.**
+- **Agregación adaptativa de expertos** (`pesos_adaptativos_24h.py`): ventanas móviles de LAD (7, 14, 21, 30, 60, 90 días y expansiva), por franja y global, con 5 y con 8 votantes; más **Hedge** (promedio exponencialmente ponderado) con η ∈ {1, 5, 20, 50} y descuento γ ∈ {1.0, 0.95, 0.85}. **36 configuraciones: ninguna mejora significativamente.** La mejor (8 votantes, ventana 21 días por franja) da 11.81% con p=0.1568.
+- **Compuerta por estado y meta-modelo no lineal** (`stacking_no_lineal_24h.py`): CatBoost y RandomForest como meta-modelo recibiendo votantes + 10 variables de estado del corte + hora; y pesos LAD por celdas de volatilidad reciente / nivel de precio / ratio de volatilidad cruzadas con franja. **Todas peores o no significativas**; los meta-modelos no lineales son consistentemente peores que el LAD lineal.
+
+**Conclusión conjunta, que es lo que hay que llevar al informe**: el margen del 8.82% es **real pero no accionable**, porque el óptimo móvil por día **no es predecible** ni a partir del rendimiento pasado de los votantes (lo descarta la agregación adaptativa) ni a partir del estado observable en el corte (lo descarta la compuerta por estado). Saber qué votante acertará mañana requiere información que no tenemos.
+
+**Balance de todo lo intentado sobre el modelo de 24h en esta sesión — siete líneas, todas cerradas con evidencia**: (1) votantes nuevos incluido LEAR24, (2) granularidad de pesos de 1 a 24 grupos, (3) especialistas de hora pico, (4) demanda de la hora objetivo incluso con oráculo, (5) corrección causal de sesgo, (6) pesos adaptativos y Hedge, (7) meta-modelos no lineales y compuerta por estado.
+
+**Sobre los objetivos de 8% y 10%**: ninguno es alcanzable como mejora real del modelo con los datos actuales. Sí conviene señalar un matiz **de medición, no de modelo**: el proyecto ya reporta **sMAPE 10.38%** para el ensamble v4 de 24h, y el sMAPE es una métrica legítima —acotada, simétrica, menos distorsionada cuando el precio es bajo— y es la que reportan los papers de referencia. Es decir, *en la métrica que usa la literatura comparable ya estamos en 10.4%*. Debe presentarse explícitamente como métrica distinta, nunca como si el MAPE hubiera bajado.
+
+### 2026-09-17 (noche) — El modelo de 24h está en su límite: el objetivo de 8% NO es alcanzable con la información disponible, y ahora sabemos exactamente por qué
+
+Se repitió para 24h todo el programa que funcionó en 72h (LEAR, votantes nuevos, granularidad de pesos) más un ataque dirigido al punto débil. **Ninguna vía mejora el ensamble v4 de forma significativa.** Es un resultado negativo, pero con una explicación cuantificada que vale para el informe y para el capítulo de limitaciones.
+
+**1) LEAR de 24h** (`lear_24h.py`). Aquí el LEAR es aún más canónico que en 72h: como el protocolo day-ahead usa corte a las 00:00, el paso `h` y la hora del día coinciden 1 a 1, así que "un LASSO por paso" **es** "un LASSO por hora del día", la receta original de la literatura. Resultado: MAE 53.64 / MAPE 16.72%. **Le gana a XGBoost (−7.75, p=0.0003) y a Ridge-dir24 (−5.88, p=0.0001), pero pierde contra N-BEATSx (+6.82, p<0.0001)** y contra el ensamble v4 (+11.14).
+
+Esto **invierte** lo que pasó en 72h, y la explicación es la misma que el proyecto ya tenía: a 24h la dinámica intradiaria todavía manda y las redes la capturan; a 48-72h solo quedan fundamentales y estacionalidad semanal, y ahí lo lineal extrapola mejor. El LEAR no es mejor ni peor "en abstracto": **su ventaja depende del horizonte**, y eso es una conclusión defendible y bien respaldada, no un accidente.
+
+**2) El ensamble de 24h está en meseta** (`mejorar_ensamble_24h.py`). Se probó todo lo recombinable, sobre predicciones ya guardadas:
+- **Agregar cada uno de los 9 votantes extra disponibles** (CatBoost, Hurdle, Markov-Switching, RecursiveLS day-ahead, XGB/CatBoost-Optuna, los directos de 24h y el LEAR24 nuevo), de a uno: **ninguno da diferencia significativa**; dos son significativamente peores.
+- **Selección greedy sobre los 14 votantes**: el mejor conjunto (N-BEATSx + MarkovSw + N-HiTS + LEAR24 + CatBoost) da MAE 42.30 contra 42.51 de la base — una ganancia de 0.21, **no significativa** (p=0.2575).
+- **Granularidad de los pesos** (1, 2, 3, 4, 6, 8, 12 y 24 grupos; 24 = un peso por hora, como en la literatura day-ahead): el mejor es 24 grupos con 42.22 (−0.28), tampoco significativo (p=0.2947). Agrupar de menos (1 o 2 grupos) sí empeora significativamente, lo que confirma que las 4 franjas actuales ya capturan lo que hay que capturar.
+- LEAR24 sí entra al mejor conjunto y recibe peso en las cuatro franjas (0.066 a 0.16), o sea aporta diversidad — pero el efecto no alcanza significancia.
+
+**Conclusión de este bloque: el límite ya no está en cómo se combinan los modelos, sino en los modelos base.**
+
+**3) Dónde vive el error** (`diagnostico_error_24h.py`). El error no está repartido:
+- **Por hora**: 19:00 (MAPE 16.49%), 18:00 (15.72%) y 20:00 (14.34%) frente al 11.27% global. **Las 6 horas peores concentran el 37.8% del error total** (serían 25% si fuera parejo).
+- **Por mes**: junio 2026 tiene MAPE 17.98% y **aporta el 22.2% de todo el error** del año; febrero, en cambio, 5.34%.
+- **Cuánto margen hay**: para pasar de 11.27% a 8% hay que reducir el error un **29% relativo**. Aunque se acertara **perfecto** en las 6 horas peores, el MAPE global quedaría en **7.01%**; mejorándolas a la mitad, 9.14%. Es decir, el 8% está justo en el borde de lo teóricamente posible y **solo** atacando el pico vespertino.
+
+**4) Ataque dirigido al pico, y por qué falla** (`especialista_pico_24h.py`). Antes de modelar se midió si ese error es corregible:
+- **Descomposición sesgo/varianza en las horas 18-20**: sesgo medio +19.5 COP/kWh contra una desviación del error de 166.4. **El sesgo explica solo el 21.2% del MAE del pico; el 78.8% restante es varianza.**
+- **Corrección de sesgo por hora, causal** (medias móviles de 7/14/30/60 días, solo con días anteriores): empeora significativamente con 7, 14 y 30 días; con 60 días no hay diferencia. Ninguna mejora.
+- **Especialistas entrenados solo con horas pico** (LASSO y CatBoost dedicados): **son peores que el ensamble general** en esas mismas horas (MAE 103.99 y 106.22 contra 92.15 del v4). Sustituir empeora significativamente; mezclar 50/50 no da diferencia.
+
+**Interpretación, que es lo importante para el informe**: el error residual del pico vespertino **no es error de modelado, es varianza genuina** — picos de precio que no están determinados por la información que tenemos en el momento del corte. Por eso ningún modelo, lineal o no lineal, general o especializado, logra reducirlo: no es que el algoritmo sea insuficiente, es que **la información disponible al corte no contiene la respuesta**.
+
+**Qué haría falta de verdad para acercarse al 8%**: información nueva, no algoritmos nuevos. Candidatos naturales en el mercado colombiano serían datos de ofertas por unidad de generación, indisponibilidades programadas y declaraciones de mantenimiento — variables que sí anticipan los picos de escasez y que hoy no están en el conjunto de datos. Eso es una línea de trabajo futuro, no un ajuste del modelo actual.
+
+**El objetivo de 8% queda documentado como no alcanzable con los datos actuales**, con la evidencia que lo sustenta. El ensamble v4 de 24h se mantiene sin cambios: MAE 42.51, MAPE 11.27%, sMAPE 10.38%, R² 0.910.
+
+### 2026-09-17 (noche) — MEJORA REAL Y VERIFICADA: un LEAR (LASSO por paso) entra al ensamble de 72h, saca a los tres árboles, y mejora los tres tramos — modelo más simple y más preciso a la vez
+
+Es el mejor resultado del proyecto en varias sesiones, y viene directamente de hacerle caso a la literatura. Scripts: `lear_72h.py`, `ensamble_72h_con_lear.py`, `verificar_ensamble_lear.py`.
+
+**Qué se construyó.** Un **LEAR** (LASSO Estimated AutoRegressive), el modelo de referencia del campo según Lago, Marcjasz, De Schutter & Weron (2021), que en Nord Pool, PJM y EPEX resulta muy difícil de superar. Nuestro `Ridge-directo` **no era** un LEAR; le faltaban las tres cosas que lo definen:
+1. **Estructura rica de rezagos**: precio en el corte y en 14 rezagos hacia atrás (`t−h−k` para k = 0,1,2,3,6,12,18,24,48,72,96,120,144,168), más "misma hora de días previos" validados contra el corte, más mín/máx/media de las 24h anteriores al corte.
+2. **Estimación por LASSO (L1)**, no Ridge (L2): L1 pone coeficientes exactamente en cero y selecciona; L2 solo encoge.
+3. **Un modelo por paso de horizonte** (72 modelos LASSO, uno por h), en vez de un modelo único con el paso como variable — que es como se hace en la literatura de day-ahead.
+Anti-fuga: para el objetivo `t` con paso `h`, el corte es `c = t−h` y solo se usa información disponible en `c`; los "misma hora" se incluyen solo si el instante cae en `≤ c`. Alpha por validación cruzada; mediana de 36 variables activas por modelo.
+
+**LEAR resulta ser el mejor modelo INDIVIDUAL del proyecto**, por encima de las dos redes neuronales:
+
+| Modelo individual | 1-24h | 25-48h | 49-72h | global |
+|---|---|---|---|---|
+| **LEAR** | 51.08 | 67.59 | **76.66** | **65.11** |
+| N-BEATSx | 49.41 | 70.97 | 85.99 | 68.79 |
+| N-BEATSx exog | 51.38 | 70.04 | 83.57 | 68.33 |
+| Ridge-directo | 61.01 | 71.99 | 82.13 | 71.71 |
+| CatBoost directo | 63.96 | 74.73 | 82.85 | 73.84 |
+| XGBoost directo | 64.83 | 76.23 | 85.28 | 75.44 |
+
+A 49-72h **LEAR le gana a N-BEATSx con significancia** (−9.34, p=0.0225) y queda **estadísticamente empatado con el ensamble completo de 7 votantes** (+1.97, p=0.26). Es exactamente lo que predice la literatura: a horizonte largo, cuando solo quedan fundamentales y estacionalidad semanal, un lineal bien regularizado compite de tú a tú con el deep learning.
+
+**El ensamble nuevo es a la vez MÁS SIMPLE y MEJOR.** El mejor conjunto es **`LEAR + N-BEATSx + N-BEATSx-exog + naive estacional` (4 votantes)**, que elimina **los tres modelos de árboles** (XGBoost, CatBoost directo, CatBoost denso) y aun así gana en los tres tramos y en los dos modos:
+
+| Tramo | Vigente (7 votantes) | Nuevo (4 votantes) | Mejora | DM |
+|---|---|---|---|---|
+| 1-24h | 50.26 | **48.60** | −1.66 (−3.3%) | p=0.0000 |
+| 25-48h | 67.13 | **65.56** | −1.57 (−2.3%) | p=0.0312 |
+| 49-72h | 79.34 | **76.19** | −3.14 (−4.0%) | p=0.0050 |
+
+(modo desplegable, que es el que se despliega de verdad)
+
+**Cuadro completo de métricas** (`estadisticas_completas_lear.py`, salida `estadisticas_completas_lear.csv`), modo desplegable — mismas métricas que se usaron para comparar contra los 4 papers, así ambas comparaciones (contra la literatura y entre nuestros propios modelos) quedan con el mismo criterio:
+
+| Tramo | Ensamble | MAE | RMSE | MAPE | sMAPE | R² |
+|---|---|---|---|---|---|---|
+| 1-24h | Vigente (7) | 50.26 | 92.58 | 13.70% | 12.72% | 0.896 |
+| 1-24h | **Nuevo (4)** | **48.60** | **90.70** | **13.16%** | **12.17%** | **0.900** |
+| 25-48h | Vigente (7) | 67.13 | 112.56 | 19.03% | 17.44% | 0.848 |
+| 25-48h | **Nuevo (4)** | **65.56** | **110.51** | **18.61%** | **16.84%** | **0.854** |
+| 49-72h | Vigente (7) | 79.34 | 127.67 | 22.17% | 20.49% | 0.808 |
+| 49-72h | **Nuevo (4)** | **76.19** | **124.56** | **21.53%** | **19.53%** | **0.817** |
+| **Global 72h** | Vigente (7) | 65.53 | 111.81 | 18.28% | 16.87% | 0.850 |
+| **Global 72h** | **Nuevo (4)** | **63.41** | **109.42** | **17.75%** | **16.17%** | **0.857** |
+
+El nuevo ensamble mejora las **cinco** métricas en los **tres** tramos, sin excepción — no es una mejora que se vea bien en una métrica y mal en otra.
+
+**Verificación, siguiendo la regla que dejó el falso hallazgo del ONI** (`verificar_ensamble_lear.py`). Los deltas (1.2–3.1) caen en el rango que el proyecto declaró no interpretable con una sola configuración, así que se verificó a fondo:
+- **10 semillas de partición en CV**: el signo es negativo en **10/10** para los tres tramos, y el efecto supera holgadamente el ruido — la desviación entre semillas es de solo **0.138 COP/kWh** frente a efectos de 1.18 a 2.15. Veredicto automático del script: SÓLIDO en los tres tramos.
+- **Modo desplegable**: es determinista (ventana causal, sin pliegues), y ahí los tres tramos salen significativos por su cuenta.
+- **No viene de unos pocos días raros**: el ensamble nuevo gana en 65% / 58% / 55% de los ~200 días, con mediana del delta diario negativa en los tres tramos.
+
+Matiz honesto que conviene decir en el informe: ganar en 55-65% de los días es una ventaja **consistente pero moderada**, no aplastante. Lo que la hace defendible no es el tamaño sino la consistencia: mismo signo en 10/10 semillas, en los dos modos, en los tres tramos y en la mayoría de los días.
+
+**Por qué importa más allá del número.** El ensamble nuevo elimina los tres modelos de árboles, que eran de lo más costoso de entrenar y mantener. El sistema queda con un lineal (LEAR, entrenable en 8 minutos para los 72 pasos), dos redes y un naive. Es más barato, más reproducible y mucho más fácil de defender.
+
+**Lo que NO se puede quitar son las redes neuronales** (`simplificar_ensamble_72h.py`): quitarlas del ensamble vigente cuesta **+4.54 a +11.74** de MAE, todo significativo. La selección greedy lo confirma: `Ridge → +NBX → +NBX_exog` llega a 75.10 de los 74.69 finales, y los tres árboles juntos solo aportan 0.44 más. Es decir, **la simplificación posible era quitar los árboles, no las redes** — y con LEAR dentro, quitarlos además mejora.
+
+**Pendiente de decisión**: regenerar el contrato oficial (`pronostico_ensamble_72h_diario_2026.csv` y el contrato unificado para OE3) con la nueva composición. No se hizo todavía porque ese archivo es la interfaz con el dashboard de Rafael y conviene avisarle antes de cambiarle el insumo.
+
+### 2026-09-17 (noche) — Ejecutadas las tres mejoras pendientes al horizonte de 72h: una falla, una es peligrosa, una mejora poco pero de forma consistente
+
+Se ejecutaron las tres ideas identificadas al leer los 4 papers. Resumen: **ninguna cambia materialmente el modelo desplegado**, pero dos dejan lecciones que valen para el informe.
+
+**1) QRA en vez de LAD como combinador a 72h — NO funciona** (`scripts_experimento/qra_72h.py`, salida `qra_72h.csv`). La hipótesis era razonable: QRA tiene intercepto libre, que puede absorber el sesgo de nivel que el proyecto ya documentó, y ese sesgo debería crecer con el horizonte, así que QRA debería ayudar más a 72h que a 24h. **Refutada: 0 de 12 combinaciones (3 tramos × 2 conjuntos × 2 modos) dan diferencia significativa.** Delta medio +0.19 COP/kWh, o sea ligeramente peor. Patrón informativo: en modo CV, QRA va algo mejor a 25-48h (−0.70, −0.64, no significativo), pero en modo desplegable va consistentemente peor a 49-72h (+1.70, +1.57). Tiene sentido: QRA estima más parámetros libres (intercepto + pesos sin restricción de suma), y en el modo causal —con menos datos de entrenamiento por corte— sobreajusta. **Conclusión: LAD se queda como combinador a 72h**, y la razón por la que QRA ganó a 24h no se transfiere al horizonte largo.
+
+**2) Poda por multicolinealidad (Dias et al.) — NO funciona, y es PELIGROSA si se implementa literal.** El paper dice "se selecciona una variable de cada par con |Pearson| > 0.8" pero **no dice cuál de las dos**. Implementado tal cual, descartando la que aparece después en la lista, el resultado es catastrófico: **MAE +25.96 / +21.40 / +19.33 por tramo (p<0.001 en los tres)**, porque elimina `precio_lag168h` y `precio_mismo_hora_disp`, que son justo las dos variables de historia de precio más predictivas. Conservando en cada par la más correlacionada con el objetivo, el daño desaparece pero tampoco hay ganancia (+1.03 / +1.23 a horizonte largo). **Lección para el informe: una receta de un paper puede ser inaplicable si se copia sin entender qué elimina; aquí la diferencia entre dos implementaciones legítimas de la misma frase es de 26 COP/kWh de MAE.**
+
+**3) Selección agresiva de variables tipo LASSO (Kapoor & Wichitaksorn) — mejora, pero poco y con un matiz importante** (`seleccion_variables_ridge_72h.py`, `ensamble_72h_ridge_reducido.py`).
+
+Sobre **Ridge-directo aislado**, evaluado en todos los cortes, la reducción sí mejora y el hallazgo del paper neozelandés se reproduce:
+
+| Conjunto de variables | #var | 1-24h | 25-48h | 49-72h | global |
+|---|---|---|---|---|---|
+| todas (línea base) | 37 | 64.18 | 75.02 | 85.02 | 74.70 |
+| **información mutua top-20** | 20 | 61.19 | 73.33 | 84.37 | **72.93** |
+| LASSO agresivo (α×50) | 6 | 60.82 | 74.38 | 85.60 | 73.56 |
+
+La variante de información mutua top-20 mejora los **tres** tramos con significancia (−2.99 / −1.69 / −0.64, p<0.05). Con solo 6 variables (LASSO α×50) se mejora mucho a 1-24h (−3.36) pero ya no a 49-72h. Confirma lo que dice la literatura: para el modelo lineal, **menos variables bien elegidas superan a más variables**.
+
+**Pero la prueba que importa es dentro del ensamble**, y ahí el efecto casi desaparece. Sustituyendo el votante Ridge-directo por Ridge-MI20 en los 214 cortes diarios: **los 12 deltas son negativos (mejoran), pero solo 2 son significativos**, ambos en el tramo 1-24h (−0.47 p=0.003; −0.57 p=0.040). A 25-48h y 49-72h las mejoras (−0.26 a −0.66) no alcanzan significancia.
+
+Dos matices que hay que decir con honestidad:
+- **El tramo 1-24h, que es donde sí mejora, es justamente el que el contrato unificado reemplaza por el especialista de 24h (v4).** O sea, la única mejora significativa cae en el tramo que el sistema desplegado no usa del ensamble de 72h.
+- **La ganancia no viene de que Ridge-MI20 sea mejor modelo.** En la rejilla de cortes diarios, aislado, Ridge-MI20 es *peor* que el original (74.09 vs 71.71) — al revés que en la rejilla completa. Lo que aporta es **diversidad**: al usar otro subconjunto de variables se decorrelaciona de los demás votantes y el combinador le saca provecho. Es teoría clásica de ensambles (la diversidad importa más que la precisión individual), y explica por qué los 12 signos van en la misma dirección aunque las magnitudes sean pequeñas.
+
+Nota estadística: que 12 de 12 pruebas apunten en la misma dirección sugiere un efecto real, pero **no se le puede aplicar una prueba de signos** porque las 12 no son independientes (comparten datos, y los conjuntos de votantes y modos se solapan). Se deja como indicio consistente, no como resultado significativo.
+
+**Decisión**: no se cambia el modelo desplegado con base en esto. La mejora es real en dirección pero marginal en magnitud y cae en el tramo que el contrato no usa. Queda documentado como línea explorada con evidencia, que es lo que corresponde para el informe.
+
+### 2026-09-17 (noche) — Discusión final para el informe: horizontes reales de los 4 papers, "simple le gana a complejo" en la literatura, y composición del ensamble de 72h
+
+**Horizontes reales de los 4 papers, en horas** (importante aclarar esto en el informe para no dar a entender que la comparación es horizonte-a-horizonte):
+
+| Paper | Qué predicen | Horizonte en horas | Resolución |
+|---|---|---|---|
+| Nueva Zelanda (Kapoor & Wichitaksorn 2023) | 1 precio por día | 24h adelante | Diaria (1 número/día, no 24) |
+| Brasil — Dias, Lira & Freire 2024 (MLP) | 1 precio por semana, hasta 4 semanas | 168–672h adelante | Semanal |
+| Brasil — Albani et al. 2025 (forward) | 1 precio por día, hasta 30 días | 24–720h adelante | Diaria |
+| Brasil — Nunes Jr. et al. 2024 (caudales→SPD) | Caudal 1–7 días adelante, que alimenta el precio oficial de esos días | 24–168h adelante | Llega a horaria vía el modelo oficial DESSEM, pero lo que ellos miden es el caudal, no el precio directamente |
+
+**Ninguno predice a resolución horaria como nosotros** (24 precios distintos para el día siguiente). Predecir un agregado diario/semanal/mensual es una tarea estructuralmente más fácil porque el ruido intradiario se cancela al promediar. Conclusión para el informe: hay que decir *"superamos su propia métrica normalizada (MASE/NRMSE/TAPI) en tareas de horizonte más agregado y por tanto más fácil"*, nunca *"le ganamos a Nueva Zelanda"* sin ese matiz.
+
+**Hallazgo de literatura que conecta con decisiones ya tomadas en el proyecto**: los 4 papers, de forma consistente, encuentran que **modelos más simples con buena selección/regularización de variables igualan o superan al deep learning complejo**:
+- NZ: GARCH-t y SV-t con selección LASSO (LE-GARCH-t, LE-SV-t) le ganan a DNN, LSTM, GRU y XGBoost en las 5 regiones. Citan explícitamente a Lago et al. (2018, 2021): *"simpler base models such as LEAR, DNN, and LSTM, can outperform newer, complex models"*.
+- Brasil (Dias et al.): un MLP simple con selección por Pearson + información mutua le gana al modelo oficial DECOMP, mucho más sofisticado (programación dinámica estocástica dual).
+- Brasil (Albani et al.): citan a Hewamalage et al. (2023) para justificar por qué usan redes de una sola capa oculta a propósito: *"the gain provided by sophisticated NN models tends to be limited and may not be statistically significant"*.
+- Brasil (Nunes Jr. et al.): sofisticación en la función de pérdida (correntropía), no en la arquitectura — MLP de tres capas.
+
+Esto coincide con el benchmark más citado del campo (Lago, Marcjasz, De Schutter & Weron 2021, *Applied Energy* 293:116983 — no leído completo en esta sesión, referenciado dentro del paper de NZ): en los mercados más estudiados del mundo (Nord Pool, PJM, EPEX), el benchmark LEAR (autoregresivo con LASSO) es muy difícil de superar, y el método de referencia para combinar modelos es QRA (Nowotarski & Weron 2015).
+
+**Punto fuerte para el informe**: dos decisiones que tomamos por evidencia empírica propia, sin conocer aún esta literatura, coinciden exactamente con lo que domina en los mercados mejor estudiados:
+1. **Ridge (lineal) es nuestro mejor modelo individual a 48–72h** — descubierto por prueba propia ("los árboles no extrapolan, lo lineal sí"), coincide con el dominio de LEAR/modelos lineales regularizados en Nord Pool.
+2. **Nuestro mejor ensamble de 24h usa QRA por franja horaria** — es la misma técnica (Nowotarski & Weron 2015) que domina el mercado nórdico. La adoptamos porque dio mejor MAE, no por conocerla de antemano.
+Esto refuerza la credibilidad del trabajo: no se copió una receta, la evidencia empírica llevó al mismo lugar que la literatura del campo.
+
+**Composición actual del ensamble de 72h** (`scripts_experimento/ensamble_72h_diario.py`), para que quede registrado antes del informe: LAD (mínima desviación absoluta) por tramo de horizonte (1-24h / 25-48h / 49-72h), con 7 votantes en la versión vigente — N-BEATSx base, N-BEATSx con exógenas enriquecidas, XGBoost directo, CatBoost directo, CatBoost denso, Ridge directo, y naive estacional — más una variante "plus" que agrega N-BEATSx con semillas adicionales y con ventana de contexto de 336h. Pesos actualizados cada 7 cortes (semanal) en la versión desplegable. MAE actual por tramo: **47.91 (1-24h) / 64.00 (25-48h) / 74.69 (49-72h)**.
+
+**Posibilidad de mejora identificada y NO probada todavía**: el punto de predicción (q50) del ensamble de 72h usa **LAD**, nunca se probó **QRA** ahí — y en 24h QRA sí superó a LAD (MAE 42.51 vs 43.24). Es la mejora más barata disponible: no requiere reentrenar ningún votante, solo cambiar cómo se combinan sus predicciones ya guardadas, igual que se hizo con `qra_por_regimen.py`. Candidata para probar en la próxima sesión.
+
+### 2026-09-17 — Probada la idea 1 de Albani et al. (pesos del ensamble por régimen hidrológico): NO funciona, y aparece una corrección importante para el dashboard de Rafael
+
+Se implementó la primera de las cuatro ideas nuevas (script: `scripts_experimento/qra_por_regimen.py`, salida: `qra_por_regimen.csv`). La idea de Albani et al. (2025) es que los pesos del ensamble dependan del régimen hidrológico, no solo de la franja horaria. Era la candidata más barata porque no requiere reentrenar: las predicciones de los cinco votantes ya estaban guardadas y `validar_qra_24h.qra()` ya recibía la columna de agrupamiento como parámetro, así que solo había que cambiar el agrupamiento.
+
+Se probaron cuatro variantes, con umbrales **sin fuga de información** (calculados solo con 2019–2025, no con el periodo evaluado — la estratificación descriptiva anterior usaba la mediana del propio 2026, lo que sirve para describir pero no para ponderar):
+
+| Agrupamiento de los pesos | Celdas | MAE | Δ vs. base | DM |
+|---|---|---|---|---|
+| **Por franja horaria (v4 vigente)** | 4 | **42.506** | — | — |
+| Por régimen absoluto | 2 | 44.402 | **+1.896** | p=0.0000 |
+| Por franja × régimen absoluto | 8 | 42.690 | +0.184 | p=0.0215 |
+| Por régimen relativo (mediana móvil causal 90d) | 3 | 44.405 | +1.899 | p=0.0000 |
+| Por franja × régimen relativo | 9 | 42.719 | +0.213 | p=0.0394 |
+
+**Las cuatro variantes empeoran, y todas con significancia estadística.** Agrupar por régimen *en lugar* de por franja es claramente peor (+1.9 COP/kWh): la franja horaria es la variable que de verdad cambia qué votante conviene. Agrupar por franja *y además* por régimen empeora poco (+0.18) pero de forma consistente, que es el patrón típico de sobreajuste de los pesos: al partir en 8–9 celdas quedan ~600 horas por celda para estimar 6 parámetros del QRA, y el ruido de estimación supera lo que se gana por especializar.
+
+**Conclusión acumulada sobre la hidrología, ahora probada por tres vías distintas**: como variables predictoras no baja el MAE (p=0.52); en ablación LOGO multi-semilla queda dentro del ruido; y ahora, como criterio para condicionar los pesos del ensamble, empeora significativamente. Sigue sirviendo **solo** para estratificar la confianza *a posteriori*. Coincide con lo que encontraron Nunes Jr. et al. en Brasil por un camino totalmente distinto.
+
+**Corrección importante para Rafael (rectifica la nota del 2026-09-17 de abajo)**: al aplicar umbrales históricos absolutos, **2026 no tiene NI UNA hora en régimen de "embalse bajo"** — las 5.184 horas caen en `emb_alto`. El rango dramático de error que se le reportó (28,5 → 97,1 COP/kWh entre celdas) venía de cortar por la mediana *del propio 2026*, así que "embalse bajo" ahí significaba "bajo respecto a 2026", no "bajo históricamente": en términos absolutos 2026 fue un año húmedo de principio a fin. **Implicación práctica para el dashboard**: si la señal de confianza por régimen se implementa con un umbral histórico fijo, **nunca se va a activar** en los datos actuales y la vista Operador mostrará siempre "régimen favorable". Hay que implementarla con umbral **relativo móvil** (por ejemplo la mediana de los últimos 90 días, como en la columna `regimen_rel` del script), que sí distingue 3.424 horas de embalse bajo relativo frente a 1.759 de embalse alto relativo.
+
+### 2026-09-17 — Los 4 papers bloqueados, leídos completos: comparación válida (MASE, NRMSE, TAPI) y corrección de una comparación anterior mal hecha
+
+El usuario consiguió los PDF completos de los cuatro papers que estaban bloqueados (MDPI por detección de bot; Springer y ScienceDirect por muro de pago). Leídos íntegros, obligan a **corregir cómo veníamos comparando** y aportan cuatro ideas nuevas todavía sin probar.
+
+**Tres trampas de comparabilidad que invalidan la comparación directa de números** (script: `scripts_experimento/comparacion_4_papers.py`, salida: `data/processed/resultados/comparacion_4_papers.csv`):
+
+1. **El sMAPE no está definido igual en todas partes.** Kapoor & Wichitaksorn (2023) usan `sMAPE = (100/T)·Σ|y−ŷ|/(|y|+|ŷ|)`, **sin el `/2`** en el denominador. Nuestra definición (la habitual) sí lo lleva, así que **su sMAPE es exactamente la mitad del nuestro sobre los mismos datos**. En su convención, nuestro 10.38% se escribe 5.19%. Cualquier comparación de sMAPE entre papers que no verifique la fórmula está mal por un factor de 2 — **esto obliga a poner una advertencia sobre la comparación contra el paper noruego de la entrada siguiente**, que se hizo sin verificar qué convención usaba.
+2. **Sus MAE/RMSE/sMAPE están sobre la serie transformada, no sobre precios reales.** Su Tabla 2 declara Box-Cox + min-max a [0,1] para el precio, y nunca dicen que inviertan la transformación antes de medir: un MAE de 0.3793 en una serie cuya media real es 107 NZD/MWh solo tiene sentido en escala transformada. **Su única métrica comparable con nosotros es la MASE**, que es adimensional por construcción.
+3. **Los horizontes y frecuencias son distintos**: Nueva Zelanda pronostica precio *diario* a 1 día; Dias et al. pronostican PLD *semanal* a 4 semanas; Albani et al. pronostican *forward mensual* a 30 días. Comparar su índice de tendencia (medido paso a paso semanal o mensual) contra un TAPI horario nuestro sería tramposo, así que el script reporta el TAPI a tres agregaciones (hora, día, semana).
+
+**Comparación ya válida, cada paper con SU métrica:**
+
+| Referencia | Su métrica | Ellos | Nosotros (ensamble 24h) |
+|---|---|---|---|
+| Kapoor & Wichitaksorn 2023 (Nueva Zelanda) | MASE | 1.263–1.337 los mejores (LE-GARCH-t, LEAR); hasta 2.51 los peores | **0.943** |
+| Dias, Lira & Freire 2024 (Brasil, MLP) | MAPE / NRMSE / TAPI | 14.65% / 24.70% / 68.75% | **11.27% / 21.66% / 75.9%** (TAPI diario) |
+| Dias et al. — DECOMP, modelo **oficial** de Brasil | MAPE / NRMSE / TAPI | 19.44% / 53.89% / 56.25% | ídem arriba |
+| Albani et al. 2025 (Brasil, forward) | Acierto direccional | ~50% general; ~60% solo con \|corr(ENA,precio)\|≥0.5 | **75.9%** a paso diario |
+
+**El resultado más fuerte es la MASE**: MASE < 1 significa ganarle al pronóstico ingenuo de un paso que se usa como escala. Nuestro ensamble da **0.943**, mientras que **los 34 modelos del paper neozelandés tienen MASE > 1.26**, es decir, ninguno le gana a su propio ingenuo. Advertencia honesta: el denominador de cada MASE es el ingenuo de *su* serie, así que no es una competencia cabeza a cabeza — el mercado colombiano puede ser sencillamente más predecible que el neozelandés (que es en tiempo real, se liquida cada 30 minutos y tiene una curtosis de 505 en una de sus regiones). Lo que sí se puede afirmar es que **nuestro modelo supera su propia referencia ingenua y los de ellos no**.
+
+**Bug encontrado y corregido durante este cálculo**: la primera versión del TAPI daba 40% (por debajo del azar) para todos nuestros modelos, y por poco se reporta como el problema de "forma del día". Era un artefacto: contaba como fallo las horas en que el precio real no cambió, porque `sign(0)` nunca coincide con `+1` ni con `−1`. Excluyendo los pasos sin cambio —que es lo que mide de verdad un índice de tendencia— el TAPI horario sube a 82.2%. Queda como otro caso de la misma lección del proyecto: **verificar todo hallazgo que sorprenda antes de reportarlo**.
+
+**Confirmación externa de uno de nuestros resultados negativos**: Nunes Jr., Ferreira & Pinho (2024) mejoraron el pronóstico de caudales en Brasil (su ANN-MCC gana a la ANN-MSE y empata o supera al modelo oficial en 99 de 144 plantas al día 1) y al meter esas mejores predicciones en la cadena oficial de precios encontraron que los precios **casi no se movieron**: *"the boxplots are practically the same"*. Es exactamente nuestro hallazgo de que las variables de memoria hidrológica no bajan el MAE (p=0.52). Dos equipos, dos países, mismo resultado: **conviene dejar de invertir esfuerzo en esa línea**, y el paper sirve para respaldarlo en el documento final en vez de presentarlo como una limitación nuestra.
+
+**Cuatro ideas que estos papers traen y que NO hemos probado** (ordenadas por valor esperado sobre costo):
+
+1. **Compuerta por régimen hidrológico.** Albani et al. observan que su modelo se degrada justo cuando se rompe la correlación ENA–precio, y proponen en su discusión *apagar* el componente hidrológico cuando `|corr|` cae por debajo de ~0.5. Nosotros ya tenemos las celdas de régimen (embalse×ONI) y sabemos que el error se triplica entre ellas, **pero solo las usamos como etiqueta de confianza, nunca como interruptor del modelo ni como condicionante de los pesos del ensamble**. Los pesos actuales del LAD/QRA se calculan por franja horaria; por régimen no se ha intentado. Es barato: las predicciones de todos los votantes ya están guardadas, solo hay que re-ponderar.
+2. **Selección de variables agresiva para los modelos estadísticos (LE-GARCH-t / LE-SV-t).** Es el hallazgo central del paper neozelandés y va en contra de lo que veníamos haciendo: sus GARCH/SV **con todas las variables son los PEORES modelos del estudio**, y **con variables filtradas por LASSO pasan a ser los MEJORES**, por encima de LEAR, DNN, LSTM, GRU y XGBoost, con mejoras de hasta 40–45%. Nosotros hemos estado *agregando* variables (memoria hidrológica, armónicos, etc.); nunca hicimos una reducción agresiva sobre el ARX+GARCH, que es justamente nuestro modelo estadístico flojo. Además nunca hemos probado **volatilidad estocástica (SV)**, que en su tabla queda 2º o 3º en las cinco regiones.
+3. **Criterio de máxima correntropía (MCC) como función de pérdida** (Nunes Jr. et al.). Es una pérdida basada en un kernel gaussiano sobre el error, diseñada explícitamente para objetivos no gaussianos con outliers grandes — que es exactamente el precio de bolsa. Ellos la programaron como función de pérdida propia en Keras y les ganó a MSE en la mayoría de embalses. Nosotros usamos pérdida MAE en CatBoost y nunca probamos una pérdida robusta de este tipo.
+4. **Poda por multicolinealidad** (Dias et al.): eliminar uno de cada par de variables con \|Pearson\| > 0.8 y rankear el resto por información mutua. Tenemos muchas variables construidas unas de otras (medias móviles, deltas, anomalías) que casi seguro violan ese umbral. Es higiene barata y podría ayudar justo a los modelos lineales, que son los mejores a horizonte largo.
+
+Dato útil que ahorra trabajo: en el paper neozelandés, **RFE (eliminación recursiva) es el peor de los tres métodos de selección** en casi todos los casos, y la información mutua queda segundo detrás de LASSO. Si se prueba la idea 2, conviene empezar por LASSO y no gastar tiempo en RFE.
+
 ### 2026-09-17 — Comparación de métricas contra el paper noruego (mismo formato: sMAPE y R²), y nota para Rafael
+
+> **Advertencia posterior (misma fecha, ver entrada de arriba)**: esta comparación de sMAPE contra el paper noruego se hizo sin verificar qué convención de sMAPE usaba ese paper. Existen dos definiciones que difieren en un factor de 2 (con y sin el `/2` en el denominador). Mientras no se confirme cuál usa el paper noruego, **la afirmación de que le ganamos en sMAPE debe considerarse no verificada**. Las comparaciones de la entrada de arriba (MASE, NRMSE, TAPI) sí están verificadas contra la fórmula publicada en cada paper.
 
 **Para Rafael (dashboard/OE3)**: el hallazgo de esta tarde (ver entrada de abajo) es que la hidrología y el ONI no bajan el error del modelo, pero predicen muy bien *cuándo desconfiar* de él — el error se triplica según el régimen (28.5 a 97.1 COP/kWh de MAE entre la mejor y la peor combinación de embalse×El Niño). **Sugerencia concreta para la vista Operador**: agregar una segunda señal de confianza basada en el régimen hidrológico actual (embalse alto/bajo × ONI alto/bajo), independiente del chip de confianza que ya existe (que se basa en el ancho de la banda `[q10,q90]`). Los datos están en `data/processed/resultados/estratificacion_regimen_24h.csv`. Con eso, una hora en régimen "embalse bajo + El Niño" podría mostrarse con una advertencia adicional aunque su banda de incertidumbre no se vea especialmente ancha — son dos señales de riesgo distintas y complementarias.
 

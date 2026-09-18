@@ -214,3 +214,6 @@ catboost_info/
 
 # Logs de scripts_experimento (no son artefactos del proyecto)
 logs_*.txt
+
+# Archivos temporales de bloqueo de Word/Office (se crean al tener un .docx abierto)
+~$*
