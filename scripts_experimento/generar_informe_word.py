@@ -437,10 +437,53 @@ p("Comparar directamente sería engañoso por tres razones que el propio informe
   "período tranquilo, dan MAPE de 9-19%. Que este proyecto llegue a 10.74% en uno de los años más "
   "volátiles del histórico colombiano, con un modelo multivariado que incorpora régimen "
   "hidrológico, está en un rango razonable para el mercado — no por debajo de lo esperable.")
-p("Segundo punto de referencia colombiano: un estudio de clasificación de régimen de precio alto "
-  "para plantas de generación en Colombia (Herrera-Mejía et al., 2025, AES Colombia), que reporta "
-  "84.77% de precisión de clasificación por tercil de precio para su mejor planta. El ensamble de "
-  "24h de este proyecto alcanza 92.01% de acierto por tercil sobre el mismo tipo de clasificación.")
+p("Segundo punto de referencia colombiano: Herrera-Mejía et al. (2025), Smart Energy (Elsevier), "
+  "diciembre 2025 — título exacto pendiente de verificar contra el PDF original — un estudio de "
+  "AES Colombia sobre clasificación de régimen de oferta para "
+  "plantas de generación hidroeléctrica individuales (no el precio de bolsa agregado), que reporta "
+  "84.77% de precisión de clasificación por tercil de precio para su mejor planta. No es "
+  "directamente comparable en el objetivo (predice oferta por planta a resolución diaria, sin deep "
+  "learning), pero es útil como validación cruzada independiente: sus modelos fallan de la misma "
+  "forma que los de este proyecto justo en las transiciones de régimen (documentan la sequía de "
+  "octubre 2024 como su propia \"prueba de fuego\"), y usan la misma lógica de precisión por tercil "
+  "como métrica de decisión. El ensamble de 24h de este proyecto alcanza 92.01% de acierto por "
+  "tercil sobre el mismo tipo de clasificación, aunque sobre una tarea distinta (precio agregado, "
+  "no oferta por planta), así que la cifra se reporta como contexto, no como superioridad directa.")
+
+doc.add_heading("7.1.1 Candidatos colombianos descartados, y por qué", level=3)
+p("Antes de aceptar Gallón & Barrientos (2021) y Herrera-Mejía et al. (2025) como los dos puntos "
+  "de referencia colombianos del informe, se revisaron otros cuatro estudios colombianos que "
+  "resultaron no comparables por razones metodológicas concretas — se documentan aquí en vez de "
+  "omitirlos, porque el criterio de exclusión es en sí mismo parte del rigor del ejercicio:")
+add_table(["Estudio", "Por qué se descarta"], [
+    ["Tesis de pregrado/especialización, Universidad Nacional Abierta y a Distancia (UNAD, 2023)",
+     "Fuga parcial de datos: incluye precio_oferta (correlación 0.73 con el precio de bolsa) entre "
+     "las variables del modelo."],
+    ["Villarreal & Flores (EAFIT, 2023)", "Resolución diaria, no horaria; su R² sube de 0.009-0.119 "
+     "a 0.452 solo al agregar una variable dummy que le indica al modelo las fechas exactas del "
+     "Niño 2015-2016 — calibración retrospectiva, no predicción genuina; ventana de prueba de solo "
+     "15 días para dos de sus modelos."],
+    ["Giraldo Zuluaga & Ramírez Londoño (UdeA, 2023) — LSTM, MAPE 6.93%",
+     "Ventaneo sin traslape deja solo ~73-91 ventanas de prueba independientes en el año; "
+     "inestabilidad severa entre semillas sin reportar varianza (un modelo pasa de MAPE 8.02% a "
+     "61.18% solo por el proceso de afinamiento); evaluado en 2018, un año ya calmado tras el "
+     "choque de 2015-2016, no durante una transición de régimen nueva."],
+    ["Cantillo-Luna et al. (Energies/MDPI, 2023) — T2V-TE Transformer, MAPE 5.39%",
+     "El más riguroso de los cuatro (journal arbitrado, hiperparámetros afinados también en los "
+     "baselines, prueba de Wilcoxon, métricas probabilísticas completas) — pero pronostica solo 8 "
+     "horas intradía a partir de precio ya observado, no el día completo siguiente sin haber visto "
+     "ninguna hora de él; y no usa ninguna variable de fundamentales (hidrología, ONI, demanda), "
+     "algo que los propios autores dejan como trabajo futuro."],
+], widths=[6.5, 9.5], small=True)
+p("Ninguno de los cuatro invalida los resultados de este proyecto — al contrario, el más riguroso "
+  "de ellos (Cantillo-Luna et al.) confirma explícitamente que la ausencia de variables de "
+  "fundamentales es una limitación pendiente en su propio trabajo, justo lo que este proyecto sí "
+  "incorpora. La lectura más honesta sigue siendo la establecida con Gallón & Barrientos: en un "
+  "período tranquilo y sin fundamentales, un MAPE de 6-9% es alcanzable en el mercado colombiano; "
+  "este proyecto llega a 10.74% en 2026, el año más volátil del histórico disponible, con "
+  "variables causales de régimen hidrológico incluidas y validado con walk-forward de 6 regímenes "
+  "— un estándar de evidencia más exigente que el de cualquiera de los cinco estudios colombianos "
+  "revisados.")
 
 doc.add_heading("7.2 Mercados con matriz energética hidro-dominada comparable", level=2)
 p("Se buscaron mercados eléctricos con una proporción de generación hidroeléctrica similar a la "
@@ -640,9 +683,21 @@ refs = [
  "Functional Approach. International Journal of Energy Economics and Policy, 11(1).",
  "Gneiting, T., Raftery, A. E. (2007). Strictly Proper Scoring Rules, Prediction, and Estimation. "
  "Journal of the American Statistical Association, 102(477).",
- "Herrera-Mejía, L. et al. (2025). Estudio sobre clasificación de régimen de precio alto para "
- "plantas de generación en Colombia (AES Colombia). Referencia interna del proyecto; ficha "
- "bibliográfica completa pendiente de verificar.",
+ "Herrera-Mejía, L. et al. (2025). Estudio de AES Colombia sobre clasificación de régimen de "
+ "oferta de plantas hidroeléctricas individuales bajo riesgo de sequía. Smart Energy, Elsevier, "
+ "diciembre 2025. Título exacto y volumen pendientes de verificar contra el PDF original.",
+ "Giraldo Zuluaga, D., Ramírez Londoño, J. (2023). Pronóstico del precio de bolsa de energía en "
+ "Colombia con LSTM. Universidad de Antioquia. Trabajo de grado/tesis; título exacto pendiente de "
+ "verificar contra el PDF original.",
+ "Cantillo-Luna, S. et al. (2023). Pronóstico probabilístico intradía del precio de bolsa "
+ "colombiano con Time2Vec y Transformer (T2V-TE). Energies, MDPI. Título exacto y volumen "
+ "pendientes de verificar contra el PDF original.",
+ "Villarreal, Flores (2023). Pronóstico del precio de bolsa de energía en Colombia: comparación de "
+ "modelos econométricos (VAR, SARIMAX, regresión múltiple). Universidad EAFIT. Trabajo de grado; "
+ "nombres completos y título exacto pendientes de verificar contra el PDF original.",
+ "Universidad Nacional Abierta y a Distancia (UNAD) (2023). Pronóstico del precio de bolsa de "
+ "energía en Colombia. Trabajo de grado; autores y título exactos pendientes de verificar contra "
+ "el PDF original.",
  "Hewamalage, H., Bergmeir, C., Bandara, K. (2023). Global models for time series forecasting: A "
  "simulation study. Pattern Recognition, 124.",
  "Kapoor, G., Wichitaksorn, N. (2023). Electricity price forecasting in New Zealand: A "
