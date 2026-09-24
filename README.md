@@ -316,6 +316,703 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
 
+### 2026-09-18 — Investigación a fondo del origen de pronóstico de N-BEATSx/N-HiTS: lo que parecía un bug NO lo era, se documenta el salto de precio de medianoche, y se corrige la identificación de las horas de mayor error
+
+Entrada larga a propósito: esta investigación arrancó por una observación del usuario sobre un gráfico, terminó tocando los números centrales del proyecto, y el desenlace fue que **los números originales eran correctos y quedaron restaurados**. Vale la pena dejar el recorrido completo para no repetirlo.
+
+**Punto de partida (observación del usuario).** En el gráfico de error por hora, la hora 0 tenía un error muy alto mientras sus vecinas (23h y 1h) lo tenían muy bajo. Un salto así entre horas contiguas no tiene sentido físico.
+
+**Primer hallazgo (real).** `neuralforecast.cross_validation` arma sus ventanas contando hacia atrás desde el final de la serie. Como el rango de prueba del Origen 6 tenía 5,185 horas (no múltiplo de 24, porque `test_fin` estaba escrito como `"2026-08-05"` sin hora, a diferencia de los Orígenes 1-5 que sí llevan `23:00`), `n_windows = 5185 // 24 = 216` dejaba fuera la primera hora del año. Resultado: los cortes de N-BEATSx/N-HiTS caen a las **00:00**, no a las 23:00 como los demás modelos. Verificado con conteos exactos (5,184 filas desde 01:00 vs 5,185 desde 00:00 en los otros tres modelos).
+
+**Corrección aplicada, y el resultado desconcertante.** Al fijar el rango a 5,184 horas exactas (cortes a las 23:00) y reentrenar, N-BEATSx pasó de MAE 46.82 a 57.38 — de ser el mejor modelo individual a uno de los peores. Se verificó con **dos semillas independientes** (42 y 123 → 57.38 y 56.10, correlación entre corridas 0.9926), así que no era varianza de entrenamiento.
+
+**El diagnóstico que lo explicó todo.** El modelo "corregido" pronosticaba a 1 hora de distancia con MAE 48.2, cuando **copiar el precio de la hora anterior da 30.05**. Ningún modelo sano pierde contra eso a un paso. Además el gradiente de horizonte había desaparecido (h1=48.2, h24=45.5, plano), cuando en el original era de manual (h1=10.3, h24=52.3). La causa está en los datos, no en el modelo:
+
+| Hora objetivo | Desde 1h antes | Desde 2h antes | Desde 24h antes |
+|---|---|---|---|
+| **00:00** | **56.49** | 75.92 | 46.76 |
+| **01:00** | **7.39** | **59.42** | 46.99 |
+| 02:00 | 9.23 | 12.01 | 46.98 |
+
+**El precio de bolsa da un salto grande al cambiar de día de despacho**: 56.5 COP/kWh de diferencia media entre las 23:00 y las 00:00, contra 7.4 entre las 00:00 y la 01:00. Con corte a las 00:00 el modelo ya conoce el precio de apertura del día y pronostica el resto **sin cruzar el salto**; con corte a las 23:00 tiene que atravesarlo. Son dos tareas distintas, y la segunda es genuinamente más difícil. Ninguna de las dos versiones estaba rota: el modelo "corregido" incluso le gana a la persistencia en su propia tarea (46.6 contra 59.4 a dos horas).
+
+**Prueba definitiva de reproducibilidad.** Se entrenaron las dos geometrías en el mismo entorno, misma semilla, mismo código: la original devolvió **MAE 46.82 clavado**, idéntico al número histórico del proyecto. El entorno, las librerías y el modelo original están bien.
+
+**Decisión: se restauró el estado original** (`walkforward_predicciones_crudas.csv` recuperado desde el commit `cbff7d8`), y se verificó que todo el pipeline vuelve a sus cifras conocidas: ensamble de 24h MAE 41.19 / MAPE 10.72% / sMAPE 10.04%, rMAE del Origen 6 de N-BEATSx 0.3786. Nada del proyecto quedó degradado.
+
+**Lo que sí queda documentado como limitación honesta**, y conviene decirlo en la sustentación si preguntan: los dos modelos neuronales usan un origen de pronóstico a las 00:00 del día objetivo, mientras Persistencia, XGBoost y ARX+GARCH usan variables con rezago de 24h o más. **Los votantes del ensamble no comparten exactamente el mismo conjunto de información.** No es fuga hacia el futuro (ninguno usa datos posteriores a la hora que predice), pero sí es una asimetría que favorece a las redes, sobre todo en las horas de madrugada. Igualar los conjuntos de información de los cinco votantes es trabajo pendiente, no algo resuelto.
+
+**Corrección aparte que sí se adoptó.** Al revisar el diagnóstico por hora se encontró que la afirmación repetida en varias entradas anteriores —"el pico vespertino (18-20h) concentra el 37.8% del error"— identificaba mal las horas. El 37.8% siempre estuvo bien calculado (con `nlargest(6)` sobre el aporte al MAPE), pero **las 6 horas que de verdad lo componen son 0, 8, 9, 10, 18 y 19**: la hora 20 no entra (queda en el puesto 7) y faltaban la medianoche y el bloque de media mañana. En esas seis horas el sesgo explica solo el **8.4%** del error (91.6% es varianza), lo que refuerza —no debilita— la conclusión de que ese error no es corregible por modelado. El techo teórico recalculado sobre el modelo actual (acertando perfecto esas seis horas) es **6.66%**, no el 7.01% que se venía citando desde el v4 original. Gráfico e informe actualizados.
+
+Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron corregidos a `[0, 8, 9, 10, 18, 19]`. **Cuidado con un detalle que ya causó un bug**: en `especialista_pico_24h.py` esa constante no es solo una máscara, se pasa como paso de horizonte a `construir_para_paso`. Con el corte a las 00:00 la hora H es el paso H, pero la hora 0 es la medianoche del día *siguiente*, o sea el paso 24. Pasar `h=0` hace `t = c + 0 = c`: el objetivo pasa a ser el propio corte, que además es una variable de entrada (`p_corte_lag0`), y el MAE se va a 0.68 por fuga pura. Ya está corregido con un mapeo explícito `hora 0 -> paso 24`. Los experimentos de especialistas de pico que usaron la definición vieja de horas no se volvieron a correr.
+
+**Lección de proceso, propia:** se sobrescribió `walkforward_predicciones_crudas.csv` sin respaldo antes de reentrenar. Se pudo recuperar solo porque el archivo estaba commiteado. Antes de regenerar cualquier insumo del pipeline hay que guardar copia.
+
+**Inconsistencia encontrada y corregida en el informe.** La comparación con la literatura (MASE, NRMSE, sMAPE, TAPI) se estaba calculando sobre el **v4 original de 5 votantes**, no sobre el modelo vigente de 6 votantes con combinador alineado. El informe se estaba subestimando: con el modelo actual, MASE **0.914** (no 0.943), NRMSE **21.58%** (no 21.66%), sMAPE **10.04%** (no 10.38%), TAPI diario **76.4%** (no 75.9%). Corregido en gráfico y texto.
+
+### 2026-09-24 — Aclaración del usuario sobre el protocolo: el pronóstico es móvil (24 h desde "ahora"), y el precio de la última hora está disponible de inmediato
+
+Tras el hallazgo de protocolo del 2026-09-23, el usuario aclaró dos hechos de operación que cambian la lectura:
+
+1. **El horizonte de 24 h se cuenta desde la hora real en que se pronostica**, no como un "día siguiente" calendario.
+2. **El precio de la última hora está disponible de inmediato.**
+
+Con eso, usar el último precio conocido —aunque pertenezca al mismo día de despacho que los objetivos— es **legítimo**. El corte a las 23:00 del día previo no es "el único protocolo honesto": es el caso de pronosticar justo a esa hora.
+
+**Lo que sigue en pie** es que la evaluación del proyecto siempre lanza el pronóstico desde las 00:00, y esa es **la hora más favorable del día** para hacerlo, porque 23 de los 24 objetivos comparten el día de ofertas que ya se empezó a observar:
+
+| hora de lanzamiento | objetivos del día de ofertas ya observado | MAE del ensamble |
+|---|---|---|
+| **00:00** (lo que mide el proyecto) | 23 de 24 | **41.29** (mejor caso) |
+| 23:00 | 0 de 24 | **51.82** (peor caso) |
+| otras horas | entre 1 y 22 | entre ambos (no medido) |
+
+**Cómo debe leerse ahora:**
+- 41.29 / 10.74% no está "inflado": es el desempeño de un pronóstico de 24 h **lanzado a medianoche**.
+- Para un pronóstico móvil lanzado a cualquier hora, la cifra representativa es el **promedio sobre las 24 horas de lanzamiento**, que queda entre 41.29 y 51.82. No está medido; se puede estimar con el LEAR lanzando desde cada hora.
+- La comparación con papers **day-ahead** de la literatura (Figura 5) sigue necesitando la salvedad: ellos pronostican el día siguiente completo sin observar ninguna hora de él.
+- El motor de decisión debe saber a qué hora se lanza cada pronóstico, porque la exactitud esperada depende de ella.
+
+Los PDF de `docs/papers/` **no se suben al repositorio** (es público y varios no son de acceso abierto); quedan en el equipo local y `REFERENCIAS.md` tiene cita y enlace de cada uno.
+
+### 2026-09-23 — La cifra honesta del ensamble de 24h, el walk-forward completo de NOT, y el oráculo de demanda
+
+#### 1. El ensamble de 24h con el corte day-ahead honesto (`ensamble_protocolo_honesto.py`)
+
+Se reentrenaron con el corte a las 23:00 del día previo los tres votantes que usaban el precio del mismo día de despacho (mismos hiperparámetros). Los otros tres ya eran honestos. Nada del proyecto se sobrescribió: todo con sufijo `_corte23`.
+
+| votante | MAE actual (corte 00:00) | MAE honesto (corte 23:00) | hora 1 actual | hora 1 honesto |
+|---|---|---|---|---|
+| Persistencia | 56.41 | 56.41 | 47.15 | 47.15 |
+| XGBoost | 61.39 | 61.39 | 51.11 | 51.11 |
+| ARX+GARCH | 55.84 | 55.84 | 46.03 | 46.03 |
+| N-BEATSx | 46.83 | **57.38** | 10.31 | 46.55 |
+| N-HiTS | 46.45 | **57.39** | 10.37 | 47.58 |
+| GARCH-ged | 45.42 | **57.36** | 7.48 | 45.99 |
+
+El N-BEATSx honesto da **57.38 — exactamente la cifra** de la "corrección" que se revirtió. Aquella corrección era el protocolo correcto.
+
+**El ensamble (6 votantes, combinador sMAPE, 10 particiones):**
+
+| | MAE | MAPE | sMAPE | MASE vs persistencia 24h |
+|---|---|---|---|---|
+| protocolo actual (corte 00:00) | 41.29 ± 0.10 | 10.74% | 10.06% | 0.732 |
+| **day-ahead honesto (corte 23:00)** | **51.82 ± 0.12** | **14.22%** | **13.27%** | **0.919** |
+| persistencia | 56.41 | 15.81% | 14.77% | 1.000 |
+
+**Lectura:**
+- La cifra honesta es **~25% peor en MAE** que la reportada. La diferencia se concentra en las horas 1-17 (hora 1: 7.60 → 43.83).
+- **El ensamble honesto sigue ganándole a la persistencia** (MAE −8%, MAPE −1.6 puntos, MASE 0.919). El proyecto no se cae; sus cifras de cabecera estaban infladas.
+- **Las horas pico de la tarde casi no cambian**: 18h 90.89 → 92.42, 19h 103.87 → 106.76, 20h 79.36 → 79.65. **El problema de los puntos de cambio intradía de la tarde es real e independiente del protocolo**: ahí el corte a las 00:00 nunca ayudó.
+- En la hora 0 el honesto es *mejor* (47.51 → 44.68), coherente con que en el protocolo actual la hora 0 era el único objetivo de un día nuevo.
+
+#### 2. Walk-forward completo de NOT (`not_walkforward_origenes.py`)
+
+| comparación | MAE mejor | MAPE mejor | significativo (p<0.05) |
+|---|---|---|---|
+| ARX NOT vs ARX Win | 4/6 | 4/6 | 5/6 |
+| ARX NOTH vs ARX WinH | 4/6 | 5/6 | 4/6 |
+| **LEAR NOT vs LEAR histórico completo** | **3/6** | 4/6 | 6/6 (en ambos sentidos) |
+
+Por origen (MAE): O1 3/3 mejora · O2 2/3 · O3 1/3 · **O4 (El Niño 2023-24) 0/3** · O5 2/3 · O6 (2026) 3/3.
+
+**NOT depende del régimen.** Ayuda cuando el régimen vigente se parece a tramos del histórico y falla cuando llega algo sin precedente cercano (El Niño 2023-24). Contra la configuración real del proyecto (LEAR con todo el histórico) es una moneda al aire: 3/6. **La mejora del ensamble medida en 2026 no justifica adoptarlo como votante oficial.** Para el paper de Nasiadka/Nitka/Weron, la respuesta a su pregunta abierta queda matizada: sobre el LEAR funciona en unos regímenes y no en otros.
+
+#### 3. Oráculo de demanda (`oraculo_demanda_rampas.py`)
+
+Hipótesis: si un punto de cambio intradía es un cambio de planta marginal, debería dispararlo la demanda cruzando umbrales de capacidad. Si fuera así, el pronóstico oficial de demanda de XM sería el dato a conseguir. Se mide con la **demanda real** de cada hora objetivo (oráculo, cota superior), en LEAR y en gradient boosting (que sí capta umbrales):
+
+| modelo / corte | MAE rampa base | + demanda de ayer | **+ demanda real (oráculo)** |
+|---|---|---|---|
+| LEAR, 00:00 | 108.19 | 108.04 | 104.65 |
+| LEAR, 23:00 | 111.94 | 111.45 | 108.46 |
+| GBM, 00:00 | 111.84 | 113.51 | 107.51 |
+| GBM, 23:00 | 117.81 | 117.95 | 111.62 |
+
+**Ni con la demanda real el error de rampa baja más de 3-5%**, y el MAE global no mejora. La demanda no es la pieza que falta. Lo que mueve las rampas son las ofertas y la disponibilidad por planta —la información que el Alcance del Anexo 1 restringe—. Es la evidencia más directa hasta ahora de que el error en los puntos de cambio es un **límite de información**, y no conviene gastar esfuerzo en conseguir el pronóstico de demanda de XM para este fin.
+
+
+### 2026-09-23 — ⚠️ HALLAZGO DE PROTOCOLO: el corte de las 00:00 cae DENTRO del día de despacho que se pronostica. Con un corte day-ahead honesto, el LEAR pierde contra la persistencia
+
+**No se cambió nada del proyecto.** Esta entrada solo documenta y mide. La decisión de qué protocolo reportar es del usuario.
+
+#### Cómo apareció
+
+Buscando atacar los puntos de cambio intradía por la vía de las mesetas (`diagnostico_mesetas.py`) salió que el precio es **escalonado**: cada día tiene en promedio **solo 7.2 niveles distintos** en 24 horas, porque las plantas ofertan un precio por día y el precio horario lo marca la planta marginal. En tramos planos el precio real se mueve **0.00** por hora; el ensamble, 6.62.
+
+Siguiendo eso, la igualdad **exacta** entre el precio de una hora y el de la anterior, sobre todo el histórico:
+
+```
+00:  0%  01: 73%  02: 71%  03: 77%  04: 72%  05: 57%  06: 68%  07: 48%  08: 50%  09: 62%  10: 58%  11: 57%
+12: 75%  13: 74%  14: 64%  15: 72%  16: 64%  17: 58%  18: 29%  19: 56%  20: 58%  21: 48%  22: 35%  23: 34%
+```
+
+**La única transición sin ninguna repetición exacta es 23:00 → 00:00.** El día de ofertas (día de despacho) va de 00:00 a 23:00.
+
+#### Por qué es un problema
+
+El protocolo day-ahead del proyecto usa ventanas 01:00 → 00:00 del día siguiente con **corte a las 00:00**. Entonces:
+
+- el corte (00:00 del día D) es la **primera hora del día de despacho D**;
+- **23 de los 24 objetivos** (01:00 a 23:00 de D) son del **mismo día de despacho** que el corte;
+- solo el último objetivo (00:00 de D+1) es de un día nuevo.
+
+No es fuga del objetivo —ningún valor objetivo entra como variable—, pero el modelo conoce un precio formado **con las mismas ofertas** que sus objetivos. Un pronóstico day-ahead real no lo tendría: el precio de las 00:00 de D se conoce, como pronto, al terminar esa hora.
+
+#### Medido: el mismo LEAR con dos cortes
+
+`scripts_experimento/protocolo_dayahead_honesto.py`. Mismas variables, misma regularización, mismo periodo (2026), mismos 5.184 instantes objetivo. Solo cambia el corte.
+
+| | MAE | MAPE |
+|---|---|---|
+| **A** — corte 00:00 de D (actual) | 53.27 | 16.53% |
+| **B** — corte 23:00 de D−1 (day-ahead honesto respecto del día de ofertas) | **61.65** | **19.32%** |
+| persistencia (t−24h) | 56.40 | 15.81% |
+
+**Con el corte honesto, el LEAR pierde contra la persistencia** en 22 de las 24 horas. La ventaja del protocolo actual es enorme en la madrugada y se extiende a todo el día:
+
+| horas | B − A (MAE) |
+|---|---|
+| 1-5 | **+16.60** de media (hora 1: 20.51 → 47.41) |
+| 6-23 | +6.75 de media |
+| 0 (el único objetivo de un día nuevo en A) | −3.33 (B es mejor) |
+
+Conocer el primer precio del día revela el **nivel de ofertas** de ese día, y eso informa las 23 horas siguientes.
+
+#### Lo que esto explica retroactivamente
+
+1. **Las horas 1-5 tienen MAE bajísimo** (7.6 a 20.9 en el ensamble): heredan el precio del corte, que el 73% de las veces es *exactamente* el de la 01:00.
+2. **La hora 0 es la peor hora no-pico y la única donde el ensamble no le gana a la persistencia** (−1.3%): es el único objetivo de un día de despacho nuevo, o sea el único pronóstico day-ahead de verdad.
+3. **El "salto de medianoche"** que se documentó con el marco de Ziel & Weron es exactamente esta frontera. El diagnóstico era correcto; lo que no se vio es que el corte quedaba del lado equivocado.
+4. **La "corrección" de ventana del N-BEATSx** (`corregir_nbeatsx_origen6.py`), que lo empeoró de 46.82 a 57.38 y se revirtió porque "el proyecto no debía empeorar", **muy probablemente era el protocolo honesto**. Lo que se perdió al aplicarla era esta información del mismo día.
+
+#### Qué sigue válido y qué no
+
+- **Las comparaciones internas siguen siendo válidas**: todo lo que se comparó dentro del proyecto (NOT vs ventana fija, votantes, combinadores, Diebold-Mariano) usó el mismo protocolo en ambos lados.
+- **Las cifras absolutas de cabecera de 24h** (MAE 41.29, MAPE 10.74%, MASE 0.914) están medidas con el protocolo A, y por tanto **son optimistas** respecto de un day-ahead real. Cuánto, en el ensamble completo, no está medido: requiere reentrenar los seis votantes (incluidas N-BEATSx y N-HiTS) con el corte a las 23:00.
+- **La comparación con la literatura** (Figura 5) queda afectada en la misma dirección.
+- Incluso el protocolo B es algo optimista para una operación real: las ofertas del día D se entregan en la mañana de D−1, y a esa hora no se conocen los precios de la tarde de D−1. Un protocolo estrictamente operativo tendría el corte todavía más atrás.
+- **El motor de decisión de Rafael** consume estos pronósticos; si su uso es preparar ofertas para el día D, la información disponible es la del protocolo B o anterior.
+
+#### Pendiente, a decidir por el usuario
+
+1. Reentrenar el ensamble completo con el corte a las 23:00 del día previo y medir la cifra honesta.
+2. Decidir qué protocolo se reporta en el informe y en la sustentación, y cómo se explica.
+3. Avisar a Rafael antes de que integre los pronósticos al motor de decisión.
+
+---
+
+### 2026-09-23 — Tres intentos más sobre los puntos de cambio intradía: mesetas, precio pegajoso y STBC fiel
+
+#### Mesetas (`diagnostico_mesetas.py`)
+Horas donde el precio no se movió (2.632, el 35% del error total, MAE 28.52). No hay días completamente planos (0 de 216); las mesetas viven dentro de días con picos. En tramos de ≥3 h planas el real se mueve 0.00 por hora y el ensamble 6.62. **Oráculo** (saber dónde hay meseta y aplanar ahí): 41.19 → **39.72**. Cota superior modesta.
+
+#### Precio pegajoso con regla de la mediana (`precio_pegajoso_mediana.py`)
+Idea con fundamento: la distribución del precio en la hora h es una **mezcla** — con probabilidad π se queda exactamente en el precio del corte (un átomo), si no se mueve. Para MAE el óptimo es la **mediana**, y con π > 0.5 la mediana **es** el átomo. Explica también por qué falló el hurdle de rampas: usaba π × magnitud, que es la **esperanza** (óptima para error cuadrático, no para MAE).
+
+Pero **falla como regla desplegable**:
+
+| regla | MAE | p(MAE) |
+|---|---|---|
+| ensamble actual | 41.19 | – |
+| τ = 0.5 (teoría, sin ajustar) | 41.94 | 0.016 (peor) |
+| τ elegido en validación (0.3) | 42.82 | 0.033 (peor) |
+| **oráculo** (sabe dónde se queda) | **37.41** | – |
+
+10 particiones: **0/10**. El clasificador no anticipa si la planta marginal cambia: AUC 0.58-0.68 en las primeras horas y **por debajo de 0.5 en las horas 7, 8 y 12** (la relación aprendida antes de 2026 no se transfiere). El oráculo muestra que hay 3.78 de MAE en juego, pero con la información del corte no se alcanza. Y a la luz del hallazgo de protocolo de arriba: la regularidad "el precio se queda en el del corte" es, en buena parte, **la misma información del mismo día de despacho**.
+
+#### STBC implementado fielmente (`stbc_regime_aware_24h.py`) — corrige una prueba anterior mal hecha
+Con el paper en mano (Singh 2027, *Expert Systems With Applications* 332, 133584, aportado por el usuario) se vio que la prueba de `limite_informacion_rampas.py` **no era STBC**: aquella entrenaba un modelo de ML para predecir el error desde el estado del sistema. El método real es `corregido = predicho + λ · (media móvil de los últimos k=10 errores)`, sin variables ni modelo aprendido. Pregunta otra cosa: si el error está **autocorrelacionado**.
+
+Resultado fiel: autocorrelación del error con su media móvil **+0.127**; la búsqueda en validación (ene-mar 2026) elige **λ = 0**; los λ del paper (0.2/0.5/0.8 por régimen GMM) **empeoran**: 58.93 → 60.42 en prueba (p=0.029). La corrección correlaciona **+0.377** con la dirección de la persistencia, que ya es un votante del ensamble. **No aporta información nueva.**
+
+La conclusión de `limite_informacion_rampas.py` sobre su propia pregunta (el error no es predecible desde el estado del sistema, R² ≤ 0) sigue en pie; lo que cambia es que ya no se presenta como prueba de STBC.
+
+
+### 2026-09-23 — ATAQUE DIRECTO A LOS PUNTOS DE CAMBIO INTRADÍA: cuatro métodos de familias distintas, todos fallan contra el mismo número. Es un límite de información, no de modelado
+
+El usuario corrigió el rumbo: NOT mejoró el modelo pero no en los puntos de cambio, que era el objetivo. Y recordó que pidió literatura **fuera de mercados eléctricos**, sobre cómo corregir errores de modelos de aprendizaje cuando hay puntos de cambio. Esta entrada recoge ese ataque frontal.
+
+#### Paso 0 — El diagnóstico que fija qué puede funcionar
+
+`scripts_experimento/diagnostico_forma_intradia.py`. Antes de elegir método hay que saber por qué falla. Tres causas posibles, medidas por separado sobre el ensamble en 2026:
+
+| | resultado | lectura |
+|---|---|---|
+| **¿Nivel o forma?** | error total 41.19; con nivel diario perfecto **40.26 (98%)**; con forma perfecta 24.78 | **el error es de FORMA**, modelar la curva es la vía correcta |
+| **¿Amplitud?** | desv. intradía real **90.22** vs pronosticada **65.18** (razón **0.723**); rango 327.8 vs 230.1; curva más plana en el **70%** de los días; en las 6 horas peores la razón baja a **0.690** | el modelo dibuja la curva **comprimida** |
+| **¿Desfase?** | el mejor desplazamiento es **0 h**, con caída limpia a ambos lados (MAE de forma 40.26 en 0h, 44.92 en +1h, 46.93 en −1h) | **no hay problema de tiempo**; descarta toda una familia |
+| **¿Es predecible la forma?** | climatología (hora × día × mes) 65.11 vs ensamble 40.26 | el ensamble le gana a la climatología por **38.2%**: sí extrae información |
+
+#### Intento 1 — Calibración de amplitud (meteorología: pronósticos subdispersos, EMOS)
+
+`calibracion_amplitud_intradia.py`. Transplante desde fuera de energía: en meteorología el aplanamiento de los pronósticos tiene nombre —*subdispersión*— y se corrige con inflación de varianza y EMOS/regresión gaussiana no homogénea. Adaptado aquí como `p_calibrado = nivel_día + k·(p − nivel_día)`, con `k` ajustado **solo con días anteriores**.
+
+| variante | MAE | MAE en rampa | veredicto |
+|---|---|---|---|
+| sin calibrar | 41.19 | 105.53 | – |
+| k global | 41.19 | 105.55 | nulo |
+| k por hora, encogido 50% | **41.07** | 105.68 | 10/10 pero trivial |
+| **k = igualar varianza (control)** | **50.68** | **113.07** | **desastre, p=0.0000** |
+
+**El resultado clave es el valor que elige `k`: 0.997 global, 0.981 por hora.** Es decir, **la amplitud del ensamble ya está óptimamente calibrada**. Igualar varianzas (k≈1.51) destroza el modelo, exactamente como se predijo: cuando la forma se conoce con correlación 0.78, el encogimiento **es** la respuesta estadísticamente correcta (regresión a la media), no un defecto. La pendiente de `forma_real ~ forma_pronosticada` es 1.095, no 1.38.
+
+**Conclusión:** el aplanamiento es real como descripción pero **no es corregible por post-proceso**. Para mejorar las rampas hace falta mejor información de forma, no reescalar la que hay.
+
+#### Intento 2 — Análisis funcional de Hyndman-Ullah-Shang (Gallón & Barrientos, Colombia)
+
+`fpca_hyndman_24h.py`. El paper colombiano de la biblioteca aplica exactamente el método que hacía falta: tratar el día como **una curva**, descomponerla en componentes principales funcionales (SVD sobre curvas centradas), pronosticar los *scores* y reconstruir. 30 variantes: K ∈ {1,2,3,4,6} × {media ponderada, AR sobre scores, Ridge con exógenas} × {agrupado, por día de semana}.
+
+**Corrección de diseño en el camino:** la primera versión modelaba la curva completa, nivel incluido (que es lo que hace el método original) y daba **MAE 210** — el nivel del precio en Colombia no es estacionario y la media ponderada histórica llega tarde. Rediseñado para modelar **solo forma**, con el nivel pronosticado aparte, que además es lo que dice el diagnóstico propio.
+
+| | MAE de forma | vs ensamble | en rampa | en pico |
+|---|---|---|---|---|
+| ensamble actual | **40.26** | – | **93.05** | **57.79** |
+| climatología | 65.11 | +61.7% | – | – |
+| FPCA K=6 AR (mejor) | 44.51 | +10.5% | **93.68** | 62.16 |
+| FPCA K=1 AR | 46.77 | +16.2% | **93.56** | 65.46 |
+| FPCA con exógenas (mejor) | 52.95 | +31.5% | 105.29 | 74.88 |
+| FPCA media ponderada | 60.53 | +50.3% | 111.76 | 91.07 |
+
+Como votante: **0/10, delta +0.000**. El combinador le asigna peso cero.
+
+**Pero deja dos datos importantes:**
+1. **En rampa fuerte, el FPCA empata al ensamble: 93.68 contra 93.05.** Y con **un solo componente** (K=1) ya da 93.56. Dos modelos radicalmente distintos —uno es un ensamble de seis familias con 62 variables, el otro es un SVD con un AR sobre 6 números— chocan contra el mismo número.
+2. **Las exógenas EMPEORAN los scores** (52.95 contra 44.51 sin ellas). La hidrología, el ONI y los embalses **no informan la forma del día**. Informan el nivel, no la curva.
+
+#### Intento 3 — Short-Term Bias Compensation (bolsa de Varsovia, *Expert Systems with Applications*)
+
+`limite_informacion_rampas.py`. El segundo transplante fuera de energía. El paper lo resume como pasar de *"build a better predictor"* a *"correct a known predictor's drift"*: se entrena un segundo modelo para predecir el **error** del primero y se resta.
+
+**¿Es predecible el error del ensamble con la información del corte?** (TimeSeriesSplit, 62 variables de estado)
+
+| subconjunto | modelo | R² fuera de muestra | correlación |
+|---|---|---|---|
+| todas las horas | Ridge | **−0.283** | 0.077 |
+| todas las horas | GradBoost | **−0.481** | 0.040 |
+| rampa fuerte | GradBoost | **−0.011** | 0.307 |
+| 6 horas pico | Ridge | **+0.021** | 0.204 |
+
+**R² negativo o nulo en todos los casos.** Y aplicar la corrección empeora sistemáticamente: 46.32 → 58.75 en general, 109.33 → 121.63 en rampa. **No hay deriva que corregir porque no hay información residual.**
+
+#### El número que cierra la línea
+
+**Oráculo del signo** — cota superior de *cualquier* corrección de sesgo imaginable, suponiendo que se conociera si el modelo se queda corto o largo:
+
+| subconjunto | MAE actual | oráculo del signo |
+|---|---|---|
+| todas las horas | 41.19 | 36.95 |
+| **rampa fuerte** | **105.53** | **76.68** |
+| 6 horas pico | 62.26 | 54.32 |
+
+Ni siquiera conociendo el signo del error —información inalcanzable— el error de rampa baja de 76.68. Ninguna corrección de sesgo resuelve esto.
+
+#### Y el hallazgo que reencuadra el problema entero
+
+| grupo | n | \|rampa\| media | MAE del ensamble | **razón MAE/rampa** |
+|---|---|---|---|---|
+| meseta (no se movió) | 2632 | 0.0 | 28.52 | — |
+| cambio chico | 1063 | 4.1 | 29.62 | 7.30 |
+| cambio medio | 783 | 26.0 | 40.27 | 1.55 |
+| rampa 50-150 | 403 | 88.8 | 68.89 | **0.78** |
+| rampa 150-300 | 207 | 211.7 | 113.76 | **0.54** |
+| rampa >300 | 96 | 543.1 | 251.53 | **0.46** |
+
+**El error crece MÁS DESPACIO que el movimiento que persigue.** En una rampa de 543 el modelo se equivoca en 251 — el 46%. En una hora donde el precio no se movió nada, se equivoca en 28.5.
+
+Es decir: **en términos relativos el modelo maneja las rampas MEJOR que las mesetas.** La afirmación "el error vive en las rampas" es cierta en valor absoluto y engañosa como diagnóstico: las rampas tienen más error porque el objetivo se mueve más, no porque el modelo falle ahí.
+
+#### Conclusión de la línea
+
+Cuatro métodos de familias independientes —modelo de transiciones, calibración de amplitud meteorológica, análisis funcional de Hyndman, y compensación de sesgo financiera— fallan, y **fallan convergiendo al mismo número**. Sumado a que el error del ensamble es ruido respecto de toda la información disponible en el corte (R² ≤ 0), y a que ni el oráculo del signo lo arregla, la conclusión es que **el error en los puntos de cambio intradía está cerca de un límite de información, no de un límite de modelado**.
+
+Hipótesis estructural de por qué, que además conecta con una restricción conocida del proyecto: la forma de la curva diaria en un mercado hidro-dominado la determina el **despacho** — qué unidades entran y en qué orden de mérito. Esa es justamente la información que el Alcance del Anexo 1 impide desagregar (generación y disponibilidad **por tipo de recurso**). Es coherente con que las exógenas hidrológicas informen el nivel pero no la forma.
+
+**Queda abierta una pista distinta que este trabajo destapó sin buscarla:** en las mesetas —2.632 horas, el 35% del error total— el precio no se movió nada y el ensamble aún se equivoca en 28.5. Ese error no es de forma ni de rampa. No está analizado.
+
+
+### 2026-09-23 — ¿Dónde mejora NOT? La prueba estaba incompleta: la ganancia **no** cae en los puntos de cambio, que era lo que la motivó
+
+`scripts_experimento/not_donde_mejora_24h.py`. Pregunta del usuario tras ver los resultados de NOT: *"¿seguro que esa prueba era solo eso o falta algo más? porque me suena que dijimos que eso podía influir en el error en los puntos de cambio"*. **Tenía razón: faltaba, y es la pieza que decide si el método sirve para lo que se buscaba.**
+
+#### La distinción que no había verificado
+
+Toda esta línea nació de un diagnóstico concreto: el error se concentra en los **puntos de cambio intradía** (rampas de la curva diaria, MAE 105.5 contra 28.5 en mesetas). Pero NOT detecta puntos de cambio en **otra serie**:
+
+| | qué es | para qué |
+|---|---|---|
+| **Intradía** | quiebres dentro de la curva de un día, hora a hora | **aquí duele el error del proyecto** |
+| **Inter-día** | quiebres en la serie de una hora fija a lo largo de los días (cambios de régimen del mercado) | **esto es lo que NOT detecta**, y solo lo usa para elegir con qué historia entrenar |
+
+Son cosas distintas. Que NOT baje el error global no implica que lo baje donde el proyecto falla.
+
+#### Medido: no lo baja. Lo baja en las horas fáciles
+
+Modelo suelto, por tipo de hora (n=5.207):
+
+| | meseta (cambio 0) | cambio chico (<10) | cambio medio (10-50) | **RAMPA FUERTE (≥50)** |
+|---|---|---|---|---|
+| ARX NOTH vs ARX WinH | **−2.87 (−7.1%)** p=0.0004 | **−4.37 (−9.8%)** p=0.0155 | +1.71 p=0.21 | **+1.77 (PEOR)** p=0.44 |
+| LEAR NOT vs LEAR Win(todo) | **−2.67 (−6.5%)** p=0.0175 | **−4.17 (−9.5%)** p=0.0122 | **+4.90 (PEOR)** p=0.0126 | −4.09 p=0.1082 |
+
+**El modelo que entra al ensamble (ARX NOTH) es ligeramente PEOR en las rampas fuertes.** Toda su ganancia está en mesetas y cambios pequeños, y ahí sí es contundente (p=0.0004). El LEAR mejora algo en rampas pero no significativamente (p=0.11), y empeora claramente en los cambios medios.
+
+#### En el ensamble, la mejora vive en la mañana y no toca el pico de la tarde
+
+Por hora del reloj, el delta de MAE del ensamble al añadir el séptimo votante:
+
+| horas | delta | lectura |
+|---|---|---|
+| 00-05 | ≈ 0.00 | el combinador le da peso ~0 al votante nuevo |
+| **06-11** | −1.36, −0.63, −0.97, **−2.22**, −1.16, −1.26 | **aquí está toda la ganancia** |
+| 12-17 | entre −0.41 y +0.58 | ruido |
+| **18-23** | ≈ 0.00 | peso ~0 |
+
+Las horas 18 y 19 son las dos peores del día (MAE 89.66 y 103.31, el 19.5% de todo el error) y **mejoran exactamente 0.00**. El combinador reparte pesos por franja de 6 horas, y en las franjas 0-5 y 18-23 le asigna peso ~0 al votante nuevo: no aporta nada que los otros seis no tengan ya.
+
+**Correlación entre la rampa media de una hora y su mejora: +0.285.** Positiva, o sea que la mejora es algo *menor* donde las rampas son mayores. Si el método atacara los puntos de cambio, esta correlación tendría que ser negativa.
+
+Matiz honesto en sentido contrario: en el ensamble, el subconjunto de rampa fuerte sí mejora (−0.656, en 10/10 particiones, el mayor delta absoluto de los cuatro grupos). Pero eso no viene de que el votante nuevo sea bueno en rampas —no lo es, es peor— sino de que el combinador rebalancea los pesos de todos. Es un efecto de segundo orden, no el mecanismo que se buscaba.
+
+#### Conclusión
+
+Dos cosas que hay que mantener separadas:
+
+1. **La mejora de NOT es real** (10/10 particiones, 3 de 5 candidatos, 0 de 3 controles) — ver la entrada anterior.
+2. **NOT no resuelve el problema de los puntos de cambio intradía.** Mejora las horas planas. El error de las rampas, que es el 35.5% del total y la razón por la que se buscó esta línea, **sigue intacto**.
+
+La línea de los puntos de cambio intradía sigue abierta. Lo que NOT aporta es otra cosa —mejor selección del histórico de entrenamiento— que resultó valiosa por su cuenta.
+
+#### Pieza que faltaba guardarse
+
+`guardar_parcial()` en `ventana_calibracion_not_24h.py` solo archivaba las variantes cuyo nombre empieza por LEAR o contiene NOT, así que las de ventana fija del ARX (los controles) no quedaron en disco y la Parte 1 salió incompleta la primera vez. Regeneradas con las máscaras cacheadas (`vc_ARX_WinH728.csv`, `vc_ARX_Win728.csv`, `vc_ARX_Win364.csv`), a 3 segundos cada una.
+
+---
+
+### 2026-09-23 — Biblioteca de papers con citas verificadas, y dos correcciones de referencias
+
+`docs/papers/REFERENCIAS.md`. Cita completa, enlace de verificación y **para qué se usa en el proyecto** de cada uno de los 8 papers en la carpeta, más los 5 citados en el informe que todavía no tienen PDF local. La idea es que cualquier afirmación del informe se pueda rastrear hasta su fuente.
+
+Datos bibliográficos que se fijaron al verificar contra los PDF:
+
+- **Nasiadka, Nitka & Weron (2022)** — es un paper de **ICCS 2022** (Londres), Lecture Notes in Computer Science, arXiv:2204.00872. La bitácora anterior lo citaba sin año ni venue.
+- **Baranowski, Chen & Fryzlewicz (2019)** — JRSS-B 81(3), 649-672, DOI 10.1111/rssb.12322. Es el detector NOT que se reimplementó; faltaba citarlo.
+- **Gallón & Barrientos (2021)** — el informe decía IJEEP **11(1)**; el PDF dice **11(2), 67-74**. **Corregido** en `generar_informe_word.py`.
+- **Barrientos Marín, Tabares Orozco & Velilla (2018)** — IJEEP 8(3), 97-106. Los tres son de la Universidad de Antioquia; el informe lo citaba sin autores completos.
+
+También queda anotado en el archivo el hallazgo del paper de regímenes de Nueva Zelanda que conecta con una línea ya cerrada aquí: **concluyen que más regímenes no mejoran el pronóstico pese a la complejidad añadida**, lo que es consistente con que el Markov-Switching de 2 regímenes probado en este proyecto tampoco aportara.
+
+
+### 2026-09-23 — SELECCIÓN DE VENTANA POR PUNTOS DE CAMBIO (NOT): funciona, contesta la pregunta abierta del paper, y es la primera mejora del ensamble que pasa el estándar 10/10 en mucho tiempo
+
+`scripts_experimento/ventana_calibracion_not_24h.py` y `robustez_ventana_not_ensamble.py`. Implementación del método de Nasiadka, Nitka & Weron: en vez de entrenar con las observaciones **más recientes** (ventana móvil de τ días), se usa detección de puntos de cambio para partir el histórico en tramos estacionarios y se entrena **solo con los tramos cuyo comportamiento se parece al régimen vigente** — aunque sean viejos, y saltándose los recientes que no se parecen.
+
+Coste: 10.416 detecciones (217 días × 24 pasos × 2 series), 77 min. Las máscaras no dependen del modelo, así que se cachean en `not_mascaras_24h.npz` y todas las variantes las reusan.
+
+#### Capa 1 — ¿existe el efecto en el mercado colombiano? Sí, y más fuerte que en Alemania
+
+| Modelo ARX (Ec. 1 del paper) | MAE | RMSE | MAPE |
+|---|---|---|---|
+| `Win(728)` ventana fija de 2 años | 57.97 | 92.35 | 19.26% |
+| `WinH(728)` + asinh | 52.31 | 90.75 | 15.39% |
+| `NOT(728)` subperíodos por puntos de cambio | 51.41 | 91.04 | 13.92% |
+| **`NOTH(728)` puntos de cambio + asinh** | **50.53** | 91.64 | **13.16%** |
+
+Diebold-Mariano: `NOT(728)` vs `Win(728)` **p=0.0000** (−11.3% de MAE); `NOTH(728)` vs `WinH(728)` **p=0.0154**. En el paper la ganancia atribuible a NOT era del 1.7% de RMSE y los autores advertían que **no era significativa por sí sola**; aquí lo es en las dos comparaciones. El asinh también aporta por separado (`WinH` vs `Win`, p=0.0000), replicando su hallazgo.
+
+Detalle propio: el asinh **ayuda con ventana larga y estorba con ventana corta** (τ=728: 52.31 vs 57.97; τ=182: 54.12 vs 51.03). Coherente con que los autores lo usen solo en τ=728.
+
+Nota sobre la escala del asinh: el paper dice literalmente *"b is median absolute deviation"*, pero la MAD cruda comprime de más y la inversión con `sinh` amplifica el error. Se usa la MAD normalizada (÷0.6745). Las dos versiones dan la misma conclusión; la normalizada es uniformemente mejor (τ=728: 52.30 vs 53.23). Documentado en el código.
+
+#### Capa 2 — la pregunta que el paper deja explícitamente abierta
+
+Los autores cierran diciendo que si esto sirve para modelos más complejos que el autorregresivo, *"e.g., LASSO-estimated AR (LEAR) and deep neural networks, is left for future work"*. Este proyecto tiene un LEAR de 24h.
+
+| LEAR | MAE | RMSE | MAPE |
+|---|---|---|---|
+| `Win(728)` ventana fija de 2 años | 57.38 | 92.86 | 18.60% |
+| `Win(todo)` histórico completo — **la configuración real del proyecto** | 51.50 | 88.89 | 15.96% |
+| **`NOT(728)` subperíodos por puntos de cambio** | **49.67** | **88.78** | **13.62%** |
+| `WinH(728)` + asinh | 49.93 | 86.95 | 14.60% |
+| `NOTH(728)` puntos de cambio + asinh | 50.14 | 90.27 | 13.57% |
+
+**Sí transfiere al LEAR.** Contra ventana fija p=0.0000, y —lo que importa— contra *todo el histórico*, que es lo que el proyecto hace hoy, **p=0.0426**.
+
+Hallazgo adicional no anticipado: sobre el LEAR, **NOT y asinh son sustitutos, no complementos** (`NOTH` vs `WinH` p=0.7926). Cada uno por su lado mejora; juntos no suman. Sobre el ARX sí se acumulan. Lectura plausible: ambos atacan el mismo problema (la asimetría/no estacionariedad de la serie), uno recortando la muestra y el otro comprimiendo la escala, y al LEAR le basta con uno.
+
+Detalle de implementación que costó un error: `alpha` del LASSO **no es invariante de escala**. Calibrado sobre precios crudos y aplicado a datos asinh anula todos los coeficientes — MAE 216 en vez de 56. Ahora se calibra por variante, con la misma regla de ventana con la que se va a pronosticar (`calibrar_alphas`).
+
+#### Capa 3 — integración al ensamble, con control de selección post-hoc
+
+El candidato se había elegido por mejor MAPE entre ~26 variantes **sobre el mismo periodo de prueba** donde luego se mide la mejora. Eso es exactamente el sesgo de selección que ya nos ha mordido antes, así que se montó `robustez_ventana_not_ensamble.py`: se meten al ensamble **todos** los candidatos uno por uno, más **controles de ventana fija** (el mismo modelo con la misma información, cambiando solo la regla de qué historia usar).
+
+| candidato | tipo | ΔMAE | ΔMAPE | ΔsMAPE | p(MAPE) | veredicto |
+|---|---|---|---|---|---|---|
+| ARX NOTH(728) | NOT | −0.295 (10/10) | −0.187 (10/10) | −0.067 (10/10) | 0.0114 | **SÓLIDO** |
+| ARX NOT(728) | NOT | −0.199 (10/10) | −0.123 (10/10) | −0.053 (10/10) | 0.0168 | **SÓLIDO** |
+| LEAR NOT(728) | NOT | −0.194 (10/10) | −0.102 (10/10) | −0.081 (10/10) | 0.0281 | **SÓLIDO** |
+| ARX Av(NOTH) | NOT | −0.252 (10/10) | −0.128 (10/10) | −0.029 (9/10) | 0.0173 | – |
+| LEAR NOTH(728) | NOT | −0.096 (9/10) | −0.068 (10/10) | −0.058 (10/10) | 0.0979 | – |
+| LEAR WinH(728) | **control** | −0.086 (10/10) | −0.008 (8/10) | −0.002 (7/10) | 0.2096 | – |
+| LEAR Win(728) | **control** | −0.016 (7/10) | −0.012 (8/10) | −0.005 (8/10) | 0.0586 | – |
+| LEAR Win(todo) | **control** | −0.068 (9/10) | −0.024 (8/10) | −0.016 (8/10) | 0.1173 | – |
+
+**3 de 5 candidatos NOT pasan el estándar 10/10 en las tres métricas; 0 de 3 controles de ventana fija lo pasan.** La ganancia es del método, no de haber elegido bien el candidato ni de sumar un votante lineal más. Los p-valores del DM sobre MAPE separan limpiamente los dos grupos (0.011–0.028 los NOT, 0.059–0.210 los controles).
+
+Con el mejor candidato como séptimo votante:
+
+| métrica | actual (6 votantes) | con ventana por puntos de cambio |
+|---|---|---|
+| MAE | 41.287 ± 0.113 | **40.993 ± 0.147** |
+| MAPE | 10.744% ± 0.033 | **10.557% ± 0.038** |
+| sMAPE | 10.065% ± 0.030 | **9.998% ± 0.036** |
+
+Meter los dos mejores del ARX a la vez no aporta nada sobre el mejor solo (40.996 vs 40.993): son redundantes entre sí, basta un votante.
+
+#### Reservas honestas
+
+1. **El DM sobre MAE del ensamble da p≈0.18**, no significativo; sobre MAPE sí (p=0.0114). El 10/10 es el estándar que el proyecto declaró de antemano y se pasa, pero la mejora es chica frente al ruido del combinador.
+2. **La ganancia está medida sobre 2026**, el mismo periodo que todo lo demás. Una confirmación limpia exigiría repetirla en otros orígenes del walk-forward. **Pendiente.**
+3. La reimplementación de NOT es propia (el original es el paquete `not` de R). Está validada contra series sintéticas con puntos de cambio conocidos (5/5, ver entrada anterior), y el experimento aborta si la autoprueba falla.
+
+#### Qué queda por decidir (no se hizo por cuenta propia)
+
+Adoptar esto cambia las cifras de cabecera del informe (**MAPE 10.74% → 10.56%**), que es material de la sustentación. No se tocó ni el ensamble oficial ni el informe a la espera de decisión del usuario.
+
+
+### 2026-09-22 — Por qué falló el modelo de rampas (la causa NO era la que yo dije), implementación y validación de NOT, y verificación de la Figura 5 contra el paper original
+
+#### 1. Autopsia del modelo de rampas: una tabla 2×2 identifica al culpable
+
+`scripts_experimento/diagnostico_rampas_porque_fallo.py`. El modelo de rampas falló (0/10 semillas), pero "falló" no es una explicación. Había dos sospechosos y se pueden separar experimentalmente:
+
+- **Causa A, acumulación**: la reconstrucción `p̂(h) = p(corte) + Σ Δ̂` suma 24 predicciones, así que el paso 24 arrastra 24 errores.
+- **Causa B, restricción**: anclar y sumar impone que el coeficiente del ancla sea exactamente 1.0, cuando el precio revierte a la media.
+
+Se añadió una tercera variante que tiene B pero no A (*ancla directa*: predecir `y − p(corte)` de una sola vez por paso). Resultado sobre 5.207 filas de 2026:
+
+| variante | restricción | acumulación | MAE |
+|---|---|---|---|
+| LEAR de nivel (ancla con coeficiente libre) | no | no | 53.37 |
+| **Ancla directa (coeficiente forzado a 1.0)** | **sí** | **no** | **53.16** |
+| Rampas, suma acumulada (directa) | sí | sí | 62.33 |
+| Rampas, suma acumulada (hurdle) | sí | sí | 63.11 |
+| *(referencia)* ancla fija = persistencia | – | – | 64.86 |
+
+**Corrección a lo que yo mismo había argumentado.** Yo había razonado que el modelo de rampas vivía en un "subespacio" del modelo de nivel y que forzar el coeficiente del ancla a 1.0 era el problema de fondo. **Es falso.** La restricción no cuesta nada: la *ancla directa* empata (incluso mejora en 0.21) con el LEAR de nivel libre, porque el modelo del residuo compensa la carga impuesta usando los mismos rezagos. Todo el daño (+9.2 de MAE) viene de la acumulación. Que la carga libre del ancla sea muy distinta de 1.0 es cierto pero **irrelevante**:
+
+| paso | coeficiente que elige el LEAR | forzado por las rampas |
+|---|---|---|
+| 1 | 0.822 | 1.00 |
+| 4 | 0.594 | 1.00 |
+| 8 | 0.458 | 1.00 |
+| 18 | 0.262 | 1.00 |
+| 24 | 0.448 | 1.00 |
+
+Media 0.468, mínimo 0.262 (paso 18). Confirma la reversión a la media, pero no explica el fallo.
+
+**La acumulación sí se ve directamente.** Razón MAE(cumsum)/MAE(LEAR) por paso: 1.01x en el paso 1, 1.16x en el 8, 1.27x en el 12, 1.28x en el 16, 1.24x en el 24. Correlación (paso, MAE): +0.598 para el cumsum contra +0.471 para el LEAR de nivel.
+
+**Y el porqué último: el Δ predicho no intenta las rampas.** Desviación típica del Δ real 92.22 contra 41.36 del predicho (44.8%); correlación +0.491; R² +0.240. En las rampas fuertes (n=720) el |Δ| real medio es 184.0 y el predicho 52.6 — **captura solo el 29% de la magnitud**. Encoge por diseño (mitad de los Δ son exactamente 0), y encoger es lo correcto para minimizar error cuadrático en un objetivo inflado en cero; pero al acumularlo 24 veces se inyecta ruido sin aportar señal.
+
+**Conclusión de la línea.** Modelar la transición en una sola pasada *es* el modelo de nivel en otras coordenadas: no es una idea distinta, es la misma reparametrizada, y empata. La única versión que sí es distinta (acumular transiciones consecutivas) es estrictamente peor. La línea queda cerrada con causa identificada, no con un "no funcionó".
+
+#### 2. NOT (Narrowest-Over-Threshold) implementado y validado
+
+`scripts_experimento/not_changepoint.py`. Reimplementación en Python de Baranowski, Chen & Fryzlewicz (2019, JRSS-B); el original es el paquete `not` de R y aquí no hay puente a R. Contraste de razón de verosimilitudes generalizada para media y varianza constantes a trozos (la forma menos restrictiva, la misma que usan Nasiadka/Nitka/Weron), selección del número de puntos por SIC reforzado con Nc_max = 12.
+
+**No se usa un detector sin verificarlo.** `autoprueba()` corre series sintéticas con puntos de cambio conocidos (salto de media, cambio de varianza, ambos, ninguno, y cinco tramos en 728 puntos). Criterio declarado antes de mirar: error de ubicación ≤ 15 y ≤ 1 punto espurio. Resultado final: **5/5**, con localización exacta en 3 de los 5 casos. El experimento aborta si la autoprueba falla.
+
+Dos cosas que hubo que corregir en el camino, ambas detectadas por la autoprueba y no por intuición:
+- **El penalizador del SIC con coeficiente 2 deja pasar puntos espurios** cuando media y varianza cambian a la vez. Con 3 (media, varianza y la propia ubicación como parámetros) queda correcto.
+- **El atajo de una sola pasada rompe el algoritmo.** Intenté derivar la trayectoria de soluciones de una sola recursión con umbral bajo, guardando el contraste mínimo del camino. Con umbral bajo la regla del "intervalo más angosto" se queda con intervalos diminutos que superan el umbral por ruido: **7 puntos espurios en la serie de un solo salto de media**. La rejilla de umbrales no es un detalle de implementación, es lo que mantiene honesto al detector.
+
+**Coste y cómo se resolvió.** La detección se rehace cada día y cada paso (5.232 veces), a 3,0 s cada una en la versión ingenua = 3,2 h por variante. Vectorizando el cálculo del contraste sobre todos los intervalos candidatos a la vez (aplanar los pares intervalo×corte y recuperar el argmax con `reduceat`) baja a 440 ms → 38 min. Además, las máscaras de subperíodos **no dependen del modelo**, así que se calculan una vez y se cachean en `not_mascaras_24h.npz`; el caché lleva un contador `pasos_listos` y se descarta si quedó a medias.
+
+#### 3. Biblioteca de papers: dos incorporaciones y un enredo de citas resuelto
+
+- `Kapoor_Wichitaksorn_Zhang_2023_NZ_Regime_Switching_JoF.pdf` — Journal of Forecasting 42(8), 2011-2026, DOI 10.1002/for.3004. **Aportado por el usuario.** Markov regime-switching hasta 5 regímenes, probabilidades de transición variables en el tiempo, y teoría de valores extremos (EVT-PoT). Prueban formalmente que el EVT-PoT es un caso particular del MRS de 3 regímenes. Sus métricas son sobre precios **diarios** y con foco en réplica de densidad, no en pronóstico puntual (MAPE de 52% a 299%): **no es comparable con este proyecto en exactitud**, y no es la fuente de la Figura 5.
+- `Kapoor_Wichitaksorn_2023_NZ_EPF_AppliedEnergy.pdf` — Applied Energy 347, 121446. **Esta sí es la fuente de la Figura 5a.** Estaba ya descargada en el equipo desde el 17 de septiembre sin haberse incorporado al proyecto.
+
+**Aclaración importante:** son dos papers distintos de autores parcialmente coincidentes. El de regime-switching (Journal of Forecasting) no contiene ni LE-GARCH-t, ni LEAR, ni MASE; el de Applied Energy sí. La bitácora anterior pedía descargar el primero creyendo que respaldaba la Figura 5 — no es así.
+
+#### 4. Verificación de la Figura 5a contra el paper original (lo que el usuario pidió confirmar)
+
+Contrastadas las Tablas 5, 6 y 8 de Kapoor & Wichitaksorn (2023, Applied Energy):
+
+| afirmación del informe | verificado | correcto |
+|---|---|---|
+| "los 34 modelos del paper neozelandés" | **no** | son **33** (9 base + 8 × 3 métodos de selección de variables) |
+| "todos MASE > 1.26" | **sí** | el mínimo global es 1.2626 (LE-GARCH-t, Central North Island) |
+| mejores modelos NZ ≈ 1.30 | **sí** | LE-GARCH-t 1.2626–1.3513; LEAR 1.2954–1.3473 |
+| peores modelos NZ = 2.51 | **casi** | el máximo real es **2.5001** (RFE-GARCH, Lower South Island) |
+
+**Salvedad no declarada en el informe, y es la que más pesa.** El paper transforma los precios antes de modelar: *"electricity prices, coal generation, diesel generation, reserve prices, forward prices, and precipitation series tend to display a skewed distribution... we choose to transform them using the Box–Cox or Yeo-Johnson logarithmic transformations"*, seguido de escalado min-max. El MASE es invariante al escalado lineal (se cancela en el cociente) pero **no** a la transformación Box-Cox. O sea que su MASE está medido sobre precio transformado y el nuestro sobre COP/kWh crudos: **no son la misma cantidad**. El informe ya advertía la diferencia de resolución (diaria vs horaria) pero no esta. **Corregido**: `generar_informe_word.py` dice ahora 33 modelos, cita el mejor (1.2626, LE-GARCH-t, Central North Island) y el peor (2.5001, RFE-GARCH, Lower South Island), y añade un párrafo con la salvedad de la transformación Box-Cox; `generar_graficos_informe.py` corrige la barra de 2.51 a 2.50. Gráficos e informe regenerados.
+
+
+### 2026-09-22 — Idea del usuario: modelar los PUNTOS DE CAMBIO intradía. El diagnóstico confirma la intuición, el modelo de rampas falla, y se abre biblioteca de papers
+
+Idea del usuario: en otros mercados, ¿cómo tratan los modelos las series con puntos de cambio? El error del proyecto se concentra justo en las horas de quiebre de la curva diaria, así que valía la pena buscar qué hace la literatura y probarlo.
+
+**El diagnóstico confirma la intuición de forma contundente** (medido sobre el ensamble actual, 2026):
+
+| Tipo de hora | % del tiempo | MAE del ensamble |
+|---|---|---|
+| Precio plano (cambio exactamente 0) | 50.8% | 28.5 |
+| Cambio chico (<10) | 18.6% | 28.4 |
+| Cambio medio (10-50) | 16.8% | 40.5 |
+| **Rampa fuerte (≥50)** | 13.9% | **105.5** |
+
+El error se cuadruplica en las rampas, y las 6 horas de mayor error (0, 8, 9, 10, 18, 19) tienen rampa media de 46.6 contra 24.7 de las otras 18. **El error vive en los quiebres, no en las mesetas.** Correlación global entre |rampa horaria| y error: 0.497.
+
+**Hallazgo estructural nuevo**: más de la **mitad de las horas el precio no cambia nada** respecto a la hora anterior (la misma unidad marca el precio varias horas seguidas). La distribución de cambios está fuertemente inflada en cero — algo que el proyecto no había caracterizado.
+
+**PRUEBA: modelo de rampas (`modelo_rampas_24h.py`).** Siguiendo la literatura de eventos de rampa en energía eólica (entrenamiento orientado a la transición en vez del nivel), se construyó un modelo que pronostica Δ = p(t_h) − p(t_{h−1}) por cada paso, en dos variantes: LASSO directo sobre Δ, y hurdle de dos partes (clasificador "¿se mueve?" × regresor "¿cuánto?") para respetar la masa en cero — el proyecto ya usó ese esquema sobre el *nivel*, aplicarlo a la *transición* era nuevo.
+
+**Falla en las dos reconstrucciones probadas:**
+
+| Reconstrucción | MAE | Veredicto |
+|---|---|---|
+| Acumulada desde el corte, como votante extra | 41.22-41.28 | peor en **0/10** semillas |
+| Anclada en ensamble(h−1), mezcla 50/50 | 43.00 | **p=0.0000 peor** |
+| Anclada, sustituyendo del todo | 46.73 | **p=0.0000 peor** |
+
+Suelto, el modelo de rampas da MAE 62.3 — apenas mejor que usar el precio del corte fijo (64.9), y muy lejos del ensamble (41.2). **Causa de fondo**: predecir Δ es más difícil que predecir el nivel en esta serie, porque la distribución está partida entre 50.8% de ceros exactos y una cola de saltos grandes. Cualquier reconstrucción arrastra ese error, ya sea acumulándolo sobre 24 pasos o inyectándolo hora a hora. En las horas de rampa fuerte el efecto fue marginal (105.53 → 105.11, p=0.0585) y no sobrevive a la verificación multisemilla.
+
+**BIBLIOTECA DE PAPERS CREADA (`docs/papers/`).** Al buscar la literatura se descubrió que había PDFs completos guardados de sesiones anteriores que se creían perdidos. Quedan 7 papers con PDF + texto extraído, citables con precisión:
+
+| Paper | Por qué importa |
+|---|---|
+| Lago, Marcjasz, De Schutter & Weron (2021) | La revisión canónica de EPF; el README decía "no leído completo" — **ya está disponible** |
+| Ziel & Weron (2018) | Univariado vs multivariado (las 24 horas como vector de una subasta) |
+| Huisman & Mahieu (2003) | Los 3 regímenes (normal / salto / retorno). Conseguido gratis en el repositorio de Erasmus |
+| Nasiadka, Nitka & Weron | Selección de ventana de calibración por detección de puntos de cambio |
+| Das & Schlüter | Regime-Aware Conditional Neural Processes |
+| Gallón & Barrientos (2021) | La referencia colombiana que ya citábamos |
+| IJEEP (2018) | Segunda referencia colombiana, no se sabía que se tenía |
+
+**LÍNEA ABIERTA con respaldo explícito de la literatura.** El paper de Nasiadka, Nitka & Weron usa detección de puntos de cambio (algoritmo Narrowest-Over-Threshold) para elegir **qué subperíodos históricos usar como muestra de calibración**, en vez de tomar siempre los datos más recientes — y mejora significativamente sobre EPEX SPOT alemán. En sus conclusiones dicen textualmente que si esto funciona para *"LASSO-estimated AR (LEAR) and deep neural networks ... is left for future work"*. **Este proyecto tiene exactamente un LEAR y redes profundas**, así que es una pregunta abierta de la literatura que estamos en posición de responder. No se ha probado todavía. (Nota: ese trabajo enfatiza la transformación asinh, que aquí ya se probó y **empeoró** 6-16%, porque los picos colombianos son cambios de nivel sostenidos y no picos aislados como en Europa.)
+
+### 2026-09-22 — Prueba exhaustiva del anclaje: DOS conclusiones previas eran incorrectas, y la línea se cierra por un error de razonamiento propio
+
+Scripts: `anclaje_lag24_exhaustivo.py`, `accionar_salto_predicho.py`. Reejecución seria de las pruebas de la entrada anterior, que eran débiles (n=217, un solo target, validación cruzada que no respeta el orden temporal).
+
+**CORRECCIÓN 1 — la hora 0 es la única donde el modelo NO le gana a la persistencia.** La correlación de 0.974 entre error y salto día-a-día sí es especial de la hora 0 (correlación media entre las 24 horas: 0.600; la hora 0 está en el percentil 95), pero el hallazgo relevante es otro:
+
+| Hora | MAE modelo | MAE persistencia | Ganancia vs persistencia |
+|---|---|---|---|
+| **0** | 47.37 | 46.76 | **−1.3%** |
+| 1 | 7.60 | 47.15 | +83.9% |
+| 9 | 44.02 | 61.51 | +28.4% |
+| 19 | 104.06 | 110.32 | +5.7% |
+
+En las horas 1-5 el ensamble le gana a la persistencia por 52-84%; en la hora 0 queda por debajo. Matiz honesto: la diferencia (0.6 MAE) está dentro del error estándar de ±4.2 a esa hora, así que es un estimador puntual, no un resultado significativo.
+
+**CORRECCIÓN 2 — el salto día-a-día SÍ es predecible; la conclusión anterior ("no lo es") venía de una prueba mal hecha.** Con la historia completa (2.742 días en vez de 217) y `TimeSeriesSplit` en vez de pliegues estratificados:
+
+| Hora | Target | Mejor AUC |
+|---|---|---|
+| 0 | percentil 80 (saltos extremos) | 0.791 |
+| 9 | percentil 80 | 0.799 |
+| 19 | percentil 80 | 0.814 |
+
+Muy por encima del 0.70 que el propio proyecto fijó como umbral de utilidad. La prueba anterior daba 0.54-0.59 por falta de potencia estadística y por usar una validación cruzada inadecuada para series temporales.
+
+**PERO LA LÍNEA SE CIERRA, por un error de razonamiento que debí ver antes de programar nada.** La acción obvia —enrutar a persistencia los días de salto grande— es **circular**: en un día de salto grande, la persistencia es *precisamente* el modelo que más falla, porque el salto **es** su error. Se confirmó empíricamente incluso con oráculo (que conoce el salto real):
+
+| Hora | Ensamble | Enrutar con oráculo del salto |
+|---|---|---|
+| 0 | 47.37 | 48.59 (peor) |
+| 9 | 44.02 | 64.03 (mucho peor) |
+| 19 | 104.06 | 135.99 (mucho peor) |
+
+La verificación directa lo confirma: la persistencia gana en los días de salto **pequeño** (salto medio 21-45), y el ensamble gana en los de salto **grande** (salto medio 62-165) — lo contrario de la hipótesis.
+
+**Se probó también la dirección correcta** (enrutar a persistencia cuando se predice salto pequeño): sin mejora en las horas 0 y 9, y una aparente mejora en la hora 19 (104.06 → 94.49, p=0.0722; 95.81 con p=0.0515). **No se adopta, y conviene explicar por qué**: a esa altura se llevaban 18 comparaciones en esta línea (3 horas × 3 umbrales × 2 direcciones). Bajo la hipótesis nula, el número esperado de resultados con p<0.05 es 18 × 0.05 ≈ 0.9 — se obtuvo exactamente uno. Es lo que predice el azar, y es el mismo patrón del falso hallazgo del ONI que el proyecto ya tiene documentado. Reportarlo como prometedor sería repetir ese error.
+
+**Lo que queda en pie:** el anclaje al precio del día anterior es real y domina el error en la hora 0, el salto es anticipable, pero **no existe una acción que convierta esa señal en una mejora del pronóstico puntual**, porque los dos modelos disponibles fallan en los mismos días. Sería necesario un tercer modelo que acierte específicamente en días de ruptura — y el proyecto ya cerró esa vía tres veces (especialistas de pico, arquitectura de dos modelos, enrutamiento por fallo predicho).
+
+### 2026-09-18 — El mecanismo real del error en la hora 0: anclaje al precio de ayer, confirmado con correlación 0.974, pero no anticipable en el corte
+
+El usuario consultó a ChatGPT y Gemini sobre la Figura 4 (error por hora). Tres hipótesis planteadas, verificadas aquí contra los datos:
+
+**1) "El MAPE se infla porque el precio es bajo en la hora 0" — descartada.** El precio real medio en la hora 0 (362.9) es casi idéntico al de la hora 1 (356.2), pero el MAE difiere 6 veces (47.4 vs 7.6). El nivel de precio no es la explicación.
+
+**2) "Probar codificación cíclica seno/coseno de la hora" — ya implementado.** `hora_sin`/`hora_cos` están en el pipeline compartido desde el notebook 05, y se pasan como variable futura conocida incluso a N-BEATSx/N-HiTS.
+
+**3) "El modelo se ancla al precio de ayer (lag-24) y falla cuando el mercado cambia bruscamente de un día a otro" — confirmado con fuerza.** Correlación entre `|precio(hora 0, hoy) − precio(hora 0, ayer)|` y el error del ensamble: **0.974**. Comparando terciles: cuando el día se parece a ayer, MAE=9.2; cuando es distinto, MAE=111.1 — **12 veces más**. Es el número más contundente que el proyecto tiene sobre el mecanismo del error en esa hora, y afina lo que ya se había encontrado con Ziel & Weron sobre la frontera entre subastas.
+
+**Se probó si es explotable, y no lo es.** Se intentó predecir, con información disponible en el corte, si el salto día-a-día sería grande: con variables candidatas (volatilidad reciente, ONI, día de la semana, festivos) AUC=0.586; con el estado completo de 14 variables vía CatBoost, AUC=0.540. Ambos prácticamente azar. El mecanismo domina el error pero no hay señal en el corte que anticipe cuándo va a activarse — misma conclusión que `predecir_fallo_24h.py` desde otro ángulo: el fallo es real, no es accionable con las variables actuales.
+
+### 2026-09-18 — Auditoría sistemática del proyecto por clases de error: se encuentra una fuga real en el ONI, se cuantifica y resulta inocua; todo lo demás sale limpio
+
+Revisión ordenada de notebooks y scripts buscando errores, por clase de fallo en vez de línea por línea (126 scripts + 13 notebooks).
+
+**HALLAZGO: el ONI contiene información futura.** El archivo `data/external/oni_index.csv` viene en el formato estándar de NOAA, cuyas columnas (`DJF`, `JFM`, `FMA`, …) son medias móviles de **3 meses centradas**. La función `construir_oni_horario_causal` (notebook 02) mapea cada columna a su mes central — `JJA` → julio — y arma una rampa de ONI(M−1) a ONI(M) dentro del mes M. El problema es que ambos extremos miran al futuro:
+
+- `ONI(M)` = media de SST de **M−1, M, M+1** → incluye el mes siguiente
+- `ONI(M−1)` = media de **M−2, M−1, M** → incluye el mes en curso
+
+Son hasta **~1.5 meses de información futura**, más el hecho de que NOAA publica el valor de un mes a comienzos del siguiente. La función se llama "causal" pero no lo es respecto al dato subyacente. La diferencia es material en la variable: al cierre de junio 2026 el pipeline usa ONI = 1.4 mientras que una versión genuinamente causal daría **0.50** — la diferencia entre clasificar un Niño débil y uno fuerte.
+
+**Pero el efecto sobre el modelo es nulo** (`auditoria_oni_causal.py`). Se construyó un ONI sin futuro (para el mes M se usa ONI(M−2), enteramente pasado y ya publicado) y se reentrenó XGBoost con las dos versiones, todo lo demás idéntico:
+
+| | ONI actual (con futuro) | ONI causal (sin futuro) |
+|---|---|---|
+| MAE | 61.39 | 61.41 |
+| MAPE | 15.97% | 15.97% |
+| Importancia de la variable | 0.0033 (puesto 27 de 40) | 0.0037 (puesto 26) |
+
+Diebold-Mariano entre ambas: **p=0.6475**, diferencia de MAE de 0.021 COP/kWh. Correlación entre las dos series del ONI: 0.895, con diferencia media absoluta de 0.293 y máxima de 0.900 — o sea las series difieren mucho y el modelo no lo nota. Es coherente con la ablación LOGO previa, que ya había mostrado que quitar el ONI por completo mueve el MAE dentro del ruido.
+
+**Conclusión:** la fuga es real y hay que declararla, pero está demostrado que no infla ningún resultado del proyecto, porque el ONI no aporta capacidad predictiva. Conviene decirlo así en la sustentación si alguien del jurado conoce la definición del índice, en vez de que lo encuentren ellos. El arreglo (usar ONI(M−2)) está implementado y probado en `auditoria_oni_causal.py` por si se decide adoptarlo — cambiar el pipeline obligaría a reentrenar todo para una diferencia medida de 0.02 COP/kWh.
+
+**Lo que salió limpio en la auditoría:**
+
+| Clase de error revisada | Resultado |
+|---|---|
+| Fuga en el pipeline de features (notebook 05) | **Limpio** — todo lleva `.shift(24)` antes de cualquier ventana móvil; incluso las columnas crudas de hidrología se sobrescriben con su versión rezagada |
+| Escaladores ajustados sobre train+test | **Limpio** — se ajustan solo en train, y los NaN de test se rellenan con la mediana de *train* |
+| MAPE con denominadores cercanos a cero | **Limpio** — precio mínimo 69.95 (train) y 97.72 (2026); ningún cero ni valor pequeño |
+| Orden cronológico antes del estimador HAC del Diebold-Mariano | **Limpio** en el linaje desplegado (`cargar24().sort_index()`; las predicciones de validación cruzada se escriben en el orden original, no en orden de pliegue) |
+| Anti-fuga de la formulación directa (rezagos contra el corte) | **Limpio por construcción** — `precio_mismo_hora_disp` usa `retro = 24·⌈h/24⌉ ≥ h` para todo h; `precio_lag168h` es seguro porque h ≤ 72 < 168 |
+| Separación train/test | **Limpio** — `train = df < corte_train`, `test = df ≥ test_inicio`, sin solape |
+| Regularidad de la serie temporal | **Limpio** — 0 saltos distintos de 1 hora, sin duplicados (Colombia no tiene horario de verano) |
+| Motor de decisión de Rafael (solo lectura) | **Limpio** — las señales se generan con `q50` (la predicción), no con el precio real; los umbrales fijos salen de `precio_historico_train`; los rodantes usan `.shift(1)` antes de la ventana, explícitamente para evitar fuga. Las dos alertas de mi búsqueda por palabras clave resultaron falsos positivos (el `real` se usa solo para graficar y para evaluar después) |
+
+### 2026-09-18 — La hora 0 contra la literatura (Ziel & Weron 2018): el salto de medianoche no es un defecto a corregir, y el margen ahí está acotado por construcción
+
+Script: `promedio_simple_hora0.py`. Cierre de la línea de la hora 0, ahora con respaldo teórico.
+
+**Lo que dice la literatura.** Ziel & Weron (2018, *Energy Economics* 70:396-420) es el trabajo de referencia sobre cómo estructurar un modelo day-ahead. Su planteamiento: los precios de las 24 horas de un día **se revelan de una vez en una sola subasta**, así que la unidad natural es un vector de 24 dimensiones, no una serie horaria continua. **El salto entre las 23:00 y las 00:00 no es una anomalía que haya que arreglar: son dos subastas distintas.** Para la hora 0, el enfoque estándar es usar rezagos de la misma hora de días anteriores, no la hora inmediatamente previa. Y reportan que combinar los marcos univariado y multivariado mejora la precisión "incluso con un promedio simple de dos modelos" — con el matiz honesto de que el marco multivariado **no gana uniformemente** entre conjuntos, estaciones ni horas del día.
+
+**Cómo queda el proyecto frente a eso.** El ensamble ya implementa ambos marcos sin que se hubiera planteado en esos términos: multivariado (N-BEATSx, N-HiTS y el LEAR24 de un modelo por hora, que además usa `MISMA_HORA = [24, 48, ..., 168]`, exactamente los rezagos de misma hora que recomienda la literatura) y univariado con rezagos de 24h+ (Persistencia, XGBoost, ARX+GARCH). Combinar ambos es justo lo que ese paper recomienda — un punto defendible en la sustentación.
+
+**Corrección a una lectura previa mía.** En el análisis inicial se señaló que "en la hora 0 el ensamble (47.37) es peor que dos de sus votantes (ARX+GARCH 45.99, Persistencia 46.76)" y se presentó como evidencia de un problema. **No lo era**: con 216 días, el error estándar del MAE a esa hora es **±4.20**, así que una diferencia de 1.4 está dentro del ruido. La observación no sostenía la conclusión.
+
+**Prueba realizada: promedio simple de votantes solo en la hora 0.** Motivada por el hallazgo de Ziel & Weron sobre promedios simples, y por la hipótesis de que los pesos por franja (0-5h) están dominados por las horas 1-5, donde las redes son muy superiores porque explotan el precio recién observado en el corte — ventaja que en la hora 0 no existe.
+
+| Métrica | Combinador | Promedio simple en h0 | Delta | DM |
+|---|---|---|---|---|
+| MAE global | 41.287 | 41.227 | −0.061 | p=0.0901 |
+| MAPE | 10.744% | 10.739% | −0.005 | p=0.6785 |
+| sMAPE | 10.065% | 10.047% | −0.018 | — |
+| MAE hora 0 | 47.354 | 45.898 | −1.456 | p=0.1819 |
+
+**No se adopta.** Sin significancia, y la mejora global de MAPE (0.005 puntos) es inmaterial. **Advertencia metodológica sobre la lectura de este resultado**: aparece "mejor en 10/10 semillas" en todas las métricas, pero el promedio simple es determinista (desviación ±0.000 en la hora 0), así que son 10 apariciones del mismo cambio, **no 10 confirmaciones independientes**. Contarlo como evidencia fuerte sería un error del mismo tipo que el proyecto ya cometió con el falso hallazgo del ONI.
+
+**Techo estructural del margen en la hora 0.** Es el **4.2%** de las observaciones, así que aunque se resolviera por completo, el efecto sobre el global queda dividido entre ~24. El oráculo de selección (elegir el mejor votante cada día, usando el futuro) da MAE 25.14 contra los 47.4 actuales: hay margen teórico grande, pero no accionable, y aun capturándolo entero el MAPE global bajaría menos de 0.5 puntos. **La hora 0 no es donde están las mejoras que importan.**
+
+### 2026-09-18 — Dos líneas de mejora probadas y cerradas: corrección de sesgo por nivel de precio, y separar la hora 0 en su propio grupo de pesos
+
+Scripts: cálculo directo sobre `combinador_optimo_mape.csv`; `franja_medianoche_24h.py`.
+
+**1) Corrección de sesgo condicionada al precio PREDICHO — falla incluso con oráculo.** A diferencia de las correcciones de sesgo ya descartadas (global, por régimen, adaptativa móvil), esta se condiciona a algo que sí se conoce en el momento de pronosticar: el decil de precio predicho. El sesgo existe y es ordenado (desde +2.6% en el decil más barato hasta +3.1% en el decil 8, y −1.2% en el decil 10), pero **corregirlo empeora**: aplicando el sesgo exacto de cada decil con un oráculo que usa el futuro, el MAPE sube de 10.72% a **11.16%**. El sesgo es demasiado pequeño frente a la desviación del error dentro de cada decil, así que desplazar el nivel daña más observaciones de las que arregla — y en MAPE el daño se concentra en las horas de precio bajo. **Cuarta confirmación independiente** de que no hay corrección de sesgo aprovechable en este modelo.
+
+**2) Separar la hora 0 en su propio grupo de pesos — no concluyente.** Motivación concreta, no búsqueda ciega de granularidad: con el corte a las 00:00, la primera franja (horas 0-5) mezcla dos regímenes opuestos por el salto de medianoche. En las horas 1-5 las redes dominan aplastantemente (N-BEATSx MAE 10.3 en la hora 1 contra 46-51 de ARX+GARCH/XGBoost/Persistencia), pero en la hora 0 —que es el paso 24, al otro lado del salto— **pierden la ventaja** (N-BEATSx 52.3, N-HiTS 49.0, frente a ARX+GARCH 46.0). El síntoma medible: en la hora 0 el ensamble (MAE 47.37) es **peor que dos de sus propios votantes**.
+
+Resultado de separarla en su propio grupo (5 grupos en vez de 4): MAE global 41.19 → 41.18, MAPE sin cambio, MAE en la hora 0 47.37 → 47.12 con **p=0.7978**. En 10 particiones el MAE mejora en 10/10 pero solo 0.039 COP/kWh, muy por debajo del umbral de ruido del proyecto, y el MAPE mejora en 4/10. En modo desplegable no hay diferencia (p=0.9459). **Interpretación:** el combinador QRA ya tiene intercepto libre por grupo, y ese intercepto absorbe el desnivel de la medianoche sin necesitar un grupo aparte; separarlo solo añade parámetros. Consistente con el resultado previo de que la granularidad de pesos (1 a 24 grupos) está agotada.
+
 ### 2026-09-18 (madrugada) — Diversidad intra-familia (variantes de N-BEATSx) para 25-72h: efecto real pero débil en 25-48h, nulo en 49-72h, y redundante donde ya está el puente
 
 Script: `variantes_nbx_72h.py` (7 min). Tercera vía probada para el margen de 25-72h tras el fallo de los árboles especialistas (entrada anterior). `pronostico_72h_diario_votantes_2026.csv` ya traía tres variantes de N-BEATSx nunca usadas como votantes propios: misma arquitectura con semilla 7, semilla 123, y ventana de entrada de 336h (14 días) en vez de la base. Se probó agregarlas al conjunto de 4 votantes (LAD y combinador sMAPE) y un sub-ensamble (promedio simple de las 4 redes NBX) como votante único.

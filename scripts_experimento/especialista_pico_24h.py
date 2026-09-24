@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Ataque dirigido al pico vespertino, que es donde vive el error del ensamble de 24h.
+Ataque dirigido a las horas donde vive el error del ensamble de 24h. REEJECUCION CORREGIDA.
 
-Diagnostico previo (diagnostico_error_24h.py): las horas 18, 19 y 20 tienen MAPE 15.7%, 16.5% y
-14.3% frente al 11.27% global, y las 6 horas peores concentran el 37.8% del error total. Para
-llegar al objetivo de 8% hace falta bajar el error un 29%: ni siquiera acertando perfecto esas 6
-horas se llega (daria 7.01%), asi que el pico es condicion necesaria.
+Bug encontrado y corregido en esta reejecucion: la corrida original de este script (y otros 6 mas
+del proyecto) usaba PICO = [18, 19, 20] asumiendo que el error se concentraba en el "pico
+vespertino". Al verificar contra diagnostico_error_24h.py (que SI calcula bien con
+`nlargest(6)`), las 6 horas que de verdad mas aportan al MAPE son 0, 8, 9, 10, 18, 19 -- la hora
+20 no entra en el top 6 (queda 7a), y faltaban la medianoche y el bloque de media manana. El
+numero global (37.8% del error, techo 7.01%) siempre estuvo bien calculado; lo que estaba mal
+era CUALES horas entrenaba el especialista de la parte C de este script.
+
+Diagnostico previo (diagnostico_error_24h.py): esas 6 horas tienen MAPE entre 15.7% y 18.1%
+frente al 11.27% global, y concentran el 37.8% del error total. Para llegar al objetivo de 8%
+hace falta bajar el error un 29%: ni siquiera acertando perfecto esas 6 horas se llega
+(daria 7.01%), asi que el pico es condicion necesaria.
 
 La pregunta previa a cualquier modelo: ese error es SESGO (el ensamble se equivoca de forma
 sistematica y se puede corregir) o VARIANZA (los picos son impredecibles y no hay nada que hacer)?
@@ -32,7 +40,7 @@ from o6_comun import cargar_completo, RES
 from lear_24h import construir_para_paso
 
 CORTE = pd.Timestamp("2026-01-01")
-PICO = [18, 19, 20]
+PICO = [0, 8, 9, 10, 18, 19]  # corregido: las 6 horas que mas aportan al MAPE (nlargest), no solo 18-20
 
 
 def dm(real, p_ref, p_nuevo, maxlags=24):
@@ -100,8 +108,15 @@ def main():
     cortes_tr = idx_00[(idx_00 >= 200) & (idx_00 < idx_fin - 24)]
     cortes_te = idx_00[idx_00 >= idx_fin - 1]
 
+    # OJO con el mapeo hora -> paso. Con el corte a las 00:00, la hora H del dia se pronostica en
+    # el paso H... salvo la hora 0, que es la medianoche del dia SIGUIENTE y por tanto el paso 24.
+    # Pasar h=0 a construir_para_paso haria t = c + 0 = c, es decir el objetivo seria el propio
+    # corte, que ademas es una variable de entrada (p_corte_lag0): fuga total y MAE artificialmente
+    # cercano a cero. Este bug se introdujo al corregir PICO el 2026-09-18 y se detecto por un
+    # MAE de 0.68 en la hora 0.
     pred_pico = {}
-    for h in PICO:                       # paso h == hora del dia h (corte a las 00:00)
+    for hora in PICO:
+        h = 24 if hora == 0 else hora    # paso de horizonte real para esa hora del reloj
         Xtr, ytr, _, _ = construir_para_paso(df, h, cortes_tr)
         Xte, yte, f_obj, _ = construir_para_paso(df, h, cortes_te)
         esc = StandardScaler().fit(Xtr)
@@ -109,9 +124,9 @@ def main():
         ml = LassoCV(cv=5, random_state=42, n_jobs=1, max_iter=10000).fit(Ztr, ytr)
         mc = CatBoostRegressor(n_estimators=1500, max_depth=8, learning_rate=0.05,
                                loss_function="MAE", random_seed=42, verbose=0, thread_count=-1).fit(Xtr, ytr)
-        pred_pico[h] = pd.DataFrame({"fecha_hora": f_obj, "esp_lasso": ml.predict(Zte),
-                                     "esp_catb": mc.predict(Xte)})
-        print(f"  hora {h}: LASSO MAE={np.abs(yte-ml.predict(Zte)).mean():6.2f} | "
+        pred_pico[hora] = pd.DataFrame({"fecha_hora": f_obj, "esp_lasso": ml.predict(Zte),
+                                        "esp_catb": mc.predict(Xte)})
+        print(f"  hora {hora} (paso {h}): LASSO MAE={np.abs(yte-ml.predict(Zte)).mean():6.2f} | "
               f"CatBoost MAE={np.abs(yte-mc.predict(Xte)).mean():6.2f}", flush=True)
     esp = pd.concat(pred_pico.values(), ignore_index=True)
 

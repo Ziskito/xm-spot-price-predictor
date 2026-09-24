@@ -73,7 +73,7 @@ ax.set_ylabel("MAPE (%)")
 ax.set_title("Modelo de 24 horas: evolución del error en esta sesión", fontsize=13, color=INK, pad=14)
 limpiar_ejes(ax)
 ax.axhline(10.0, color=AQUA, linestyle=(0, (4, 3)), linewidth=1.2)
-ax.text(2.55, 10.05, "meta 10%", color=AQUA, fontsize=9, va="bottom", ha="right")
+ax.text(2.55, 10.1, "meta 10%", color=AQUA, fontsize=9, va="bottom", ha="right")
 plt.tight_layout()
 plt.savefig(OUT / "fig1_evolucion_24h.png", dpi=200)
 plt.close()
@@ -122,8 +122,10 @@ plt.close()
 # 4) Error por hora del dia (concentracion en el pico vespertino)
 # =====================================================================
 d = pd.read_csv(RES / "diagnostico_error_24h_por_hora.csv")
+PEORES_6 = set(d.nlargest(6, "aporte_%")["hora"])  # las 6 horas que mas aportan al error (por MAPE)
+horas_txt = ", ".join(str(h) for h in sorted(PEORES_6))
 fig, ax = plt.subplots(figsize=(9, 4.4))
-colores = [RED if h in (18, 19, 20) else BLUE for h in d["hora"]]
+colores = [RED if h in PEORES_6 else BLUE for h in d["hora"]]
 barras = ax.bar(d["hora"], d["MAPE"], color=colores, width=0.72)
 ax.axhline(d["MAPE"].mean(), color=MUTED, linestyle=(0, (4, 3)), linewidth=1.2)
 ax.text(23.3, d["MAPE"].mean() + 0.3, f"media diaria {d['MAPE'].mean():.1f}%", color=MUTED,
@@ -131,7 +133,8 @@ ax.text(23.3, d["MAPE"].mean() + 0.3, f"media diaria {d['MAPE'].mean():.1f}%", c
 ax.set_xticks(range(0, 24, 2))
 ax.set_xlabel("Hora del día")
 ax.set_ylabel("MAPE (%)")
-ax.set_title("El error no se reparte parejo: el pico vespertino (18-20h, en rojo)\nconcentra el 37.8% de todo el error del modelo de 24h", fontsize=12.5, color=INK, pad=14)
+aporte_total = d.nlargest(6, "aporte_%")["aporte_%"].sum()
+ax.set_title(f"El error no se reparte parejo: las 6 horas en rojo ({horas_txt})\nconcentran el {aporte_total:.1f}% de todo el error del modelo de 24h", fontsize=12.5, color=INK, pad=14)
 limpiar_ejes(ax)
 plt.tight_layout()
 plt.savefig(OUT / "fig4_error_por_hora.png", dpi=200)
@@ -145,7 +148,9 @@ fig, axs = plt.subplots(2, 2, figsize=(10.5, 8.6))
 # 5a) MASE vs Nueva Zelanda (Kapoor & Wichitaksorn 2023)
 ax = axs[0, 0]
 nombres = ["Nuestro\nensamble 24h", "Mejores modelos\nNZ (LE-GARCH-t,\nLEAR)", "Peores modelos\nNZ"]
-vals = [0.943, 1.30, 2.51]
+# Verificado contra las Tablas 5 y 6 de Kapoor & Wichitaksorn (2023, Applied Energy 347):
+# mejor MASE global 1.2626 (LE-GARCH-t, CNI), peor 2.5001 (RFE-GARCH, LSI). Son 33 modelos.
+vals = [0.914, 1.30, 2.50]
 colores = [BLUE, ORANGE, MUTED]
 barras = ax.bar(nombres, vals, color=colores, width=0.55)
 etiquetas_barras(ax, barras, "{:.2f}", fontweight="bold")
@@ -158,8 +163,8 @@ limpiar_ejes(ax)
 # 5b) MAPE/NRMSE vs Brasil (Dias et al. 2024) y DECOMP oficial
 ax = axs[0, 1]
 grupos = ["Nuestro\nensamble 24h", "MLP\n(Dias et al.\n2024)", "DECOMP\n(oficial Brasil)"]
-mape_b = [11.27, 14.65, 19.44]
-nrmse_b = [21.66, 24.70, 53.89]
+mape_b = [10.72, 14.65, 19.44]
+nrmse_b = [21.58, 24.70, 53.89]
 x = np.arange(len(grupos))
 w = 0.32
 b1 = ax.bar(x - w / 2, mape_b, w, label="MAPE", color=BLUE)
@@ -176,7 +181,7 @@ limpiar_ejes(ax)
 # 5c) sMAPE / R2 vs Noruega
 ax = axs[1, 0]
 grupos = ["Nuestro\nensamble 24h", "LightGBM Noruega\n(mejor zona)", "LightGBM Noruega\n(peor zona)"]
-smape_n = [10.38, 12.07, 25.32]
+smape_n = [10.04, 12.07, 25.32]
 colores = [BLUE, AQUA, MUTED]
 barras = ax.bar(grupos, smape_n, color=colores, width=0.55)
 etiquetas_barras(ax, barras, "{:.2f}%", fontweight="bold")
@@ -187,7 +192,7 @@ limpiar_ejes(ax)
 # 5d) Acierto direccional vs Albani et al.
 ax = axs[1, 1]
 grupos = ["Nuestro\nensamble 24h\n(TAPI diario)", "Albani et al. 2025\n(general)", "Albani et al. 2025\n(alta correlación\nENA-precio)"]
-vals = [75.9, 50, 60]
+vals = [76.4, 50, 60]
 colores = [BLUE, MUTED, ORANGE]
 barras = ax.bar(grupos, vals, color=colores, width=0.55)
 etiquetas_barras(ax, barras, "{:.0f}%", fontweight="bold")
@@ -232,13 +237,13 @@ plt.close()
 # =====================================================================
 fig, ax = plt.subplots(figsize=(7.5, 4.4))
 etapas = ["Modelo actual", "Objetivo\n\"10% tranquilo\"", "Techo teórico\n(pico perfecto)", "Objetivo\noriginal 8%"]
-vals = [10.74, 10.0, 7.01, 8.0]
+vals = [10.74, 10.0, 6.66, 8.0]
 colores = [BLUE, AQUA, MUTED, RED]
 barras = ax.bar(etapas, vals, color=colores, width=0.55)
 etiquetas_barras(ax, barras, "{:.2f}%", fontweight="bold")
-ax.set_ylim(0, 12.5)
+ax.set_ylim(0, 13.5)
 ax.set_ylabel("MAPE (%)")
-ax.set_title("¿Se puede llegar a 8%? El techo teórico (acertando PERFECTO\nen las 6 horas más difíciles del día) es 7.01%", fontsize=12, color=INK, pad=14)
+ax.set_title("¿Se puede llegar a 8%? El techo teórico (acertando PERFECTO\nen las 6 horas más difíciles del día) es 6.66%", fontsize=12, color=INK, pad=14)
 limpiar_ejes(ax)
 plt.tight_layout()
 plt.savefig(OUT / "fig7_techo_8pct.png", dpi=200)

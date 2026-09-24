@@ -32,7 +32,7 @@ warnings.filterwarnings("ignore")
 sys.path.insert(0, str(Path(__file__).parent))
 from o6_comun import cargar_completo, RES
 
-PICO = [18, 19, 20]
+PICO = [0, 8, 9, 10, 18, 19]  # corregido: las 6 horas que mas aportan al MAPE (nlargest), no solo 18-20
 ESTADO = ["precio_bolsa", "precio_media_24h", "precio_media_7d", "precio_media_30d",
           "precio_std_24h", "precio_std_7d", "precio_rango_24h", "ratio_volatilidad",
           "volumen_embalses", "volumen_embalses_vs_media30d", "volumen_embalses_delta_1d",
@@ -101,7 +101,7 @@ def main():
           f"eran de verdad del 20% peor (azar daria 20%)")
     # comparacion: la hora del reloj sola
     auc_hora = roc_auc_score(y_bin, d["hora"].isin(PICO).astype(int))
-    print(f"  Para referencia, usar solo 'es hora pico 18-20': AUC = {auc_hora:.3f}")
+    print(f"  Para referencia, usar solo 'es hora pico {PICO}': AUC = {auc_hora:.3f}")
 
     # ---------- C) valor practico del enrutamiento ----------
     print(f"\n{'='*88}\nC) SI SE ENRUTARA EL X% MAS RIESGOSO A UN MODELO PERFECTO\n{'='*88}")
@@ -119,7 +119,7 @@ def main():
         pk = d["hora"].isin(PICO).to_numpy()
         idx_pk = np.where(pk)[0][:k]
         a3 = ape.copy(); a3[idx_pk] = 0
-        print(f"  {pct:2d}% -> clasificador: {a1.mean():5.2f}%  |  por hora 18-20: {a3.mean():5.2f}%  "
+        print(f"  {pct:2d}% -> clasificador: {a1.mean():5.2f}%  |  por hora {PICO}: {a3.mean():5.2f}%  "
               f"|  ORACULO: {a2.mean():5.2f}%")
 
     print(f"\nLISTO en {(time.time()-t0)/60:.1f} min")

@@ -38,7 +38,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from stacking_24h_v2 import cargar as cargar24, BASE5, pesos_lad
 from o6_comun import cargar_completo, RES
 
-PICO = [18, 19, 20]
+PICO = [0, 8, 9, 10, 18, 19]  # corregido: las 6 horas que mas aportan al MAPE (nlargest), no solo 18-20
 ESTADO = ["precio_bolsa", "precio_media_24h", "precio_media_7d", "precio_std_24h", "precio_std_7d",
           "ratio_volatilidad", "precio_rango_24h", "volumen_embalses_vs_media30d",
           "aportes_hidricos_vs_media30d", "demanda_media_24h"]

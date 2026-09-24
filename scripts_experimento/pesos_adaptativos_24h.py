@@ -32,7 +32,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from stacking_24h_v2 import cargar as cargar24, BASE5, pesos_lad
 from o6_comun import RES
 
-PICO = [18, 19, 20]
+PICO = [0, 8, 9, 10, 18, 19]  # corregido: las 6 horas que mas aportan al MAPE (nlargest), no solo 18-20
 MIN_DIAS = 21
 
 

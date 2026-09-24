@@ -33,7 +33,7 @@ from stacking_24h_v2 import cargar as cargar24, BASE5
 from qra_bandas import ajustar_cuantil
 from o6_comun import RES
 
-PICO = [18, 19, 20]
+PICO = [0, 8, 9, 10, 18, 19]  # corregido: las 6 horas que mas aportan al MAPE (nlargest), no solo 18-20
 SEMILLAS = list(range(10))
 MIN_DIAS = 21
 

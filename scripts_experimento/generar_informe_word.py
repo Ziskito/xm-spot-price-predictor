@@ -195,15 +195,42 @@ p("Ambos horizontes se resuelven con un ensamble (combinación ponderada) de mod
   "están correlacionados entre sí, no de que un modelo individual sea el mejor posible.")
 
 doc.add_heading("3.1 Modelo de 24 horas — MAE 41.29, MAPE 10.74%, sMAPE 10.07%", level=2)
-p("Combina modelos de familias distintas — persistencia, gradient boosting (XGBoost/CatBoost), "
-  "econométrico (ARX+GARCH), deep learning (N-BEATSx, N-HiTS), un modelo de dos etapas tipo "
-  "hurdle, Markov-Switching, un filtro recursivo, y un modelo LE-GARCH-t (lineal con selección "
-  "LASSO + GARCH + errores de colas pesadas, tomado del modelo ganador del paper neozelandés) —, "
-  "con pesos ajustados por franja horaria de 6 horas usando un combinador de mínima desviación "
-  "absoluta ponderado por la métrica que se reporta (MAPE/sMAPE), en vez de por error cuadrático. "
-  "Esa alineación entre el objetivo del combinador y la métrica reportada resultó, de forma "
-  "verificada, en una mejora simultánea de MAE, MAPE y sMAPE — un efecto de regularización: "
-  "reduce la influencia de los días de precio muy alto sobre el ajuste de pesos.")
+p("Combina 6 modelos de familias distintas — persistencia, gradient boosting (XGBoost), "
+  "econométrico (ARX+GARCH), deep learning (N-BEATSx, N-HiTS), y un modelo LE-GARCH-t (lineal "
+  "con selección LASSO + GARCH + errores de colas pesadas, tomado del modelo ganador de un "
+  "estudio sobre el mercado neozelandés) —, con pesos ajustados por franja horaria de 6 horas "
+  "usando un combinador de mínima desviación absoluta ponderado por la métrica que se reporta "
+  "(MAPE/sMAPE), en vez de por error cuadrático. Esa alineación entre el objetivo del combinador "
+  "y la métrica reportada resultó, de forma verificada, en una mejora simultánea de MAE, MAPE y "
+  "sMAPE — un efecto de regularización: reduce la influencia de los días de precio muy alto "
+  "sobre el ajuste de pesos.")
+
+p("Qué hace cada uno de los 6 modelos, en términos simples:", bold=True, space_after=4)
+add_table(["Modelo", "Idea central"], [
+    ["Persistencia", "Predice que el precio de una hora será igual al de la misma hora, una "
+     "semana atrás. Es la comparación \"ingenua\" de referencia: si un modelo no le gana a esto, "
+     "no aporta nada."],
+    ["XGBoost (gradient boosting)", "Construye cientos de árboles de decisión pequeños en "
+     "secuencia, cada uno corrigiendo los errores del anterior. Bueno para capturar relaciones "
+     "no obvias entre variables (p. ej. \"si el embalse está bajo y es diciembre, el precio sube "
+     "más de lo normal\") sin que haya que programarlas a mano."],
+    ["ARX+GARCH", "Modelo econométrico en dos partes: una parte lineal predice el nivel del "
+     "precio a partir de su propio pasado y de variables como demanda o hidrología, y una parte "
+     "GARCH modela cómo la volatilidad del error se agrupa en el tiempo (los períodos inestables "
+     "tienden a seguir siendo inestables)."],
+    ["N-BEATSx / N-HiTS", "Redes neuronales diseñadas específicamente para pronóstico de series "
+     "de tiempo (no son redes genéricas adaptadas). Descomponen la señal del precio en "
+     "componentes de distinta escala (tendencia, estacionalidad) y aceptan variables externas "
+     "como hidrología, ONI y calendario."],
+    ["LE-GARCH-t", "El más reciente: lineal con selección automática de variables (LASSO) y "
+     "errores de \"colas pesadas\" (distribución t de Student en vez de normal), que resta peso "
+     "a los días de precio extremo al momento de ajustar el modelo — tomado del modelo ganador "
+     "de un estudio sobre el mercado neozelandés."],
+], widths=[4.5, 11.5], small=True)
+p("CatBoost, un modelo de dos etapas (\"hurdle\"), Markov-Switching y un filtro recursivo "
+  "(RecursiveLS) también se probaron como votantes adicionales, pero se descartaron: sumarlos "
+  "empeoraba el resultado del ensamble de forma estadísticamente significativa (documentado en "
+  "el informe comparativo de modelos del proyecto).", italic=True, size=9.5, color=GRIS)
 
 add_pic("fig1_evolucion_24h.png", 6.0)
 
@@ -220,6 +247,25 @@ p("El tramo 1-24h de este horizonte se resuelve reutilizando directamente el ens
   "medio. Esta corrección solo cubre los pasos 1-23; los tramos 25-72h no tienen todavía una "
   "mejora equivalente confirmada.")
 
+p("Qué hace cada modelo, en términos simples:", bold=True, space_after=4)
+add_table(["Modelo", "Idea central"], [
+    ["LEAR", "El benchmark de referencia del campo: una regresión lineal con selección "
+     "automática de variables por LASSO — de decenas de variables candidatas (precio en "
+     "distintos momentos del pasado, calendario, festivos), el LASSO elige solo las que de "
+     "verdad aportan y descarta el resto, evitando sobreajuste. Se entrena un modelo separado "
+     "para cada uno de los 72 pasos del horizonte."],
+    ["N-BEATSx / N-BEATSx-exógeno", "La misma red neuronal de pronóstico descrita en la Sección "
+     "3.1, entrenada aquí para cubrir el horizonte completo de 72 horas de una sola vez; la "
+     "versión \"exógeno\" usa un conjunto más amplio de variables externas."],
+    ["Persistencia estacional", "Predice que el precio de una hora futura será igual al de la "
+     "misma hora, la semana pasada — captura el patrón semanal del mercado (un lunes se parece a "
+     "otro lunes) sin necesitar ningún ajuste."],
+    ["\"Puente\" (pasos 1-23)", "No es un modelo nuevo: para las primeras 23 horas del horizonte "
+     "de 72h, en vez de usar los cuatro modelos generalistas de arriba, se reutiliza directamente "
+     "el ensamble completo de 24 horas de la Sección 3.1 (con sus 6 modelos) como un solo votante "
+     "adicional — es el canal más preciso disponible para ese tramo."],
+], widths=[4.5, 11.5], small=True)
+
 add_pic("fig3_tramos_puente.png", 6.0)
 
 add_table(["Tramo", "MAE", "MAPE", "sMAPE"], [
@@ -231,11 +277,18 @@ add_table(["Tramo", "MAE", "MAPE", "sMAPE"], [
 
 doc.add_heading("3.3 Dónde vive el error residual", level=2)
 add_pic("fig4_error_por_hora.png", 6.0)
-p("El pico vespertino (18-20h) concentra el 37.8% del error total del modelo de 24h. Ahí, el "
-  "78.8% del error es varianza genuina (no sesgo corregible): picos de precio que dependen de qué "
-  "unidad de generación entra a cubrir la demanda en ese momento — información de ofertas por "
-  "unidad e indisponibilidades programadas que hoy está fuera del alcance de datos del proyecto "
-  "(Sección 1), no un problema de modelado. La Sección 5 cuantifica el techo que esto impone.")
+p("Seis horas del día concentran el 37.8% del error total del modelo de 24h: la medianoche (0h), "
+  "la media mañana (8-10h) y el inicio de la noche (18-19h). En esas seis horas el sesgo explica "
+  "apenas el 8.4% del error — el 91.6% restante es varianza genuina, no un error de modelado "
+  "corregible: picos de precio que dependen de qué unidad de generación entra a cubrir la demanda "
+  "en ese momento, información de ofertas por unidad e indisponibilidades programadas que hoy está "
+  "fuera del alcance de datos del proyecto (Sección 1). La Sección 6 cuantifica el techo que esto "
+  "impone.")
+p("Nota sobre la medianoche: el precio de bolsa da un salto grande al cambiar de día de despacho "
+  "(en 2026, 56.5 COP/kWh de diferencia media entre las 23:00 y las 00:00, frente a 7.4 entre las "
+  "00:00 y la 01:00). Ese salto es la razón de que la hora 0 sea una de las más difíciles del día "
+  "y de que el origen del pronóstico importe tanto en ese punto.", italic=True, size=9.5,
+  color=GRIS)
 
 doc.add_page_break()
 
@@ -283,11 +336,22 @@ add_pic("fig5_comparacion_papers.png", 6.5,
         "entre sí).")
 
 p("El resultado más sólido: MASE < 1 significa \"le gana al pronóstico ingenuo\". Este proyecto "
-  "da MASE 0.943; los 34 modelos del paper neozelandés (Kapoor & Wichitaksorn, 2023) tienen todos "
-  "MASE > 1.26 — ninguno le gana a su propio ingenuo. Los cuatro estudios internacionales "
-  "coinciden, además, en un hallazgo que ya se había adoptado en este proyecto por evidencia "
-  "propia antes de conocerlos: modelos simples con buena selección de variables (lineales "
+  "da MASE 0.914; los 33 modelos del paper neozelandés (Kapoor & Wichitaksorn, 2023) tienen todos "
+  "MASE > 1.26 — ninguno le gana a su propio ingenuo (el mejor es LE-GARCH-t con 1.2626 en Central "
+  "North Island; el peor, RFE-GARCH con 2.5001 en Lower South Island). Los cuatro estudios "
+  "internacionales coinciden, además, en un hallazgo que ya se había adoptado en este proyecto por "
+  "evidencia propia antes de conocerlos: modelos simples con buena selección de variables (lineales "
   "regularizados, pesos por franja horaria) igualan o superan al deep learning complejo.")
+
+p("Salvedad sobre esta comparación, verificada contra las Tablas 5, 6 y 8 del paper original. "
+  "Kapoor & Wichitaksorn transforman los precios antes de modelar (Box-Cox o Yeo-Johnson, seguido "
+  "de escalado min-max), porque su serie es muy asimétrica. El MASE es invariante al escalado "
+  "lineal — se cancela en el cociente — pero no a la transformación logarítmica. Su MASE está por "
+  "tanto medido sobre precio transformado y el de este proyecto sobre COP/kWh crudos: no son "
+  "exactamente la misma cantidad. Sumado a que ellos pronostican precio diario y este proyecto "
+  "precio horario, la lectura honesta de esta comparación es \"nuestro modelo supera a su propio "
+  "ingenuo en una tarea más difícil, cosa que ninguno de los suyos logra en la más fácil\", nunca "
+  "una comparación numérica directa.")
 
 doc.add_page_break()
 
@@ -298,7 +362,7 @@ doc.add_heading("6. Por qué el error tiene un límite con los datos actuales", 
 add_pic("fig7_techo_8pct.png", 6.0)
 p("A 24h, el ensamble está en meseta (agregar más votantes o afinar la granularidad de pesos no "
   "da mejoras significativas), y el techo teórico — acertando perfecto en las 6 horas más "
-  "difíciles del día — es 7.01% de MAPE. Bajar más exigiría información nueva (ofertas por unidad "
+  "difíciles del día — es 6.66% de MAPE. Bajar más exigiría información nueva (ofertas por unidad "
   "de generación, indisponibilidades programadas), no más modelado sobre las variables ya "
   "disponibles.")
 p("A 25-72h se probaron tres vías para extender la mejora del tramo 1-24h (trasladar el votante "
@@ -314,7 +378,7 @@ doc.add_heading("7. Conclusiones y recomendaciones", level=1)
 bullet("El sistema actual supera todos los modelos individuales probados internamente y los "
        "puntos de referencia disponibles en la literatura de mercados hidro-dominados, en las "
        "métricas que cada estudio reporta.")
-bullet("El error de 24h (MAPE 10.74%) está cerca de su límite teórico (7.01% en el mejor caso "
+bullet("El error de 24h (MAPE 10.74%) está cerca de su límite teórico (6.66% en el mejor caso "
        "posible) con los datos actuales.")
 bullet("El error de 72h se benefició de una corrección estructural grande en su primer día; los "
        "tramos 25-72h son la frontera de trabajo más clara para la siguiente ronda.")
@@ -342,7 +406,7 @@ refs = [
  "Diebold, F. X., Mariano, R. S. (1995). Comparing predictive accuracy. Journal of Business & "
  "Economic Statistics, 13(3).",
  "Gallón, S., Barrientos, J. (2021). Forecasting the Colombian Electricity Spot Price under a "
- "Functional Approach. International Journal of Energy Economics and Policy, 11(1).",
+ "Functional Approach. International Journal of Energy Economics and Policy, 11(2), 67-74.",
  "Herrera-Mejía, L. et al. (2025). Estudio de AES Colombia sobre clasificación de régimen de "
  "oferta de plantas hidroeléctricas individuales bajo riesgo de sequía. Smart Energy, Elsevier, "
  "diciembre 2025. Título exacto pendiente de verificar contra el PDF original.",
