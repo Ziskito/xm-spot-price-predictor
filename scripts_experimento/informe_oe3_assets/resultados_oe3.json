@@ -1,0 +1,243 @@
+{
+  "casos": {
+    "24h|generador": {
+      "metodo_promedio": "banda",
+      "metodo_estable": "hibrido",
+      "es_estable": true,
+      "metodos": {
+        "banda": {
+          "ventaja_anio": 345.6437850980312,
+          "frec_anio": 0.16897081413210446,
+          "ventaja_h1": 185.73789539016911,
+          "frec_h1": 0.01152073732718894,
+          "ventaja_h2": 162.45350158378972,
+          "frec_h2": 0.32642089093702,
+          "estable": false
+        },
+        "fijo": {
+          "ventaja_anio": 313.3418987482449,
+          "frec_anio": 0.37557603686635943,
+          "ventaja_h1": 305.73147305683574,
+          "frec_h1": 0.026497695852534562,
+          "ventaja_h2": 125.03511778633344,
+          "frec_h2": 0.7246543778801844,
+          "estable": false
+        },
+        "rodante": {
+          "ventaja_anio": 244.07966629292974,
+          "frec_anio": 0.2935867895545315,
+          "ventaja_h1": 110.84553298123427,
+          "frec_h1": 0.18625192012288785,
+          "ventaja_h2": 201.16630520035494,
+          "frec_h2": 0.4009216589861751,
+          "estable": false
+        },
+        "hibrido": {
+          "ventaja_anio": 166.8163741484663,
+          "frec_anio": 0.19450844854070662,
+          "ventaja_h1": 78.07016720618134,
+          "frec_h1": 0.1662826420890937,
+          "ventaja_h2": 183.45938789575723,
+          "frec_h2": 0.2227342549923195,
+          "estable": true
+        }
+      }
+    },
+    "24h|comercializador": {
+      "metodo_promedio": "banda",
+      "metodo_estable": "rodante",
+      "es_estable": true,
+      "metodos": {
+        "banda": {
+          "ventaja_anio": 281.6289311778604,
+          "frec_anio": 0.1434331797235023,
+          "ventaja_h1": 85.8863486432982,
+          "frec_h1": 0.2868663594470046,
+          "ventaja_h2": null,
+          "frec_h2": 0.0,
+          "estable": false
+        },
+        "fijo": {
+          "ventaja_anio": 281.42418225105985,
+          "frec_anio": 0.14400921658986174,
+          "ventaja_h1": 85.8863486432982,
+          "frec_h1": 0.2868663594470046,
+          "ventaja_h2": 426.1842820122888,
+          "frec_h2": 0.001152073732718894,
+          "estable": false
+        },
+        "hibrido": {
+          "ventaja_anio": 224.980887203917,
+          "frec_anio": 0.10752688172043011,
+          "ventaja_h1": 82.67326022573624,
+          "frec_h1": 0.15130568356374807,
+          "ventaja_h2": 293.8959246227305,
+          "frec_h2": 0.06374807987711213,
+          "estable": false
+        },
+        "rodante": {
+          "ventaja_anio": 169.5769710215862,
+          "frec_anio": 0.14592933947772657,
+          "ventaja_h1": 82.67326022573624,
+          "frec_h1": 0.15130568356374807,
+          "ventaja_h2": 248.1542107554581,
+          "frec_h2": 0.14055299539170507,
+          "estable": true
+        }
+      }
+    },
+    "72h|generador": {
+      "metodo_promedio": "banda",
+      "metodo_estable": "hibrido",
+      "es_estable": true,
+      "metodos": {
+        "banda": {
+          "ventaja_anio": 299.7318182181112,
+          "frec_anio": 0.19521604938271606,
+          "ventaja_h1": 144.05040650993024,
+          "frec_h1": 0.04436728395061729,
+          "ventaja_h2": 148.19151898395887,
+          "frec_h2": 0.3460648148148148,
+          "estable": false
+        },
+        "fijo": {
+          "ventaja_anio": 278.55183824102375,
+          "frec_anio": 0.41030092592592593,
+          "ventaja_h1": 197.89573003959944,
+          "frec_h1": 0.061342592592592594,
+          "ventaja_h2": 104.24183257339655,
+          "frec_h2": 0.7592592592592593,
+          "estable": false
+        },
+        "rodante": {
+          "ventaja_anio": 203.9096512969623,
+          "frec_anio": 0.30844907407407407,
+          "ventaja_h1": 98.5219594257355,
+          "frec_h1": 0.21257716049382716,
+          "ventaja_h2": 166.02682382068133,
+          "frec_h2": 0.404320987654321,
+          "estable": false
+        },
+        "hibrido": {
+          "ventaja_anio": 149.8734345645667,
+          "frec_anio": 0.23032407407407407,
+          "ventaja_h1": 73.34984053281354,
+          "frec_h1": 0.19058641975308643,
+          "ventaja_h2": 145.9853533566138,
+          "frec_h2": 0.2700617283950617,
+          "estable": true
+        }
+      }
+    },
+    "72h|comercializador": {
+      "metodo_promedio": "banda",
+      "metodo_estable": "rodante",
+      "es_estable": true,
+      "metodos": {
+        "banda": {
+          "ventaja_anio": 279.4659199433317,
+          "frec_anio": 0.11824845679012345,
+          "ventaja_h1": 82.88915541575888,
+          "frec_h1": 0.2361111111111111,
+          "ventaja_h2": 388.54865731481476,
+          "frec_h2": 0.00038580246913580245,
+          "estable": false
+        },
+        "fijo": {
+          "ventaja_anio": 279.1809208368714,
+          "frec_anio": 0.11863425925925926,
+          "ventaja_h1": 82.88915541575888,
+          "frec_h1": 0.2361111111111111,
+          "ventaja_h2": 388.5486573148147,
+          "frec_h2": 0.0011574074074074073,
+          "estable": false
+        },
+        "hibrido": {
+          "ventaja_anio": 231.92829815917105,
+          "frec_anio": 0.11342592592592593,
+          "ventaja_h1": 71.87020165823674,
+          "frec_h1": 0.17515432098765432,
+          "ventaja_h2": 304.4356696282475,
+          "frec_h2": 0.05169753086419753,
+          "estable": false
+        },
+        "rodante": {
+          "ventaja_anio": 156.77559686765449,
+          "frec_anio": 0.16068672839506173,
+          "ventaja_h1": 71.87020165823674,
+          "frec_h1": 0.17515432098765432,
+          "ventaja_h2": 219.55409879238726,
+          "frec_h2": 0.14621913580246915,
+          "estable": true
+        }
+      }
+    }
+  },
+  "potencia_kw": 100,
+  "corte": "2026-04-19",
+  "precio_medio_2026": 398.4242647067901,
+  "barrido_percentiles": [
+    {
+      "par": "10/90",
+      "ventaja": 433.15739876643096,
+      "frec": 20.814132104454686
+    },
+    {
+      "par": "15/85",
+      "ventaja": 378.1273585602208,
+      "frec": 29.685099846390166
+    },
+    {
+      "par": "20/80",
+      "ventaja": 348.1586928373552,
+      "frec": 33.314132104454686
+    },
+    {
+      "par": "25/75",
+      "ventaja": 313.3418987482449,
+      "frec": 37.55760368663594
+    },
+    {
+      "par": "30/70",
+      "ventaja": 274.44141173274403,
+      "frec": 42.30030721966206
+    },
+    {
+      "par": "35/65",
+      "ventaja": 225.77174269890492,
+      "frec": 49.13594470046083
+    }
+  ],
+  "ultimo_mes": {
+    "inicio": "2026-07-07",
+    "fin": "2026-08-05",
+    "cobertura": 73.19444444444444,
+    "mae": 93.63700184722224,
+    "metodos": {
+      "fijo": {
+        "ventaja": 0.0,
+        "frec": 100.0,
+        "horas": 720,
+        "cop": 0.0
+      },
+      "rodante": {
+        "ventaja": 80.51687050244209,
+        "frec": 50.55555555555556,
+        "horas": 364,
+        "cop": 2930814.0862888917
+      },
+      "banda": {
+        "ventaja": -16.78511119336224,
+        "frec": 53.47222222222222,
+        "horas": 385,
+        "cop": -646226.7809444462
+      },
+      "hibrido": {
+        "ventaja": 58.82530499017798,
+        "frec": 25.13888888888889,
+        "horas": 181,
+        "cop": 1064738.0203222216
+      }
+    }
+  }
+}
