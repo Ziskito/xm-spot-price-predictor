@@ -1,0 +1,13 @@
+{
+ "filas_train": 60625,
+ "filas_test": 5185,
+ "cpu": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+ "python": "3.12.10",
+ "Persistencia_s": 5.299982149153948e-06,
+ "XGBoost_s": 0.8581293000024743,
+ "ARX+GARCH_s": 2.8455447999876924,
+ "GARCH-ged_s": 19.49032849998912,
+ "Combinador_sMAPE_s": 3.7209017999994103,
+ "N-BEATSx+N-HiTS_s": 408.0,
+ "N-BEATSx+N-HiTS_fuente": "logs_reentrenar_demanda.txt (2026-09-24, 1000 pasos cada red, CPU)"
+}

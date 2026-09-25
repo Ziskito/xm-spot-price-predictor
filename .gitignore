@@ -225,3 +225,5 @@ docs/papers/*.txt
 logs/
 # Metadatos de carpeta de Windows
 desktop.ini
+# Anexo 1 original (contiene cedulas y codigos; el repo es publico). Transcripcion sin datos sensibles: docs/ANEXO_1_formulacion_proyecto.md
+docs/Anexo 1_Formulaci*n del Proyecto*.pdf
