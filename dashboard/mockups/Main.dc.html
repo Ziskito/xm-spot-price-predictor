@@ -11,7 +11,14 @@
   <style>
     body { margin: 0; font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif; background: #F1F5F9; color: #0F172A; }
     a { color: #B45309; } a:hover { color: #92400E; }
-    .celda { flex: 1 1 0; text-align: center; font-size: 12px; padding: 9px 0; border-radius: 6px; color: #1E293B; }
+    .celda { flex: 1 1 0; text-align: center; font-size: 12px; padding: 9px 0; border-radius: 6px; color: #1E293B;
+              cursor: pointer; transition: transform .08s ease, box-shadow .08s ease; }
+    .celda:hover { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(15,23,42,0.18); }
+    .celda:active { transform: translateY(0); }
+    .celda-sel { outline: 2px solid #0F172A; font-weight: 800; }
+    .hora-step-btn { border: none; background: #F1F5F9; border-radius: 6px; width: 28px; height: 28px;
+                      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+    .hora-step-btn:hover { background: #E2E8F0; }
   </style>
 </helmet>
 
@@ -83,19 +90,21 @@
       </div>
       <div style="flex: 1 1 0;">
         <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">Hora del día</div>
-        <div style="padding: 14px 4px 0;">
-          <div style="position: relative; height: 6px; background: #DBEAFE; border-radius: 3px;">
-            <div style="position: absolute; left: 0; width: 35%; height: 6px; background: #15803D; border-radius: 3px;"></div>
-            <div style="position: absolute; left: 35%; top: -6px; width: 18px; height: 18px; border-radius: 50%; background: #15803D; transform: translateX(-9px); border: 2px solid #FFFFFF;"></div>
-            <div style="position: absolute; left: 35%; top: -24px; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: #0F172A;">8</div>
-          </div>
+        <div style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 7px 10px; background: #FFFFFF; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <button class="hora-step-btn" onclick="cambiarHora(-1)" aria-label="Hora anterior">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span id="hora-label" style="font-weight: 700; color: #0F172A; font-size: 15px;">08:00 h</span>
+          <button class="hora-step-btn" onclick="cambiarHora(1)" aria-label="Hora siguiente">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
         </div>
       </div>
     </div>
 
     <!-- HERO -->
     <div style="border: 1px solid #E2E8F0; border-left: 7px solid #B45309; border-radius: 18px; background: #FFFFFF; padding: 22px 24px; box-shadow: 0 1px 2px rgba(15,23,42,0.05); margin-bottom: 16px;">
-      <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B;">Recomendación &middot; 05/08/2026 &middot; 08:00 h &middot; rol generador</div>
+      <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B;">Recomendación &middot; 05/08/2026 &middot; <span id="hero-hora">08:00 h</span> &middot; rol generador</div>
       <div style="font-size: 33px; font-weight: 800; color: #B45309; margin: 4px 0 8px; line-height: 1.1;">ESPERAR</div>
       <div style="font-size: 16px; color: #334155; max-width: 62ch;">El precio esperado está alto, pero el pronóstico de esta hora es muy incierto (banda ancha). El motor prefiere esperar antes que arriesgarse con una señal poco confiable.</div>
 
@@ -117,32 +126,32 @@
     <!-- franja -->
     <div style="font-weight: 700; margin-bottom: 8px;">El día, hora por hora</div>
     <div style="display: flex; gap: 3px; margin-bottom: 6px;">
-      <div class="celda" style="background: #DCFCE7;">00</div>
-      <div class="celda" style="background: #FEF3C7;">01</div>
-      <div class="celda" style="background: #FEF3C7;">02</div>
-      <div class="celda" style="background: #FEF3C7;">03</div>
-      <div class="celda" style="background: #FEF3C7;">04</div>
-      <div class="celda" style="background: #FEF3C7;">05</div>
-      <div class="celda" style="background: #FEF3C7;">06</div>
-      <div class="celda" style="background: #FEF3C7;">07</div>
-      <div class="celda" style="background: #FEF3C7; outline: 2px solid #0F172A; font-weight: 800;">08</div>
-      <div class="celda" style="background: #DCFCE7;">09</div>
-      <div class="celda" style="background: #DCFCE7;">10</div>
-      <div class="celda" style="background: #DCFCE7;">11</div>
-      <div class="celda" style="background: #DCFCE7;">12</div>
-      <div class="celda" style="background: #DCFCE7;">13</div>
-      <div class="celda" style="background: #DCFCE7;">14</div>
-      <div class="celda" style="background: #DCFCE7;">15</div>
-      <div class="celda" style="background: #DCFCE7;">16</div>
-      <div class="celda" style="background: #DCFCE7;">17</div>
-      <div class="celda" style="background: #DCFCE7;">18</div>
-      <div class="celda" style="background: #DCFCE7;">19</div>
-      <div class="celda" style="background: #DCFCE7;">20</div>
-      <div class="celda" style="background: #DCFCE7;">21</div>
-      <div class="celda" style="background: #FEF3C7;">22</div>
-      <div class="celda" style="background: #FEF3C7;">23</div>
+      <div class="celda" data-hora="0" onclick="seleccionarHora(0)" style="background: #DCFCE7;">00</div>
+      <div class="celda" data-hora="1" onclick="seleccionarHora(1)" style="background: #FEF3C7;">01</div>
+      <div class="celda" data-hora="2" onclick="seleccionarHora(2)" style="background: #FEF3C7;">02</div>
+      <div class="celda" data-hora="3" onclick="seleccionarHora(3)" style="background: #FEF3C7;">03</div>
+      <div class="celda" data-hora="4" onclick="seleccionarHora(4)" style="background: #FEF3C7;">04</div>
+      <div class="celda" data-hora="5" onclick="seleccionarHora(5)" style="background: #FEF3C7;">05</div>
+      <div class="celda" data-hora="6" onclick="seleccionarHora(6)" style="background: #FEF3C7;">06</div>
+      <div class="celda" data-hora="7" onclick="seleccionarHora(7)" style="background: #FEF3C7;">07</div>
+      <div class="celda celda-sel" data-hora="8" onclick="seleccionarHora(8)" style="background: #FEF3C7;">08</div>
+      <div class="celda" data-hora="9" onclick="seleccionarHora(9)" style="background: #DCFCE7;">09</div>
+      <div class="celda" data-hora="10" onclick="seleccionarHora(10)" style="background: #DCFCE7;">10</div>
+      <div class="celda" data-hora="11" onclick="seleccionarHora(11)" style="background: #DCFCE7;">11</div>
+      <div class="celda" data-hora="12" onclick="seleccionarHora(12)" style="background: #DCFCE7;">12</div>
+      <div class="celda" data-hora="13" onclick="seleccionarHora(13)" style="background: #DCFCE7;">13</div>
+      <div class="celda" data-hora="14" onclick="seleccionarHora(14)" style="background: #DCFCE7;">14</div>
+      <div class="celda" data-hora="15" onclick="seleccionarHora(15)" style="background: #DCFCE7;">15</div>
+      <div class="celda" data-hora="16" onclick="seleccionarHora(16)" style="background: #DCFCE7;">16</div>
+      <div class="celda" data-hora="17" onclick="seleccionarHora(17)" style="background: #DCFCE7;">17</div>
+      <div class="celda" data-hora="18" onclick="seleccionarHora(18)" style="background: #DCFCE7;">18</div>
+      <div class="celda" data-hora="19" onclick="seleccionarHora(19)" style="background: #DCFCE7;">19</div>
+      <div class="celda" data-hora="20" onclick="seleccionarHora(20)" style="background: #DCFCE7;">20</div>
+      <div class="celda" data-hora="21" onclick="seleccionarHora(21)" style="background: #DCFCE7;">21</div>
+      <div class="celda" data-hora="22" onclick="seleccionarHora(22)" style="background: #FEF3C7;">22</div>
+      <div class="celda" data-hora="23" onclick="seleccionarHora(23)" style="background: #FEF3C7;">23</div>
     </div>
-    <div style="font-size: 13px; color: #64748B; margin-bottom: 18px;"><b style="color: #334155;">Verde</b> = hora para despachar y vender &nbsp;&middot;&nbsp; <b style="color: #334155;">rojo</b> = hora para retener generación &nbsp;&middot;&nbsp; <b style="color: #334155;">ámbar</b> = esperar. Recuadro negro = la hora seleccionada.</div>
+    <div style="font-size: 13px; color: #64748B; margin-bottom: 18px;"><b style="color: #334155;">Verde</b> = hora para despachar y vender &nbsp;&middot;&nbsp; <b style="color: #334155;">rojo</b> = hora para retener generación &nbsp;&middot;&nbsp; <b style="color: #334155;">ámbar</b> = esperar. Recuadro negro = la hora seleccionada &mdash; haz clic en cualquier celda para elegirla directamente, sin mover el control de arriba.</div>
 
     <!-- indicadores -->
     <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;">
@@ -180,6 +189,24 @@
     <div style="font-size: 13px; color: #64748B; margin-top: 8px;">Regla activa: <b style="color: #334155;">banda</b>. La elige el motor automáticamente porque dio la mejor ventaja económica en el backtest 2026 entre los métodos que actúan una fracción razonable del tiempo (10&ndash;40%). Para ver la comparación o forzar otro método, entra a la vista Analista.</div>
   </div>
 </div>
+<script>
+  function seleccionarHora(hora) {
+    document.querySelectorAll('.celda').forEach(function (c) { c.classList.remove('celda-sel'); });
+    var celda = document.querySelector('.celda[data-hora="' + hora + '"]');
+    if (celda) celda.classList.add('celda-sel');
+    var etiqueta = String(hora).padStart(2, '0') + ':00 h';
+    var label = document.getElementById('hora-label');
+    if (label) label.textContent = etiqueta;
+    var heroHora = document.getElementById('hero-hora');
+    if (heroHora) heroHora.textContent = etiqueta;
+  }
+  function cambiarHora(delta) {
+    var actual = document.querySelector('.celda-sel');
+    var horaActual = actual ? parseInt(actual.getAttribute('data-hora'), 10) : 8;
+    var nueva = (horaActual + delta + 24) % 24;
+    seleccionarHora(nueva);
+  }
+</script>
 </x-dc>
 <script data-dc-script data-props='{"$preview":{"width":1440,"height":1270}}'>
 class Component extends DCLogic {}

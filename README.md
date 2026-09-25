@@ -316,6 +316,106 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
 
+### 2026-09-24 (tarde) — Motor de decisión: método `hibrido`, selección "estable" del ganador, y arreglo del filtro de fechas en Analista
+
+Implementado en `src/motor_decision.py` y `dashboard/app.py`, siguiendo el hallazgo de la entrada
+anterior (misma fecha, barrido de sensibilidad) de que `banda` gana el backtest del año completo
+pero pierde feo en la mitad más reciente del periodo.
+
+**Cambios:**
+
+1. **Método `hibrido`** (nuevo, cuarto valor de `METODOS`): umbral **rodante** (se adapta al régimen
+   reciente) + el mismo filtro de "esperar si la banda es ancha" que ya usaba `banda` (que a su vez
+   usa el umbral **fijo**). Nunca se había probado esa combinación.
+2. **`comparar_metodos_estable()` / `elegir_mejor_metodo_estable()`** (nuevas funciones): en vez de
+   elegir el método con mejor ventaja *promedio* del periodo completo (lo que hace
+   `elegir_mejor_metodo()`), parten el periodo en dos mitades y eligen el que mejor se sostiene en su
+   **mitad más débil** (criterio maximin). Un método solo se marca "estable" si su frecuencia de
+   acción es válida (10-40%) **y** su ventaja es ≥0 en las **dos** mitades, no solo en promedio.
+3. **La vista Operador ahora usa la selección estable**, no la de promedio — es la que se presenta
+   como "el motor eligió esto automáticamente", así que se le exige más que un buen promedio.
+   Resultado con esto activo: para **generador** el ganador estable pasa de `banda` a `hibrido`
+   (24h y 72h); para **comercializador**, de `banda` a `rodante` (24h y 72h) — los cuatro casos
+   quedan marcados como `estable=True`.
+4. **Arreglado un bug real en la vista Analista**: el slider de "Rango de fechas" filtraba el backtest
+   del método ya seleccionado, pero **no** recalculaba cuál método quedaba "sugerido" — ese sugerido
+   siempre venía del año completo, sin importar qué rango se eligiera. Ahora `comparacion()` acepta
+   `inicio`/`fin` opcionales y el sugerido responde al rango filtrado. Verificado: con el rango
+   completo el sugerido es `banda`; filtrando al último mes, cambia a `hibrido` — el bug era real y
+   ocultaba exactamente el problema que motivó este cambio.
+
+Verificado con `streamlit.testing.v1.AppTest`: sin excepciones en las 4 combinaciones rol×horizonte,
+en la selección manual de `hibrido` en Analista, y confirmado que el filtro de fechas ahora sí cambia
+el método sugerido.
+
+**Nota de investigación pendiente — esto NO tiene todavía respaldo de literatura, no implementar más
+sobre esta base sin revisar primero:** el método `hibrido` es una combinación de piezas ya validadas
+por separado, no una técnica citada; y el criterio maximin de dos mitades fijas es razonable pero
+no es más que una elección de ingeniería propia (ver `docs/Informe_Diseno_Motor_Decision_Dashboard.docx`
+para el resto de decisiones en la misma situación). Antes de defender esto formalmente o de seguir
+construyendo encima, hay que leer:
+
+- **Wald (1950), "Statistical Decision Functions"** — el origen del criterio maximin/minimax usado
+  para "elegir por la peor mitad, no por el promedio". Confirmar que la forma en que se aplicó aquí
+  (dos mitades fijas del año) es una instancia razonable de ese criterio, o si conviene una versión
+  más formal (ej. más de 2 sub-periodos, ponderación en vez de corte duro).
+- **Garivier & Moulines (2011), "On Upper-Confidence Bound Policies for Non-Stationary Bandit
+  Problems"** — el marco formal más cercano a "elegir automáticamente la mejor opción entre varias
+  cuando el entorno cambia con el tiempo" (aquí, los 4 métodos serían los "brazos"). Revisar si su
+  mecanismo de ventana deslizante da una base más sólida que el corte fijo en dos mitades.
+- **Cesa-Bianchi & Lugosi (2006), "Prediction, Learning, and Games"** — aprendizaje con expertos:
+  combinar/elegir entre reglas según desempeño reciente, con garantías matemáticas. Relevante si se
+  quiere reemplazar el corte de dos mitades por una ponderación continua.
+- **Gama, Žliobaitė, Bifet, Pechenizkiy & Bouchachia (2014), "A Survey on Concept Drift Adaptation"**,
+  ACM Computing Surveys — survey sobre cómo detectar y adaptarse a que la distribución de los datos
+  cambió (el fenómeno de fondo detrás de todo esto: el precio de 2026 se alejó del histórico
+  2019-2025).
+
+Mientras esa revisión no se haga, tratar `hibrido` y la selección "estable" como una mejora empírica
+razonable (se probó y funcionó mejor que las alternativas en los datos disponibles), no como una
+técnica con respaldo formal — la diferencia importa si se defiende esto ante los asesores.
+
+### 2026-09-24 — Barrido de sensibilidad de los parámetros del motor de decisión (OE3): percentiles, ventana rodante y ancho de banda
+
+Se probó si los valores por defecto de `src/motor_decision.py` (percentiles 25/75, ventana del método
+`rodante` = 30 días, percentil de ancho de banda del método `banda` = 75) son razonables o si otro
+valor da una ventaja económica claramente mejor. Barrido: percentiles 10/90 a 35/65, ventana rodante
+7/14/30/60/90 días, percentil de banda 60-90, sobre las bandas de 24h y 72h, ambos roles. Para evitar
+reportar un "óptimo" que en realidad sea sobreajuste a un solo periodo, además del promedio del
+holdout 2026 completo se evaluó cada valor por separado en las dos mitades del año (ene-abr / may-ago,
+el mismo corte ya usado para diagnosticar el cambio de régimen de precio en la calibración de bandas).
+
+**Resultado 1 — los 3 valores por defecto se mantienen.** Ninguno quedó lejos de su mejor punto en el
+barrido: los percentiles 25/75 están cerca del mejor balance ventaja/frecuencia para el rol generador
+(y casi no afectan al comercializador, cuya ventaja es prácticamente plana en todo el rango probado);
+el percentil de banda 75 está a solo unos pocos COP/kWh del pico de una curva bastante plana (70-80);
+y la ventana de 30 días, aunque no da el promedio anual más alto (90 días se ve mejor en el agregado),
+es más estable entre las dos mitades del año que 90 días (ver Resultado 3). No se encontró evidencia
+que justifique cambiar ninguno de los tres.
+
+**Resultado 2 — el hallazgo más importante no es el percentil, es la inestabilidad del método `fijo`/
+`banda` dentro de un mismo año.** Para el rol generador, la frecuencia de acción pasa de ~0% en
+ene-abr a 50-90% en may-ago, **sin importar qué percentil se elija** — el precio de 2026 se disparó
+tan por encima del histórico 2019-2025 (la referencia que usa el método `fijo`) que un umbral fijo
+queda mal calibrado durante meses seguidos. Es una limitación estructural del método frente a un
+cambio de régimen, no un problema de tuning del valor exacto del percentil.
+
+**Resultado 3 — ejemplo concreto de por qué optimizar solo sobre el promedio anual puede engañar.**
+Para el método `rodante`, una ventana de 90 días da el mejor promedio del año completo, pero al separar
+por mitades mejora fuerte en ene-abr y empeora fuerte en may-ago (la ventana larga reacciona demasiado
+lento a la escalada de precio). La ventana de 30 días actual es más pareja entre ambos tramos, aunque
+su promedio anual sea menor que el de 90 días.
+
+**Siguiente paso sugerido** (no implementado todavía): en vez de seguir afinando el percentil exacto
+del método `fijo`, podría valer más la pena investigar cómo hacer que el umbral de referencia se
+adapte al régimen de precio vigente — en la línea de lo que ya hace la calibración adaptativa de las
+bandas de incertidumbre, pero para el umbral de decisión.
+
+Script del barrido no comiteado todavía (vive fuera del repo por ahora) — es una consulta rápida y
+reproducible en minutos con las funciones ya existentes en `motor_decision.py`, sin necesidad de
+entrenar nada; misma práctica que ya se usó en sesiones anteriores para análisis exploratorios que no
+ameritan quedar en el historial de inmediato.
+
 ### 2026-09-10 (tarde) — Notebook 10 reejecutada con festivos: confirma 2026, matiz en Origen 1 (2020, pandemia)
 
 `10_diebold_mariano_juan.ipynb` reejecutada con festivos integrados en las 5 familias de

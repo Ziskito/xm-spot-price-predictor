@@ -44,6 +44,7 @@ if str(RAIZ / "src") not in sys.path:
 
 from motor_decision import (  # noqa: E402
     generar_senales, evaluar_backtest, comparar_metodos, elegir_mejor_metodo,
+    comparar_metodos_estable, elegir_mejor_metodo_estable,
     cargar_fuente_pronostico, umbrales_fijos, umbrales_rodantes,
 )
 
@@ -102,14 +103,6 @@ h1, h2, h3, h4 { color: $tinta; }
 .chip-baja  { background: $rojo_bg; color: $rojo; }
 .chip-nota { color: $gris; font-size: .8rem; margin-left: 8px; }
 
-.franja { display: flex; gap: 3px; margin: 8px 0 4px; flex-wrap: wrap; }
-.celda { flex: 1 1 28px; min-width: 28px; text-align: center; font-size: .72rem;
-         padding: 9px 0; border-radius: 6px; color: #1E293B; }
-.celda-verde { background: $verde_bg; }
-.celda-rojo  { background: $rojo_bg; }
-.celda-ambar { background: $ambar_bg; }
-.celda-sel { outline: 2px solid $tinta; font-weight: 800; }
-
 .tarjetas { display: flex; gap: 12px; margin: 4px 0 8px; flex-wrap: wrap; }
 .stat { flex: 1 1 180px; background: $panel; border: 1px solid $linea;
         border-radius: 14px; padding: 14px 16px; }
@@ -162,12 +155,36 @@ def cargar_precio_historico():
 
 
 @st.cache_data
-def comparacion(horizonte, rol, p_bajo, p_alto):
-    """Corre el backtest de los 3 metodos y devuelve (tabla, metodo_sugerido, es_valido)."""
+def comparacion(horizonte, rol, p_bajo, p_alto, inicio=None, fin=None):
+    """Corre el backtest de los 4 metodos y devuelve (tabla, metodo_sugerido, es_valido).
+
+    Si se dan inicio/fin (fechas), la senal se calcula sobre TODA la serie
+    (continuidad para "rodante"/"hibrido") pero el backtest -- y por lo tanto
+    que metodo queda como "sugerido" -- se mide solo en ese rango. Antes del
+    2026-09-24 este rango se ignoraba: la vista Analista dejaba elegir un
+    rango de fechas pero el metodo sugerido seguia siendo el del año completo."""
     bandas, _ = cargar_bandas(horizonte)
-    tabla = comparar_metodos(bandas, rol, cargar_precio_historico(), p_bajo=p_bajo, p_alto=p_alto)
+    mascara = None
+    if inicio is not None and fin is not None:
+        mascara = (bandas["fecha_hora"].dt.date >= inicio) & (bandas["fecha_hora"].dt.date <= fin)
+    tabla = comparar_metodos(bandas, rol, cargar_precio_historico(),
+                              p_bajo=p_bajo, p_alto=p_alto, mascara_evaluacion=mascara)
     metodo, es_valido = elegir_mejor_metodo(tabla)
     return tabla, metodo, es_valido
+
+
+@st.cache_data
+def comparacion_estable(horizonte, rol):
+    """Version 'robusta' de comparacion(): en vez de elegir el metodo con
+    mejor ventaja PROMEDIO del año completo, elige el que mejor se sostiene
+    en su mitad mas debil (criterio maximin, ver comparar_metodos_estable()
+    en motor_decision.py). Usada por la vista Operador desde el 2026-09-24 --
+    antes, "banda" podia quedar como regla automatica aunque su buen promedio
+    dependiera casi todo de una sola mitad del año."""
+    bandas, _ = cargar_bandas(horizonte)
+    tabla = comparar_metodos_estable(bandas, rol, cargar_precio_historico())
+    metodo, es_estable = elegir_mejor_metodo_estable(tabla)
+    return tabla, metodo, es_estable
 
 
 # --------------------------------------------------------------------------
@@ -190,22 +207,51 @@ def pos_en_barra(valor, lo, hi):
 
 def umbrales_para_hora(bandas, metodo, precio_hist, idx, p_bajo, p_alto):
     """Devuelve (bajo, alto) efectivos en la fila `idx` de bandas para el metodo dado."""
-    if metodo == "rodante":
+    if metodo in ("rodante", "hibrido"):
         bajo_s, alto_s = umbrales_rodantes(bandas["q50"], 30, p_bajo, p_alto)
         return float(bajo_s.get(idx, np.nan)), float(alto_s.get(idx, np.nan))
     u = umbrales_fijos(precio_hist, p_bajo, p_alto)
     return u["bajo"], u["alto"]
 
 
-def franja_html(dia_df, rol, hora_sel):
-    celdas = []
+def _set_hora(h):
+    st.session_state["hora_operador"] = h
+
+
+def franja_botones(dia_df, hora_sel):
+    """Version clickeable de la franja horaria: cada hora es un boton real de
+    Streamlit, coloreado segun su senal, con la hora elegida resaltada por un
+    borde. Comparte estado (session_state["hora_operador"]) con el stepper de
+    arriba -- las dos formas de elegir hora quedan siempre sincronizadas, para
+    quien prefiera clickear la hora en vez de mover el stepper."""
+    color_bg = {"verde": T["verde_bg"], "rojo": T["rojo_bg"], "ambar": T["ambar_bg"]}
+    reglas = []
     for _, r in dia_df.iterrows():
         h = int(r["fecha_hora"].hour)
         color = SIGNIFICADO[r["senal"]][1]
-        sel = " celda-sel" if h == hora_sel else ""
-        tip = f"{h:02d}:00 h - {SIGNIFICADO[r['senal']][0].lower()} (precio esperado {r['q50']:.0f} COP/kWh)"
-        celdas.append(f'<div class="celda celda-{color}{sel}" title="{tip}">{h:02d}</div>')
-    return '<div class="franja">' + "".join(celdas) + "</div>"
+        borde = f"2px solid {T['tinta']}" if h == hora_sel else "1px solid transparent"
+        # :hover/:focus/:active se pisan explicitamente porque el boton de Streamlit
+        # trae su propio estado (borde de color, sombra) que rompe el look de "cuadrito
+        # plano" -- sin esto, al pasar el mouse se ve como boton, no como celda.
+        reglas.append(
+            f'.st-key-hora_c_{h} button, '
+            f'.st-key-hora_c_{h} button:hover, '
+            f'.st-key-hora_c_{h} button:focus, '
+            f'.st-key-hora_c_{h} button:active {{ '
+            f'background:{color_bg[color]} !important; color:#1E293B !important; '
+            f'border:{borde} !important; box-shadow:none !important; '
+            f'border-radius:6px !important; font-weight:700 !important; '
+            f'font-size:.72rem !important; padding:9px 0 !important; min-height:0 !important; }}'
+        )
+    st.markdown(f"<style>{''.join(reglas)}</style>", unsafe_allow_html=True)
+
+    cols = st.columns(24, gap="small")
+    for col, (_, r) in zip(cols, dia_df.iterrows()):
+        h = int(r["fecha_hora"].hour)
+        with col:
+            with st.container(key=f"hora_c_{h}"):
+                st.button(f"{h:02d}", key=f"hora_btn_{h}", on_click=_set_hora, args=(h,),
+                          use_container_width=True)
 
 
 def tarjetas_html(items):
@@ -299,7 +345,7 @@ st.markdown(
 # VISTA OPERADOR
 # ==========================================================================
 def vista_operador():
-    tabla, metodo, es_valido = comparacion(horizonte, rol, 25, 75)
+    tabla, metodo, es_valido = comparacion_estable(horizonte, rol)
 
     fechas = bandas["fecha_hora"]
     dia_min, dia_max = fechas.dt.date.min(), fechas.dt.date.max()
@@ -309,7 +355,7 @@ def vista_operador():
         dia = st.date_input("Día operativo", value=dia_max,
                             min_value=dia_min, max_value=dia_max)
     with c2:
-        hora = st.slider("Hora del día", 0, 23, 8)
+        hora = st.number_input("Hora del día", 0, 23, 8, step=1, key="hora_operador")
 
     # Señal para toda la serie con el método elegido por el backtest
     senal_full = generar_senales(bandas, metodo, rol, precio_hist, p_bajo=25, p_alto=75)
@@ -346,7 +392,7 @@ def vista_operador():
 
     # ---- Tarjeta grande ----
     titulo, color = SIGNIFICADO[senal]
-    if senal == "esperar" and metodo == "banda" and crudo != "normal":
+    if senal == "esperar" and metodo in ("banda", "hibrido") and crudo != "normal":
         frase = (
             f"El precio esperado está {crudo}, pero el pronóstico de esta hora es muy incierto "
             "(banda ancha). El motor prefiere esperar antes que arriesgarse con una señal poco confiable."
@@ -358,7 +404,7 @@ def vista_operador():
     if np.isnan(bajo_val) or np.isnan(alto_val):
         gauge_html = (
             '<div class="stat-s" style="margin-top:14px">Umbrales moviles aun sin definir '
-            '(el metodo rodante necesita 30 dias de historia antes de operar).</div>'
+            '(los metodos rodante e hibrido necesitan 30 dias de historia antes de operar).</div>'
         )
     else:
         pb = pos_en_barra(bajo_val, lo, hi)
@@ -393,15 +439,17 @@ def vista_operador():
 
     # ---- El dia hora por hora ----
     st.markdown("**El día, hora por hora**")
-    st.markdown(franja_html(dia_df, rol, hora), unsafe_allow_html=True)
+    franja_botones(dia_df, hora)
     if rol == "comercializador":
         leyenda = ("<b>Verde</b> = hora para comprar en bolsa &nbsp;&middot;&nbsp; "
                    "<b>rojo</b> = hora para cubrirse con contratos &nbsp;&middot;&nbsp; "
-                   "<b>ámbar</b> = esperar. Recuadro negro = la hora seleccionada.")
+                   "<b>ámbar</b> = esperar. Recuadro con borde = la hora seleccionada &mdash; "
+                   "haz clic en cualquier hora para elegirla directamente.")
     else:
         leyenda = ("<b>Verde</b> = hora para despachar y vender &nbsp;&middot;&nbsp; "
                    "<b>rojo</b> = hora para retener generación &nbsp;&middot;&nbsp; "
-                   "<b>ámbar</b> = esperar. Recuadro negro = la hora seleccionada.")
+                   "<b>ámbar</b> = esperar. Recuadro con borde = la hora seleccionada &mdash; "
+                   "haz clic en cualquier hora para elegirla directamente.")
     st.markdown(f'<div class="leyenda">{leyenda}</div>', unsafe_allow_html=True)
 
     # ---- Indicadores del dia y del backtest ----
@@ -433,14 +481,16 @@ def vista_operador():
     # ---- Nota sobre la regla activa ----
     if es_valido:
         st.caption(
-            f"Regla activa: **{metodo}**. La elige el motor automáticamente porque dio la mejor "
-            "ventaja económica en el backtest 2026 entre los métodos que actúan una fracción "
-            "razonable del tiempo (10-40%). Para ver la comparación o forzar otro método, entra a la vista Analista."
+            f"Regla activa: **{metodo}**. La elige el motor automáticamente porque fue la más "
+            "estable en el backtest 2026: mantuvo ventaja económica positiva y una frecuencia de "
+            "acción razonable (10-40%) en las dos mitades del periodo, no solo en el promedio del "
+            "año completo. Para ver la comparación o forzar otro método, entra a la vista Analista."
         )
     else:
         st.warning(
-            f"Regla activa: **{metodo}** (elegida por mayor ventaja, pero ningún método cayó en el "
-            "rango de frecuencia 10-40% para este rol/horizonte). Revisa la vista Analista antes de confiar en la señal."
+            f"Regla activa: **{metodo}** (la más estable disponible, pero ninguna se sostuvo con "
+            "ventaja positiva y frecuencia razonable en las DOS mitades del periodo para este "
+            "rol/horizonte). Revisa la vista Analista antes de confiar en la señal."
         )
 
 
@@ -453,22 +503,28 @@ def vista_analista():
         st.subheader("Controles de análisis")
         p_bajo, p_alto = st.slider("Percentiles del umbral (bajo / alto)", 5, 95, (25, 75), step=5)
 
-        tabla_metodos, metodo_sugerido, es_valido = comparacion(horizonte, rol, p_bajo, p_alto)
-        etiqueta = (f"{metodo_sugerido} (sugerido)" if es_valido
-                    else f"{metodo_sugerido} (sugerido, sin método 100% válido)")
-        opciones = ["fijo", "rodante", "banda"]
-        metodo = st.selectbox(
-            "Método de umbral", opciones, index=opciones.index(metodo_sugerido),
-            help=("fijo: percentiles del precio histórico 2019-2025. "
-                  "rodante: percentiles con ventana móvil causal de 30 días. "
-                  "banda: percentiles fijos + 'esperar' forzado cuando la banda de incertidumbre es ancha.\n\n"
-                  f"Sugerido por el backtest económico: {etiqueta}."),
-        )
-
+        # El rango de fechas se pide ANTES de comparar metodos (y se le pasa a
+        # comparacion()) para que "el metodo sugerido" responda al rango que
+        # el usuario filtra -- antes del 2026-09-24 el rango solo afectaba el
+        # backtest del metodo ya elegido, no cual quedaba sugerido como ganador.
         rango = bandas["fecha_hora"].dt.date
         fecha_min, fecha_max = rango.min(), rango.max()
         inicio, fin = st.slider("Rango de fechas", min_value=fecha_min, max_value=fecha_max,
                                 value=(fecha_min, fecha_max))
+
+        tabla_metodos, metodo_sugerido, es_valido = comparacion(horizonte, rol, p_bajo, p_alto, inicio, fin)
+        etiqueta = (f"{metodo_sugerido} (sugerido para este rango)" if es_valido
+                    else f"{metodo_sugerido} (sugerido, sin método 100% válido en este rango)")
+        opciones = ["fijo", "rodante", "banda", "hibrido"]
+        metodo = st.selectbox(
+            "Método de umbral", opciones, index=opciones.index(metodo_sugerido),
+            help=("fijo: percentiles del precio histórico 2019-2025. "
+                  "rodante: percentiles con ventana móvil causal de 30 días. "
+                  "banda: percentiles fijos + 'esperar' forzado cuando la banda de incertidumbre es ancha. "
+                  "hibrido: umbral rodante + el mismo filtro de 'esperar' de banda (agregado 2026-09-24, "
+                  "sin respaldo de literatura todavía -- ver README).\n\n"
+                  f"Sugerido por el backtest económico en el rango de fechas elegido: {etiqueta}."),
+        )
 
     senal = generar_senales(bandas, metodo, rol, precio_hist, p_bajo=p_bajo, p_alto=p_alto)
     base = bandas.assign(senal=senal)
