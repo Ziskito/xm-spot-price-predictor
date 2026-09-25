@@ -350,6 +350,64 @@ Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron
 
 **Inconsistencia encontrada y corregida en el informe.** La comparación con la literatura (MASE, NRMSE, sMAPE, TAPI) se estaba calculando sobre el **v4 original de 5 votantes**, no sobre el modelo vigente de 6 votantes con combinador alineado. El informe se estaba subestimando: con el modelo actual, MASE **0.914** (no 0.943), NRMSE **21.58%** (no 21.66%), sMAPE **10.04%** (no 10.38%), TAPI diario **76.4%** (no 75.9%). Corregido en gráfico y texto.
 
+### 2026-09-24 — Notebook 03 extendido al rango completo del Anexo 1 (2019-2025 + 2026): correlación, periodograma y estadísticas ahora usan los 66.576 datos completos, no solo hasta 2025
+
+- Contexto: al revisar notebook 03 con el usuario se notó que caracterizaba solo `precio_bolsa_2019_2025.csv`/`dataset_maestro_2019_2025.csv`, dejando fuera los ~7 meses de 2026 ya disponibles y usados en el resto del proyecto — inconsistente con el compromiso del Anexo 1 (§4.1, "enero 2019 a agosto 2026").
+- Cambio de alcance mínimo y de bajo riesgo: solo se extendieron las celdas que **leen** datos (Celda B ×2, y la celda de correlación), sin tocar las celdas 22-24 que construyen `dataset_maestro_2019_2025.csv` — ese archivo es compartido con Rafael/otros notebooks y no se modificó (verificado con `git status` antes y después: 0 cambios).
+- Verificado antes de extender: mismo esquema de columnas en los pares `_2019_2025`/`_2026` de cada fuente (`precio_bolsa`, `dataset_maestro`), y el ONI oficial ya cubre 2026 completo (interesante: vuelve a subir a niveles tipo El Niño, 0.9-1.4 desde mayo 2026).
+- Notebook reejecutado completo (`nbconvert --execute`, 30/30 celdas sin error, numeración intacta). Nuevo rango: 2019-01-01 a 2026-08-05 23:00, 66.576 filas (antes 61.368), sin huecos.
+- **Resultados que cambian**: media del precio 331.5→336.7 COP/kWh; correlación contemporánea con `oni` sube de 0.355 a 0.387 (el repunte de El Niño en 2026 refuerza la relación); `aportes_hidricos`/`volumen_embalses` bajan levemente en magnitud (-0.302→-0.286 y -0.189→-0.164 en 0h) pero el patrón cualitativo de la correlación cruzada por rezago **no cambia**: `aportes_hidricos` sigue siendo más fuerte a 168h (-0.309) que en 0h, `volumen_embalses` sigue siendo más fuerte en 0h (-0.164) y decae con el rezago.
+- **Resultado que NO cambia**: la comparación Savitzky-Golay vs. promedio móvil (ventana del súper Niño 2023-2024) da exactamente los mismos números de retraso (724h vs 348h, Savitzky-Golay gana por 376h) porque son cálculos de ventana local, sin alcance hasta 2026; solo la desviación estándar del residuo (calculada sobre toda la serie) sube levemente (136.34→138.03 y 115.86→117.70) por tener más observaciones.
+- De paso, se corrigió la celda de conclusión de la correlación (Paso 1.5c), que antes quedaba en condicional ("si la correlación es más fuerte en un rezago...") sin resolver contra los números reales — ahora declara explícitamente que el resultado es mixto entre las dos variables, con la explicación física (estado acumulado vs. flujo).
+
+### 2026-09-24 — Bug real encontrado en datos EN VIVO al probar el notebook 02 en copia aislada: demanda del 4-5 de agosto de 2026 mal (70-86% por debajo), corregido y reentrenado. Mejora confirmada: MAE 41.34→41.10, MAPE 10.76%→10.49%, 10/10 particiones
+
+Origen: el usuario preguntó si era seguro re-ejecutar los notebooks 01 y 02 (recordaba que algunas celdas no corregían bien el error). En vez de correrlos sobre el proyecto real, se hizo una **copia aislada** en el scratchpad (`notebooks/` + `data/` + `requirements.txt` como marcador de raíz, verificado que `encontrar_raiz_proyecto()` resuelve a la copia y no al proyecto real) y se ejecutaron ahí con `jupyter nbconvert --execute`.
+
+**Notebook 01**: corrida limpia, 17/17 celdas sin error, numeración `In[1]`-`In[17]`. Los 52.608 valores de precio 2019-2024 descargados hoy coinciden **exactamente** (diff=0.0) con los ya guardados — confirma que la descarga es determinística y XM no revisa precios ya liquidados. **Notebook 01 en vivo actualizado** con esta ejecución (solo arregla la numeración, a pedido del usuario; no se tocaron los comentarios `# Celda N` ni las 3 celdas sueltas sin etiquetar, que quedan como registro real del proceso).
+
+**Notebook 02**: corrida limpia también (31/31 celdas sin error), pero comparando los datos resultantes contra los archivos en vivo salió un hallazgo real:
+
+- `volumen_util_embalses` 2019-2025: coincide perfecto (0 diferencias en 2.557 días).
+- `precio_bolsa` 2019-2025: coincide perfecto salvo diciembre 2025, con desfases de centésimas (XM publica el mes más reciente como provisional). Benigno.
+- `aportes_hidricos` 2019-2025: 89% de los días difieren, pero el error promedio es 0,042% y el máximo 2,38% (un solo día) — ruido de redondeo irrelevante frente al ~10-16% de MAPE del proyecto. Benigno.
+- **`demanda` en `dataset_maestro_2026.csv`: las 48 horas del 4 y 5 de agosto de 2026 estaban entre 70% y 86% por debajo del valor real** (ej. 04-ago 00:00: 1.518.987 en vivo vs 9.578.964 en la descarga fresca). `generacion`, `precio_bolsa`, `volumen_embalses` y `aportes_hidricos` estaban bien esos mismos días — el defecto es exclusivo de `demanda`. Nadie lo había detectado porque no había con qué compararlo hasta esta prueba.
+
+**Arreglo, con respaldo previo** (`data/processed/resultados/backups_pre_fix_demanda_04_05ago2026/`):
+1. `demanda_real_2026.csv`: 48 horas reemplazadas por los valores de la descarga fresca.
+2. `dataset_maestro_2026.csv`: columna `demanda` de esas 48 horas.
+3. `dataset_features_2026.csv`: `demanda` (48h) + `demanda_lag24h` y `demanda_media_24h` recalculadas con las fórmulas exactas de `05_features_compartidas_juan.ipynb` (`shift(24)`, `rolling(24).mean()`) — afectan solo las 24 horas del 5-ago, verificado antes de escribir con un cálculo en seco. `demanda_lag48h`/`demanda_lag72h` no cambian (sus ventanas caen fuera del rango del archivo).
+
+**Alcance del reentrenamiento, verificado antes de tocar nada**: Persistencia usa `precio_lag24h` (sin demanda, sin cambios). ARX+GARCH — su lista de regresoras no incluye ninguna variable de demanda (confirmado en `o6_comun.py`, sin cambios). XGBoost sí usa `demanda_lag24h`/`demanda_media_24h` (no están en `EXCLUIR`). N-BEATSx/N-HiTS usan `demanda_lag24h` como exógena histórica. GARCH-ged usa `demanda_media_24h` en `EXOG_CORTE`. Se regeneraron exactamente estos 3 (script: `scripts_experimento/reentrenar_tras_fix_demanda.py`), con los mismos hiperparámetros que ya producían los números vigentes del proyecto — único input que cambia es el archivo de features ya corregido.
+
+**Error de proceso encontrado y corregido en el camino**: la primera corrida del reentrenamiento tenía el corte de entrenamiento de las redes neuronales una hora antes de donde debía (usaba el mismo corte que XGBoost, `< "2026-01-01"`, cuando N-BEATSx/N-HiTS pronostican en bloques de 24h con el protocolo día-adelante documentado el 22-24 de septiembre: ventanas 01:00→00:00, corte a las 00:00). El script llevaba una verificación que compara el rango de salida contra el rango que ya existe en vivo, y **abortó solo, sin guardar nada**, señalando el desfase exacto de 1 hora. Corregido con un corte de entrenamiento propio para la red (`NEURAL_TRAIN_FIN`, train incluye hasta las 00:00 del 1-ene inclusive) y reverificado en seco antes de repetir la corrida completa.
+
+**Resultado por modelo (Origen 6, 2026):**
+
+| modelo | antes | después |
+|---|---|---|
+| XGBoost | 61.39 | 61.39 (sin cambio) |
+| **N-BEATSx** | 46.82 | **45.15** |
+| N-HiTS | 46.44 | 46.42 |
+| GARCH-ged | ~45.3-45.4 | 45.39 |
+
+N-BEATSx mejora notablemente (−1.67 de MAE) pese a que solo 48 de 5.184 horas de prueba (0.9%) tenían algún dato corregido — coherente con que usa `demanda_lag24h` como contexto de 7 días (`input_size=168`): el dato malo contaminaba la ventana de contexto de varios pronósticos vecinos, no solo los 2 días con el valor directamente mal.
+
+**Ensamble completo (6 votantes, 10 particiones, mismo estándar del proyecto):**
+
+| métrica | antes | después | delta |
+|---|---|---|---|
+| MAE | 41.340 ± 0.125 | **41.096 ± 0.077** | −0.244, mejor en 10/10 |
+| MAPE | 10.760% ± 0.035 | **10.487% ± 0.021** | −0.273, mejor en 10/10 |
+| sMAPE | 10.080% ± 0.032 | **9.841% ± 0.013** | −0.239, mejor en 10/10 |
+
+**Nota de reproducibilidad**: la cifra "antes" del GARCH-ged tuvo que reconstruirse (0.11 de MAE de diferencia frente al valor que el propio script de reentrenamiento imprimió al leer el archivo en vivo justo antes de sobrescribirlo: 45.29 vs 45.40 reconstruido) porque **no se respaldó `pronostico_GARCH-ged_24h_2026.csv` antes del primer parche** — lección de proceso: el respaldo previo a modificar debe cubrir *todos* los archivos que un script vaya a sobrescribir, no solo los que se editan a mano. Se reconstruyó corriendo la misma función sobre los datos de `dataset_features_2026.csv` sí respaldados (que aún tienen el bug), y la comparación final usa esa reconstrucción de forma consistente en ambos lados. La discrepancia menor no cambia la dirección ni la magnitud aproximada del hallazgo.
+
+**Archivos modificados en vivo** (todos con respaldo previo en `backups_pre_fix_demanda_04_05ago2026/`, y recuperables además desde el commit `dbc1e8f`): `data/demanda_real_2026.csv`, `data/processed/dataset_maestro_2026.csv`, `data/processed/dataset_features_2026.csv`, `data/processed/resultados/walkforward_predicciones_crudas.csv`, `data/processed/resultados/pronostico_GARCH-ged_24h_2026.csv`, `notebooks/01_prueba_conexion_juan.ipynb` (solo numeración).
+
+**Pendiente**: las cifras de cabecera citadas en el informe Word y en entradas anteriores de esta bitácora (41.29/10.74%) quedan ligeramente desactualizadas por este arreglo (ahora 41.10/10.49%). Actualizar el informe cuando se decida (el usuario pidió esperar antes).
+
+
 ### 2026-09-24 — Aclaración del usuario sobre el protocolo: el pronóstico es móvil (24 h desde "ahora"), y el precio de la última hora está disponible de inmediato
 
 Tras el hallazgo de protocolo del 2026-09-23, el usuario aclaró dos hechos de operación que cambian la lectura:
@@ -374,6 +432,145 @@ Con eso, usar el último precio conocido —aunque pertenezca al mismo día de d
 - El motor de decisión debe saber a qué hora se lanza cada pronóstico, porque la exactitud esperada depende de ella.
 
 Los PDF de `docs/papers/` **no se suben al repositorio** (es público y varios no son de acceso abierto); quedan en el equipo local y `REFERENCIAS.md` tiene cita y enlace de cada uno.
+
+### 2026-09-24 — El error del pronóstico móvil según la hora en que se lanza: promedio de las 24 horas
+
+`scripts_experimento/pronostico_movil_24_horas_lanzamiento.py`. Cierra el pendiente de la aclaración del usuario (el pronóstico de 24h se cuenta desde la hora real en que se emite). Mismo LEAR, mismo periodo 2026, cambiando solo la hora del corte:
+
+| lanzado a las | objetivos del día de ofertas ya abierto | MAE (LEAR) | MAPE |
+|---|---|---|---|
+| 00:00 | 23 | 53.27 | 16.54% |
+| 04:00 | 19 | 53.83 | 16.06% |
+| **08:00** (mejor) | 15 | **52.54** | 14.34% |
+| 12:00 | 11 | 58.41 | 16.32% |
+| 16:00 | 7 | 56.14 | 16.53% |
+| 20:00 | 3 | 58.04 | 17.26% |
+| **23:00** (peor) | 0 | **61.64** | 19.32% |
+| **promedio de las 24 horas** | — | **56.37** | — |
+
+El error sube a medida que el lanzamiento se acerca a la medianoche: quedan menos objetivos del día de ofertas que ya empezó a observarse. La madrugada y la mañana (00:00-08:00) son las mejores horas para lanzar; 21:00-23:00 las peores.
+
+**Estimación para el ensamble** (no medida: exigiría reentrenar las redes 24 veces). Sus dos extremos sí están medidos, 41.29 a las 00:00 y 51.82 a las 23:00. Interpolando con la posición relativa del promedio del LEAR (37% del camino entre sus extremos), el ensamble lanzado a cualquier hora rondaría **MAE ≈ 45.2**. El supuesto es que la curva del ensamble tiene la misma forma que la del LEAR.
+
+**Frase defendible para el informe:** *lanzado a medianoche, MAE 41.3; lanzado a cualquier hora del día, del orden de 45; en el peor caso (23:00), 51.8 — siempre por debajo de la persistencia (56.4).*
+
+### 2026-09-24 — MCC (criterio de máxima correntropía) como pérdida robusta: mejora mucho los modelos sueltos, empeora las rampas, y no aporta al ensamble
+
+`scripts_experimento/mcc_perdida_robusta_24h.py`. Único pendiente genuinamente nunca probado de las ideas de los papers (Nunes Jr., Ferreira & Pinho 2024). MCC maximiza `Σ exp(−e²/2σ²)`: pérdida **redescendente**, un error muy grande casi no pesa. Se optimiza por la equivalencia *half-quadratic*: mínimos cuadrados reponderados con pesos `exp(−e²/2σ²)`, 4 iteraciones desde un ajuste con pérdida absoluta. σ elegido en validación temporal dentro del entrenamiento (último 20% de cortes pre-2026): 3.0× la escala robusta para GBM, 1.0× para LASSO. Protocolo de 24h vigente (corte 00:00), diseño del LEAR.
+
+**Modelos sueltos (2026):**
+
+| variante | MAE | MAPE | rampa ≥50 | meseta | pico |
+|---|---|---|---|---|---|
+| GBM pérdida cuadrática | 56.05 | 15.42% | 113.60 | 44.47 | 82.59 |
+| GBM pérdida absoluta | 51.62 | 13.57% | 112.29 | 39.94 | 76.70 |
+| **GBM MCC** | **49.23** | **13.14%** | 116.48 | 36.16 | 75.11 |
+| LEAR (LASSO) | 52.78 | 16.07% | **107.99** | 42.22 | 74.58 |
+| **LEAR MCC** | **47.09** | **12.78%** | 113.69 | 34.38 | 69.73 |
+
+MCC mejora mucho: LEAR −10.8% de MAE (DM p<0.0001), al nivel de N-BEATSx (46.83), el mejor modelo individual del proyecto; GBM −4.6% frente a pérdida absoluta (p=0.002). **Pero empeora en las rampas**: LEAR 107.99 → 113.69 (p=0.0027), GBM 112.29 → 116.48 (p=0.08). Es exactamente lo que se anticipó: la pérdida le quita peso a los errores grandes, que son los de las rampas, y el modelo gana en las horas tranquilas a costa de los picos. **Va en contra del objetivo declarado del usuario.**
+
+**Como séptimo votante (10 particiones):**
+
+| | MAE | MAPE | sMAPE | mejor en (MAE/MAPE/sMAPE) |
+|---|---|---|---|---|
+| ensamble actual | 41.287 | 10.744 | 10.065 | — |
+| + GBM MCC | 41.326 | 10.716 | 10.039 | 2/9/10 |
+| + LEAR MCC | 41.337 | 10.760 | 10.078 | 0/0/0 |
+| + GBM absoluta (control) | 41.395 | 10.732 | 10.063 | 0/8/7 |
+
+Ninguno pasa el estándar 10/10. La pequeña ganancia de MAPE del GBM MCC la reproduce en buena parte el control sin MCC (8/10): viene de sumar un árbol más, no de la pérdida. **No se adopta.** Sexta confirmación del patrón del proyecto: un modelo individual claramente mejor (aquí −10.8%) no le aporta a un ensamble que ya es fuerte.
+
+Queda como dato útil para la sustentación: si alguna vez se necesita **un único modelo lineal** (por interpretabilidad o costo), el LEAR entrenado con MCC es la mejor opción disponible (MAE 47.09, MAPE 12.78%).
+
+### 2026-09-24 — Limpieza de carpetas del proyecto y búsqueda exhaustiva de pruebas pendientes
+
+Revisión carpeta por carpeta a petición del usuario. Borrado: `.claude/` (vacía), `catboost_info/` y `lightning_logs/` (artefactos de entrenamiento regenerables, ya en `.gitignore`), `logs_catboost_dir.txt` (log suelto de una corrida vieja). `.streamlit/config.toml` se confirmó en uso (tema del dashboard de Rafael) y se deja.
+
+**`data/processed/resultados/`** (199 archivos, 91MB): clasificación sistemática automatizada de los 199 archivos por referencias cruzadas. Único huérfano real: `arxgarch_predicciones_festivos.csv` (256KB, salida intermedia de una reejecución puntual del notebook 08 el 10-sep, sin ningún generador ni lector actual) — **borrado**. Todo lo demás tiene generador o lector vigente, o es historial documentado a propósito (`*_3meses_backup.csv`, `fuzzy_oni_preview.csv`).
+
+**`data/` raíz — 34 CSV crudos de XM descargados directamente ahí (no en `raw/`/`external/`)**: clasificados con el mismo método. 10 son el núcleo del pipeline (precio, demanda, generación, embalses, aportes — usados por los notebooks 01-05). El resto se separa en tres grupos:
+
+1. **Evidencia de decisiones ya tomadas** (se quedan, documentan por qué no se usan): `max_precio_oferta` (fuga, prohibida), `disponibilidad_por_tipo`/`generacion_por_tipo` (restringidas por Anexo 1), `firma_despacho_hidraulico` (idea descartada).
+2. **Ya tamizadas y probadas en el modelo real** (12 variables, `tamizar_variables_nuevas.py` + `probar_variables_nuevas.py`): 9/12 redundantes por correlación parcial, 1 fuga (`max_precio_oferta`), y la única candidata real (`costo_marginal_despacho`, parcial 0.178) se probó en el modelo y **empeoró** el ensamble — tercera confirmación del patrón "señal real que no sobrevive al ensamble".
+3. **Sin ningún respaldo ni uso documentado, borradas**: `generacion_fuera_merito`, `generacion_programada_despacho`, `restricciones_sin_alivios` (~6.5MB).
+4. **Con respaldo de papers, nunca probadas** — ver siguiente sección.
+
+**Actualización (mismo día): borrados también los 13 CSV crudos descartados por los tamices** — los 12 de `tamizar_variables_nuevas.py` (`max_precio_oferta`, `costo_marginal_despacho`, `generacion_ideal`, `demanda_comercial`, `restricciones_aliviadas`, `perdidas_energia`, `importaciones_energia`, `exportaciones_energia`, `precio_escasez`, `precio_escasez_marginal`, `aportes_media_historica`, `compras_arranque_parada`) y `porcentaje_volumen_util` (redundante en el tamiz de Nivel 2, abajo). Sus resultados siguen documentados en `tamiz_variables_nuevas.csv` y `tamiz_nivel2_papers.csv`. **Consecuencia**: los scripts de esos experimentos cerrados (`tamizar_variables_nuevas.py`, `probar_variables_nuevas.py`, `atacar_el_nino.py`, `margen_reserva_pico_24h.py`, `ensamble_24h_con_oferta.py`, `tamizar_nivel2_papers.py`) ya no corren sin restaurarlos. **Segunda tanda, a pedido del usuario**: borrados también `precio_contratos_regulado`, `precio_contratos_no_regulado` y `aportes_caudal` (probados hoy, no sobreviven al ensamble), `disponibilidad_por_tipo` y `generacion_por_tipo` (desglose por tipo de recurso, prohibido por el Anexo 1) y `firma_despacho_hidraulico` (idea descartada el 10-sep). En `data/` quedan solo los 10 CSV del núcleo del pipeline y los 2 catálogos de XM que usan los scripts de descarga. **Para recuperar cualquiera**: `git checkout dbc1e8f -- data/<archivo>.csv`, o volver a bajarlos con `descargar_variables_nuevas.py` / `descargar_equivalentes_papers.py`.
+
+**`docs/`**: borrado `informe_comparativo_modelos.md` (resultados del 2026-09-10, con N-BEATSx como mejor modelo a MAE 56.11; superado por `Informe_Pronostico_Precio_Bolsa_XM.docx` y esta bitácora). Las menciones a ese archivo en entradas anteriores quedan como historia; se recupera con `git checkout dbc1e8f -- docs/informe_comparativo_modelos.md`. `motor_decision_guia.md` es de Rafael y no se tocó. El informe en Word queda **pendiente de actualizar** con lo de esta semana (hora de lanzamiento del pronóstico, historia del precio como entrada principal, pruebas negativas).
+
+**`scripts_experimento/`** (150 scripts, 2.8 MB): no se borra ninguno. 22 son módulos que importan otros scripts (`o6_comun.py` lo usan 62, `stacking_24h_v2.py` 46), 107 están citados por nombre en esta bitácora, y los 21 restantes están descritos en prosa o generan archivos vigentes de `resultados/`. Borrar scripts ahorraría casi nada y rompería la reproducibilidad de resultados documentados. Solo se borró `__pycache__/` (caché regenerable).
+
+**Dos resultados que solo estaban en mensajes de commit, rescatados aquí:**
+- **Causalidad de Granger** (`granger_hidrologia.py`, commit `c5f09a8`, 2026-09-10). Metodología de Emre (2025, IJEPES), aplicada sobre la serie **diaria** para no inflar la significancia con la autocorrelación horaria. **`aportes_hidricos` y `volumen_embalses` causan el precio de bolsa en sentido de Granger (p<0.0001 en todos los rezagos de 1 a 7 días).** Es evidencia formal —no solo correlación— de una relación causal entre hidrología y precio en el mercado colombiano. Contrasta con Emre en Turquía, que no la encontró por razones estructurales de su mercado (YEKDEM). Útil para la sustentación junto con el hallazgo de que la hidrología predice cuándo desconfiar del modelo aunque no baje su error.
+- **Corrección de sesgo/escala por régimen** (`correccion_regimen.py`, commit `49b65dc`, 2026-09-10): mejora pequeña y no significativa (p=0.31). No se adoptó.
+
+**Raíz del proyecto**: borrados 24 `logs_*.txt` sueltos de sesiones anteriores y la carpeta `logs/` de esta semana (salida de consola; los resultados de esos experimentos quedan en `resultados/` y en esta bitácora), y `desktop.ini` (metadatos de Windows que se había subido a git por error; ahora está en `.gitignore`). **`notebooks/`**: los 13 se quedan (3 son de Rafael; el 01 descarga los datos crudos y el 04 Prophet está comprometido en el Anexo 1); solo se borró `notebooks/lightning_logs/` (16 MB de artefactos). **`src/`** solo contiene `motor_decision.py` de Rafael.
+
+**Arreglo de reproducibilidad en `requirements.txt`**: faltaban `catboost` (lo importan 17 archivos, incluidos votantes del ensamble) y `python-docx` (generador del informe en Word). Agregados con las versiones del entorno: `catboost==1.2.10`, `python-docx==1.2.0`. Sin esto, una instalación desde cero no podía correr esos scripts.
+
+#### Nivel 1 — tres ideas de los papers desbloqueados, las más baratas (`scripts_experimento/nivel1_ideas_papers.py`)
+
+Las tres fallan:
+
+**(1) Compuerta por régimen hidrológico** (Albani et al. 2025: apagar el componente hidrológico cuando se rompe la correlación ENA-precio). Se repesó el ensamble por celda de régimen (embalse alto/bajo × ONI alto/bajo, con umbral **móvil causal de 90 días**, corrigiendo de paso el sesgo no-causal de `estratificacion_regimen_24h.csv` que usa la mediana de todo 2026) en vez de por franja horaria.
+
+| esquema | MAE | 10 particiones |
+|---|---|---|
+| actual (franja horaria) | 41.19 | — |
+| por celda de régimen (fija) | 43.35 | — |
+| por celda de régimen (móvil 90d) | 43.25 | 0/10, p=0.0000 |
+| franja horaria × régimen | 41.43 | no significativo (p=0.25) |
+
+Falla porque las celdas quedan muy desbalanceadas: con umbral móvil, `embAlto_oniBajo` tiene solo 30 observaciones en todo 2026 — no hay suficiente variación de régimen dentro del año de prueba para que repesar por celda tenga sentido estadístico. **No se adopta.**
+
+**(2) RLS-dayahead como séptimo votante.** Documentado desde antes como "candidato razonable... no se hizo todavía". Resultado: neutro (41.19→41.18, p=0.56, 1/10 particiones). Reemplazando a GARCH-ged: peor (42.57, p=0.0003). **GARCH-ged sigue siendo mejor 6º votante. No se adopta.**
+
+**(3) Poda por multicolinealidad** (Dias et al. 2024, |Pearson|>0.8, quedarse con la de mayor información mutua). Sobre las 55 variables del diseño del LEAR (paso 12 representativo), poda 28 y deja 27. Resultado: MAE 53.37 → **64.19**, empeora drásticamente (DM p=0.0000). **Explicación**: LASSO ya maneja la colinealidad con su propia regularización — podar variables correlacionadas antes de LASSO destruye información que el propio regularizador ya sabía repartir bien entre variables redundantes. Podar por correlación es redundante (en el mejor caso) o dañino (en este caso) cuando el modelo ya es LASSO. **No se adopta.**
+
+#### Nivel 2 — las 4 variables con respaldo de papers, nunca probadas (`scripts_experimento/tamizar_nivel2_papers.py`)
+
+Mismo protocolo en dos fases que `tamizar_variables_nuevas.py` + `probar_variables_nuevas.py`: tamiz de correlación parcial primero, solo lo que pasa llega al modelo real.
+
+| variable | de qué paper | corr. parcial | veredicto del tamiz |
+|---|---|---|---|
+| `porcentaje_volumen_util` (EAR%) | Dias, Lira & Freire 2024, Brasil — #1 en información mutua en su Tabla 1 | −0.029 | **REDUNDANTE** |
+| `precio_contratos_regulado` | Kapoor & Wichitaksorn 2023, NZ — equivalente a forward prices | 0.066 | candidata |
+| `precio_contratos_no_regulado` | mismo paper | 0.081 | candidata |
+| `aportes_caudal` | Nunes Jr., Ferreira & Pinho 2024, Brasil — cadena caudal→precio | −0.088 | candidata |
+
+El EAR%, pese a ser la variable #1 del paper brasileño, no aporta nada aquí que el precio rezagado 24h no tenga ya — probablemente porque el proyecto ya usa `volumen_embalses` en absoluto y sus derivadas (anomalía vs media 30d, delta 1d).
+
+Las tres candidatas (contratos regulado/no regulado + caudal), con nivel + anomalía vs media 30d + delta 1d cada una, metidas al LEAR:
+
+| | MAE | resultado |
+|---|---|---|
+| LEAR actual | 53.37 | — |
+| **LEAR + las 3 variables** | **52.24** | mejora real, DM p=0.0074 |
+| Ensamble actual (6 votantes) | 41.19 | — |
+| + ese LEAR como 7º votante | 41.20 | sin diferencia, DM p=0.90 |
+
+**Mismo patrón que `costo_marginal_despacho` y la variable H/T**: la señal es real y mejora un modelo individual con margen estadísticamente significativo, pero no sobrevive dentro del ensamble — la información ya está implícita en los otros seis votantes. Cuarta/quinta confirmación de este hallazgo metodológico del proyecto: **correlación parcial real (y hasta mejora individual significativa) no implica que un ensamble ya fuerte tenga algo que ganar**.
+
+#### Corrección: 4 de estas 7 pruebas eran repeticiones, no pruebas nuevas
+
+La "búsqueda exhaustiva" de pendientes se hizo mal: se tomó la lista "cuatro ideas... que NO hemos probado" de la entrada del 2026-09-17 sin cruzarla con las entradas **posteriores**, y varias ya se habían ejecutado. Contraste completo:
+
+| idea | ¿ya probada antes? | resultado de entonces | resultado de hoy |
+|---|---|---|---|
+| Compuerta por régimen (Albani) | **sí**, `qra_por_regimen.py` (09-17), incluida la versión relativa 90d | 42.51 → 44.40, no sirve | igual: no sirve |
+| RLS-dayahead como votante | **sí**, entre los "9 votantes extra" (09-17) | sin diferencia significativa | igual: neutro |
+| Poda por multicolinealidad (Dias) | **sí**, en 72h (09-17) | catastrófica literal, neutra corregida | igual: empeora |
+| Precios de contratos (forward, NZ) | **sí**, en la media del LE-GARCH-t (09-17) | falso positivo detectado | igual: no sobrevive al ensamble |
+| LASSO agresivo sobre GARCH (NZ) | **sí, y se ADOPTÓ** (09-17): es el LE-GARCH-t → GARCH-ged, 6º votante actual | MAPE 11.27% → 10.89% | — |
+| EAR% (`porcentaje_volumen_util`) | **no** — nuevo hoy | — | redundante en el tamiz |
+| `aportes_caudal` | **no** — nuevo hoy | — | pasa el tamiz, no sobrevive al ensamble |
+| MCC como pérdida (Nunes Jr.) | **no** | — | ver entrada siguiente |
+
+Las cuatro réplicas dieron el mismo resultado que la primera vez, así que al menos sirven como confirmación independiente. Lección de proceso: una lista de "pendientes" en la bitácora queda obsoleta en cuanto se ejecuta algo de ella, y antes de actuar hay que cruzarla con todo lo que vino después.
+
+**Pendientes reales tras el cruce completo**: (1) MCC como pérdida robusta, nunca probado; (2) medir el error promedio de un pronóstico móvil lanzado desde cada una de las 24 horas (aclaración del usuario del 2026-09-24), nunca medido; (3) TFT, abortado por falta de GPU —la idea no falló, simplemente no es viable en esta máquina—; (4) recalibración 2026 v2, dejada de lado con un resultado preliminar negativo.
 
 ### 2026-09-23 — La cifra honesta del ensamble de 24h, el walk-forward completo de NOT, y el oráculo de demanda
 
