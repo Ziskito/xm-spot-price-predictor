@@ -1,0 +1,4 @@
+origen,regimen,filas_train_analogo,filas_train_cronologico,mae_analogo,mae_cronologico,dm_stat,p_valor,conclusion
+Origen 1,La Nina (inicio),8064,12385,16.483319283475755,16.289324310183734,0.6417570100608929,0.5210309666320212,sin diferencia significativa
+Origen 4,El Nino (fuerte),8472,40873,240.095601081401,143.23009058468386,7.10382878030725,1.2134717955417488e-12,ANALOGO PIERDE (sig.)
+Origen 6,El Nino 2026 (neutral->fuerte),8064,60625,136.0494226749657,61.307471895690036,9.561735008679333,1.1579886702555513e-21,ANALOGO PIERDE (sig.)

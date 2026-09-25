@@ -1,34 +1,34 @@
 origen,regimen,modelo_1,modelo_2,dm_stat,p_valor,conclusion
-Origen 1,La Nina (inicio),N-BEATSx,ARX+GARCH,-3.630961830555463,0.0002823669465974131,N-BEATSx GANA (sig.)
-Origen 1,La Nina (inicio),N-BEATSx,Persistencia,6.359459559536966,2.024648243978348e-10,N-BEATSx PIERDE (sig.)
-Origen 1,La Nina (inicio),N-HiTS,ARX+GARCH,-1.5678614050014257,0.11691348064312058,sin diferencia significativa
-Origen 1,La Nina (inicio),N-HiTS,Persistencia,6.729383584873048,1.7038334210300452e-11,N-HiTS PIERDE (sig.)
-Origen 1,La Nina (inicio),ARX+GARCH,Persistencia,9.35082214330913,8.696904650348076e-21,ARX+GARCH PIERDE (sig.)
-Origen 1,La Nina (inicio),XGBoost,Persistencia,0.661060057201246,0.5085737994134865,sin diferencia significativa
-Origen 2,La Nina (continuacion),N-BEATSx,ARX+GARCH,-5.672714150400749,1.4055265027989859e-08,N-BEATSx GANA (sig.)
-Origen 2,La Nina (continuacion),N-BEATSx,Persistencia,-0.7560772089285491,0.44960290567661143,sin diferencia significativa
-Origen 2,La Nina (continuacion),N-HiTS,ARX+GARCH,-5.279067581873426,1.2984291252907036e-07,N-HiTS GANA (sig.)
-Origen 2,La Nina (continuacion),N-HiTS,Persistencia,-0.85667313447971,0.3916255547785441,sin diferencia significativa
-Origen 2,La Nina (continuacion),ARX+GARCH,Persistencia,4.765465512238852,1.8841812502824417e-06,ARX+GARCH PIERDE (sig.)
-Origen 2,La Nina (continuacion),XGBoost,Persistencia,4.518127458337406,6.2388926208725215e-06,XGBoost PIERDE (sig.)
-Origen 3,La Nina (triple-dip),N-BEATSx,ARX+GARCH,-6.886563553424286,5.715623236107681e-12,N-BEATSx GANA (sig.)
-Origen 3,La Nina (triple-dip),N-BEATSx,Persistencia,-1.2007455503334734,0.2298499190003943,sin diferencia significativa
-Origen 3,La Nina (triple-dip),N-HiTS,ARX+GARCH,-5.491830294312429,3.9778953922923946e-08,N-HiTS GANA (sig.)
-Origen 3,La Nina (triple-dip),N-HiTS,Persistencia,-0.7481172161571056,0.45438945846447454,sin diferencia significativa
-Origen 3,La Nina (triple-dip),ARX+GARCH,Persistencia,6.736223952528169,1.6255567759966408e-11,ARX+GARCH PIERDE (sig.)
-Origen 3,La Nina (triple-dip),XGBoost,Persistencia,3.4951141736694704,0.0004738590055204519,XGBoost PIERDE (sig.)
-Origen 4,El Nino (fuerte),N-BEATSx,ARX+GARCH,-1.9892010702067509,0.04667901384124226,N-BEATSx GANA (sig.)
-Origen 4,El Nino (fuerte),N-BEATSx,Persistencia,-1.9629011005872545,0.04965766687803405,N-BEATSx GANA (sig.)
-Origen 4,El Nino (fuerte),N-HiTS,ARX+GARCH,-2.5153595499657557,0.011891104551948983,N-HiTS GANA (sig.)
-Origen 4,El Nino (fuerte),N-HiTS,Persistencia,-2.4509995193896437,0.014246014351628884,N-HiTS GANA (sig.)
-Origen 4,El Nino (fuerte),ARX+GARCH,Persistencia,-0.08224142184236347,0.9344547351223983,sin diferencia significativa
-Origen 4,El Nino (fuerte),XGBoost,Persistencia,5.025390442943428,5.024093185255025e-07,XGBoost PIERDE (sig.)
-Origen 5,El Nino (pico),N-BEATSx,ARX+GARCH,-6.045132093497964,1.4928763960146089e-09,N-BEATSx GANA (sig.)
-Origen 5,El Nino (pico),N-BEATSx,Persistencia,-5.406957044782048,6.410450957599638e-08,N-BEATSx GANA (sig.)
-Origen 5,El Nino (pico),N-HiTS,ARX+GARCH,-5.60133764572145,2.1270395406678654e-08,N-HiTS GANA (sig.)
-Origen 5,El Nino (pico),N-HiTS,Persistencia,-5.222724792999399,1.7630932536101673e-07,N-HiTS GANA (sig.)
-Origen 5,El Nino (pico),ARX+GARCH,Persistencia,1.6499850825031284,0.09894598717823025,sin diferencia significativa
-Origen 5,El Nino (pico),XGBoost,Persistencia,2.294638302475224,0.021753861295700658,XGBoost PIERDE (sig.)
+Origen 1,La Nina 2020-21,N-BEATSx,ARX+GARCH,-18.037186057434873,9.948224008719031e-73,N-BEATSx GANA (sig.)
+Origen 1,La Nina 2020-21,N-BEATSx,Persistencia,12.913014947796924,3.801208954844699e-38,N-BEATSx PIERDE (sig.)
+Origen 1,La Nina 2020-21,N-HiTS,ARX+GARCH,2.332615812825752,0.019668318257905028,N-HiTS PIERDE (sig.)
+Origen 1,La Nina 2020-21,N-HiTS,Persistencia,24.79093077005494,1.122966172625338e-135,N-HiTS PIERDE (sig.)
+Origen 1,La Nina 2020-21,ARX+GARCH,Persistencia,23.8718574617897,6.005607440646712e-126,ARX+GARCH PIERDE (sig.)
+Origen 1,La Nina 2020-21,XGBoost,Persistencia,3.525592781148938,0.000422536138976364,XGBoost PIERDE (sig.)
+Origen 2,La Nina 2021-22,N-BEATSx,ARX+GARCH,-3.1625417762869703,0.001563982935126352,N-BEATSx GANA (sig.)
+Origen 2,La Nina 2021-22,N-BEATSx,Persistencia,-0.6196247667874086,0.5355048571810992,sin diferencia significativa
+Origen 2,La Nina 2021-22,N-HiTS,ARX+GARCH,-2.8351816627153323,0.004579963417049727,N-HiTS GANA (sig.)
+Origen 2,La Nina 2021-22,N-HiTS,Persistencia,0.5733039182854901,0.5664389328491082,sin diferencia significativa
+Origen 2,La Nina 2021-22,ARX+GARCH,Persistencia,3.1938230986266856,0.001404021249321419,ARX+GARCH PIERDE (sig.)
+Origen 2,La Nina 2021-22,XGBoost,Persistencia,4.8252770484956455,1.3980878431741136e-06,XGBoost PIERDE (sig.)
+Origen 3,La Nina triple-dip -> neutral,N-BEATSx,ARX+GARCH,-7.387528622262038,1.4958293980555198e-13,N-BEATSx GANA (sig.)
+Origen 3,La Nina triple-dip -> neutral,N-BEATSx,Persistencia,0.4246203472113025,0.6711134577724561,sin diferencia significativa
+Origen 3,La Nina triple-dip -> neutral,N-HiTS,ARX+GARCH,-9.04098554154766,1.552655698456788e-19,N-HiTS GANA (sig.)
+Origen 3,La Nina triple-dip -> neutral,N-HiTS,Persistencia,-1.668466777695953,0.09522310165515618,sin diferencia significativa
+Origen 3,La Nina triple-dip -> neutral,ARX+GARCH,Persistencia,7.72631123903009,1.1070775977425856e-14,ARX+GARCH PIERDE (sig.)
+Origen 3,La Nina triple-dip -> neutral,XGBoost,Persistencia,6.75506655557535,1.427697032007373e-11,XGBoost PIERDE (sig.)
+Origen 4,El Nino 2023-24 (episodio completo),N-BEATSx,ARX+GARCH,-6.697030777253264,2.1269683862408754e-11,N-BEATSx GANA (sig.)
+Origen 4,El Nino 2023-24 (episodio completo),N-BEATSx,Persistencia,-0.6035429179577941,0.5461475734301255,sin diferencia significativa
+Origen 4,El Nino 2023-24 (episodio completo),N-HiTS,ARX+GARCH,-5.081584847602637,3.7429875502330886e-07,N-HiTS GANA (sig.)
+Origen 4,El Nino 2023-24 (episodio completo),N-HiTS,Persistencia,0.7085876793760972,0.4785803842129944,sin diferencia significativa
+Origen 4,El Nino 2023-24 (episodio completo),ARX+GARCH,Persistencia,7.989342661725836,1.3566014081304473e-15,ARX+GARCH PIERDE (sig.)
+Origen 4,El Nino 2023-24 (episodio completo),XGBoost,Persistencia,9.842604455560016,7.377579053303583e-23,XGBoost PIERDE (sig.)
+Origen 5,Neutral / La Nina debil 2024-25,N-BEATSx,ARX+GARCH,0.7522158717854247,0.45192125030996333,sin diferencia significativa
+Origen 5,Neutral / La Nina debil 2024-25,N-BEATSx,Persistencia,1.3142965601764098,0.18874642440987188,sin diferencia significativa
+Origen 5,Neutral / La Nina debil 2024-25,N-HiTS,ARX+GARCH,0.17336714931298844,0.8623628451305485,sin diferencia significativa
+Origen 5,Neutral / La Nina debil 2024-25,N-HiTS,Persistencia,0.7488083204608563,0.4539727440460417,sin diferencia significativa
+Origen 5,Neutral / La Nina debil 2024-25,ARX+GARCH,Persistencia,1.2744310032714694,0.20251071059063874,sin diferencia significativa
+Origen 5,Neutral / La Nina debil 2024-25,XGBoost,Persistencia,3.358573973995711,0.000783457488470354,XGBoost PIERDE (sig.)
 Origen 6,El Nino 2026 (neutral->fuerte),N-BEATSx,ARX+GARCH,-4.038021075740361,5.3904011178149875e-05,N-BEATSx GANA (sig.)
 Origen 6,El Nino 2026 (neutral->fuerte),N-BEATSx,Persistencia,-4.153534226432148,3.2737921897100964e-05,N-BEATSx GANA (sig.)
 Origen 6,El Nino 2026 (neutral->fuerte),N-HiTS,ARX+GARCH,-4.051676614906102,5.0851918681009925e-05,N-HiTS GANA (sig.)

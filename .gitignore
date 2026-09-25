@@ -208,3 +208,20 @@ __marimo__/
 
 # PyTorch Lightning training logs/checkpoints (neuralforecast)
 lightning_logs/
+
+# Logs internos de entrenamiento de CatBoost
+catboost_info/
+
+# Logs de scripts_experimento (no son artefactos del proyecto)
+logs_*.txt
+
+# Archivos temporales de bloqueo de Word/Office (se crean al tener un .docx abierto)
+~$*
+
+# PDFs y texto extraido de papers: repositorio publico, no redistribuir (ver docs/papers/REFERENCIAS.md)
+docs/papers/*.pdf
+docs/papers/*.txt
+# Logs locales de corridas largas
+logs/
+# Metadatos de carpeta de Windows
+desktop.ini

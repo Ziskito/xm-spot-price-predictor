@@ -9,6 +9,7 @@ asyncio==4.0.0
 attrs==26.1.0
 beautifulsoup4==4.15.0
 bleach==6.4.0
+catboost==1.2.10
 certifi==2026.2.25
 charset-normalizer==3.4.7
 click==8.5.0
@@ -91,6 +92,7 @@ pydataxm==0.3.17
 Pygments==2.20.0
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
+python-docx==1.2.0
 pytorch-lightning==2.5.6
 pytz==2026.3.post1
 PyYAML==6.0.3
