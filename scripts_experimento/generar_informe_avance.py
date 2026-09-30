@@ -18,6 +18,8 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
+from ecuaciones_omml import tabla_ecuacion
+
 RAIZ = Path(r"C:\Users\mgdbj\xm-spot-price-predictor")
 PLANTILLA = RAIZ / "docs" / "PLANTILLA_FINAL_ABET (1).docx"
 SALIDA = RAIZ / "docs" / "Informe_Avance_ABET_Barcelo_Dede.docx"
@@ -66,6 +68,10 @@ BIB = {
     "creg2022": 'Comisión de Regulación de Energía y Gas (CREG), "Resolución CREG 101 018 de 2022," Bogotá, Colombia, 2022.',
     "ley23": 'Congreso de la República de Colombia, "Ley 23 de 1982, sobre derechos de autor," Bogotá, Colombia, ene. 1982.',
     "aciem2015": 'ACIEM y Consejo Profesional Nacional de Ingenierías Eléctrica, Mecánica y Profesiones Afines, *Manual de Referencia de Tarifas en Ingeniería*. Cundinamarca, Colombia, 2015.',
+    "tukey1977": 'J. W. Tukey, *Exploratory Data Analysis*. Reading, MA, EE. UU.: Addison-Wesley, 1977.',
+    "gama2014": 'J. Gama, I. Žliobaitė, A. Bifet, M. Pechenizkiy y A. Bouchachia, "A survey on concept drift adaptation," *ACM Comput. Surv.*, vol. 46, no. 4, art. 44, 2014, doi: 10.1145/2523813.',
+    "wald1950": 'A. Wald, *Statistical Decision Functions*. Nueva York, NY, EE. UU.: Wiley, 1950.',
+    "garivier2011": 'A. Garivier y E. Moulines, "On upper-confidence bound policies for switching bandit problems," en *Algorithmic Learning Theory (ALT 2011)*, LNCS, vol. 6925. Berlín, Alemania: Springer, 2011, pp. 174–188.',
     "pedregosa2011": 'F. Pedregosa et al., "Scikit-learn: Machine learning in Python," *J. Mach. Learn. Res.*, vol. 12, pp. 2825–2830, 2011.',
 }
 ORDEN = []
@@ -196,19 +202,9 @@ class Cursor:
         for k, it in enumerate(items, 1):
             self.add(_par(f"{k}.\t" + it, ind_left=426, hanging=284, after=after))
 
-    def ecuacion(self, texto, num):
-        p = _par("", jc="left", after=100, before=40)
-        ppr = p.find(qn("w:pPr"))
-        tabs = OxmlElement("w:tabs")
-        for val, pos in (("center", 4680), ("right", 9350)):
-            t = OxmlElement("w:tab"); t.set(qn("w:val"), val); t.set(qn("w:pos"), str(pos)); tabs.append(t)
-        ppr.insert(0, tabs)
-        r = OxmlElement("w:r"); r.append(OxmlElement("w:tab")); p.append(r)
-        for rr in _runs(texto, i_all=True):
-            p.append(rr)
-        r = OxmlElement("w:r"); r.append(OxmlElement("w:tab")); p.append(r)
-        p.append(_run(f"({num})"))
-        return self.add(p)
+    def ecuacion(self, latex, num):
+        self.add(tabla_ecuacion(latex, num, ancho_twips=9350, fuente="Calibri"))
+        return self.p("", after=0, sz=4)
 
     # ---- tablas y figuras ----
     def titulo_tabla(self, n, texto):
@@ -223,7 +219,8 @@ class Cursor:
         self.add(tmp._p)
         return self.p(f"**Figura {n}.** {texto}", jc="center", after=160, sz=10)
 
-    def tabla(self, filas, anchos_cm, encabezado=True, sz=9, alinear=None, negrita_col0=False, espacio=True):
+    def tabla(self, filas, anchos_cm, encabezado=True, sz=9, alinear=None, negrita_col0=False, espacio=True,
+              mantener=True, margen_v=50):
         """tabla con el mismo estilo de las tablas de contenido de la plantilla:
         bordes simples, encabezado gris oscuro 2E2E2E con texto blanco en negrita."""
         ncol = len(filas[0])
@@ -266,7 +263,7 @@ class Cursor:
                     shd = OxmlElement("w:shd"); shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto")
                     shd.set(qn("w:fill"), "2E2E2E"); tcpr.append(shd)
                 mar = OxmlElement("w:tcMar")
-                for lado, v in (("top", 50), ("left", 80), ("bottom", 50), ("right", 80)):
+                for lado, v in (("top", margen_v), ("left", 80), ("bottom", margen_v), ("right", 80)):
                     e = OxmlElement(f"w:{lado}"); e.set(qn("w:w"), str(v)); e.set(qn("w:type"), "dxa"); mar.append(e)
                 tcpr.append(mar)
                 va = OxmlElement("w:vAlign"); va.set(qn("w:val"), "center"); tcpr.append(va)
@@ -293,7 +290,7 @@ class Cursor:
                     for r in _runs(linea, sz=sz, color="FFFFFF" if enc else None,
                                    b_all=enc or (negrita_col0 and ci == 0)):
                         p.append(r)
-        if len(filas) <= 7:
+        if mantener and len(filas) <= 7:
             for tr in tbl.findall(qn("w:tr"))[:-1]:
                 for pp in tr.iter(qn("w:p")):
                     ppr = pp.find(qn("w:pPr"))
@@ -374,7 +371,6 @@ LIT = C["oe2_literatura_24h"]
 BAN = C["oe2_bandas"]
 WF = C["oe2_wf_mae"]
 WFR = {r["modelo"]: r for r in C["oe2_wf_resumen"]}
-BT = C["oe3_backtest"]
 D1 = C["oe1_desc"]
 COR = C["oe1_corr"]
 AV = {"OE1": 100, "OE2": 90, "OE3": 70, "OE4": 35}
@@ -393,23 +389,29 @@ cur = Cursor(encabezado("Título del proyecto", 2)._p)
 cur.p(f"**{TITULO}.**")
 
 cur = Cursor(encabezado("Resumen ejecutivo", 2)._p)
-cur.p("**Resumen.** El precio de bolsa en Colombia se fija cada hora sobre una matriz cercana a 72 % "
-      "hidroeléctrica {c:iea} y puede multiplicarse en semanas durante El Niño. Se diseñó una plataforma en "
-      "Python que adquiere y sincroniza los datos públicos de XM y NOAA, los caracteriza en tiempo y frecuencia, "
-      "pronostica a 24-72 h con un ensamble de seis modelos combinados por regresión cuantílica, calibra bandas de "
-      "incertidumbre por inferencia conforme y alimenta un motor de decisión con dashboard por rol. Se validó fuera "
-      "de muestra en enero-agosto de 2026 (5.184 horas), con walk-forward en seis regímenes climáticos y la prueba "
-      f"de Diebold-Mariano. A 24 h el MAPE es {pct(ENS['MAPE'])} frente a {pct(PER['MAPE'])} de la persistencia (27 % "
-      f"menos error, p < 0,001); a 72 h, {pct(G72['MAPE'])} frente a {pct(G72['MAPE_persistencia'])}. Avance global "
-      f"estimado: {AV_G} %.")
-cur.p("**Abstract.** Colombia's hourly electricity spot price rests on a roughly 72 % hydroelectric mix and can "
-      "multiply within weeks during El Niño. We designed a Python platform that acquires and synchronizes public XM and NOAA data, characterizes them in time "
-      "and frequency, forecasts 24-72 h ahead with an ensemble of six models combined by quantile regression, "
-      "calibrates uncertainty bands with conformal inference, and feeds a role-based decision engine and dashboard. "
-      "It was validated out of sample on January-August 2026 (5,184 hours) with walk-forward evaluation across six "
-      f"climate regimes and the Diebold-Mariano test. The 24-hour MAPE is {ENS['MAPE']:.2f} % versus "
-      f"{PER['MAPE']:.2f} % for persistence (27 % lower error, p < 0.001); at 72 hours, {G72['MAPE']:.2f} % versus "
-      f"{G72['MAPE_persistencia']:.2f} %. Estimated overall progress: {AV_G} %.")
+cur.p("**Resumen.** El precio de bolsa de la energía eléctrica en Colombia se fija cada hora sobre una matriz "
+      "mayoritariamente hidroeléctrica {c:iea} y puede aumentar significativamente, prolongándose este incremento "
+      "durante varias semanas en presencia del fenómeno de El Niño. Ante esta problemática, se diseñó una plataforma "
+      "para adquirir y sincronizar datos públicos del mercado de energía, proporcionados por XM, y variables "
+      "medioambientales, obtenidas de NOAA, caracterizarlos en los dominios temporal y frecuencial y pronosticar el "
+      "precio de la energía con un horizonte de 24 a 72 h. Esto se realiza mediante un ensamble de seis modelos de "
+      "predicción, tanto estadísticos como de aprendizaje automático, cuyas salidas se combinan por el método de "
+      "regresión cuantílica. La plataforma calibra bandas de incertidumbre por inferencia conforme y alimenta un motor "
+      "de decisión con dashboards adaptados a cada rol. El resultado del ensamble se validó fuera de muestra con los "
+      "datos de enero a agosto de 2026, con el método de walk-forward en seis regímenes climáticos y la prueba de "
+      f"Diebold-Mariano. A 24 h el MAPE es {pct(ENS['MAPE'])} frente a {pct(PER['MAPE'])} de la persistencia, con un "
+      f"error absoluto medio 27 % menor (p < 0,001); a 72 h, el MAPE es {pct(G72['MAPE'])} frente a "
+      f"{pct(G72['MAPE_persistencia'])}. Avance global estimado: {AV_G} %.")
+cur.p("**Abstract.** The hourly spot price of electricity in Colombia is set on a mostly hydroelectric mix and can "
+      "rise sharply for several weeks during El Niño. We designed a platform that acquires and synchronizes public "
+      "market data from XM and environmental data from NOAA, characterizes them in the time and frequency domains, "
+      "and forecasts the price 24 to 72 hours ahead with an ensemble of six statistical and machine learning models "
+      "combined by quantile regression. The platform calibrates uncertainty bands with conformal inference and feeds "
+      "a decision engine with role-based dashboards. The ensemble was validated out of sample on January-August 2026 "
+      "data, with walk-forward evaluation across six climate regimes and the Diebold-Mariano test. At 24 hours the "
+      f"MAPE is {ENS['MAPE']:.2f} % versus {PER['MAPE']:.2f} % for persistence, with a 27 % lower mean absolute error "
+      f"(p < 0.001); at 72 hours, {G72['MAPE']:.2f} % versus {G72['MAPE_persistencia']:.2f} %. Estimated overall "
+      f"progress: {AV_G} %.")
 
 cur = Cursor(encabezado("Costo total del proyecto", 2)._p)
 fr = 9 / 16
@@ -417,43 +419,53 @@ rubros = [("Personal", 32201260, fr), ("Materiales, equipos y herramientas", 316
           ("Infraestructura", 928000, fr), ("Transporte y logística", 296000, fr), ("Comunicación y divulgación", 500000, 0.0)]
 tot_p = sum(r[1] for r in rubros)
 tot_e = sum(round(r[1] * r[2]) for r in rubros)
-cur.p("Presupuesto del Anexo 1 {c:anexo1} (honorarios según ACIEM {c:aciem2015}) con la ejecución estimada a la "
-      "semana 9 de 16 por prorrateo; la divulgación se ejecuta en la semana 16. Financiación: $24.486.344 propia y "
-      "$13.118.916 de la Universidad del Norte. Detalle en el Anexo 6.")
+cur.p("Presupuesto del Anexo 1 {c:anexo1}, con honorarios según ACIEM {c:aciem2015} y ejecución estimada por "
+      "prorrateo a la semana 9 de 16 (la divulgación se ejecuta en la semana 16). Financiación: $24.486.344 propia y "
+      "$13.118.916 de la Universidad del Norte (detalle en el Anexo 6).")
 cur.titulo_tabla(1, "Presupuesto aprobado y ejecución estimada a la semana 9 (COP).")
 filas = [["Rubro", "Aprobado (Anexo 1)", "Ejecutado estimado", "% ejecutado"]]
 for nom, v, k in rubros:
     filas.append([nom, "$" + f(v, 0), "$" + f(round(v * k), 0), pct(k * 100, 1)])
 filas.append(["**Total**", "**$" + f(tot_p, 0) + "**", "**$" + f(tot_e, 0) + "**", "**" + pct(tot_e / tot_p * 100, 1) + "**"])
-cur.tabla(filas, [6.2, 3.4, 3.4, 2.4], alinear=["left", "right", "right", "right"], sz=8.5, espacio=False)
+cur.tabla(filas, [6.2, 3.4, 3.4, 2.4], alinear=["left", "right", "right", "right"], sz=8, espacio=False, margen_v=20)
 
 # ================================================================================================
 # 2. INTRODUCCION
 # ================================================================================================
 cur = Cursor(encabezado("Introducción", 1)._p)
-cur.p("El mercado mayorista de energía colombiano, administrado por XM, fija un precio de bolsa para cada hora del "
-      "día. Como cerca de 72 % de la generación es hidroeléctrica {c:iea}, ese precio responde a la hidrología "
-      "(nivel de embalses y aportes de los ríos) y a su modulación por el fenómeno El Niño-Oscilación del Sur: "
-      "entre 2023 y 2024 el promedio diario osciló entre 124 y 2.499 COP/kWh. Los agentes que compran o "
-      "venden en bolsa deben decidir hora a hora bajo esa incertidumbre, y la literatura sobre pronóstico de "
-      "precios eléctricos muestra que se trata de series con saltos, estacionalidad múltiple y cambios de régimen "
+cur.p("El Mercado de Energía Mayorista (MEM) en Colombia, administrado por XM, establece un precio de bolsa de la "
+      "energía eléctrica para cada hora del día. Dado que cerca del 72 % de la generación proviene de centrales "
+      "hidroeléctricas {c:iea}, este precio está condicionado por diversos factores, entre ellos los hidrológicos "
+      "(como el nivel de los embalses y los aportes de los ríos) y su variabilidad asociada al fenómeno de El Niño. "
+      "Esta dependencia de las condiciones hidrológicas y climáticas introduce altos niveles de incertidumbre en el "
+      "comportamiento del precio. Por ejemplo, entre 2023 y 2024 el promedio diario osciló entre 107 y 2.499 COP/kWh "
+      "{c:xm}. Los agentes (vendedores y compradores) que participan en el mercado deben decidir sus operaciones hora "
+      "a hora bajo esa incertidumbre. Por otro lado, los estudios sobre el pronóstico de precios eléctricos mediante "
+      "series de tiempo evidencian que estas presentan saltos, estacionalidad múltiple y cambios de régimen "
       "{c:weron2014}.")
-cur.p("Con este proyecto se construyó, a la fecha, una plataforma reproducible que (i) adquiere y sincroniza a "
-      "resolución horaria las series públicas del mercado entre enero de 2019 y agosto de 2026; (ii) las "
-      "caracteriza en tiempo y frecuencia para seleccionar variables predictoras; (iii) compara seis familias de "
-      "modelos y los combina en un ensamble que reduce el error en 27 % frente a la persistencia con significancia "
-      "estadística; y (iv) traduce el pronóstico y su incertidumbre en señales de comprar, vender o esperar "
-      "según el rol del usuario, visibles en un dashboard.")
-cur.p("Metodológicamente, el trabajo sigue las cinco fases del Anexo 1 {c:anexo1}: cadena de procesamiento y "
-      "caracterización (OE1), extracción de características y modelado (OE2), comparación formal y motor de "
-      "decisión (OE3) e imágenes de decisión y validación (OE3 y OE4). Todas las decisiones se tomaron con "
-      "evaluación estrictamente fuera de muestra y con la prueba de Diebold-Mariano {c:diebold1995}, siguiendo las "
-      "buenas prácticas del área {c:lago2021}.")
-cur.p("El documento se organiza así. La Sección 3 presenta los objetivos y su porcentaje de avance; la 4, los "
-      "alcances, limitaciones y entregables; la 5, el planteamiento del problema y la comparación con el estado "
-      "del arte; la 6, el diseño de ingeniería (requerimientos, normas, alternativas, matriz de decisión, riesgos "
-      "y diseño definitivo); la 7, el plan experimental y sus resultados; la 8, los impactos; la 9, las "
-      "conclusiones por objetivo; y las secciones 10 y 11, la bibliografía y los anexos.")
+cur.p("Para pronosticar este tipo de series se usan principalmente tres familias de métodos {c:weron2014,lago2021}: "
+      "los modelos estadísticos, como ARIMA y sus extensiones con volatilidad GARCH, que explican el precio a partir "
+      "de sus valores pasados y de variables externas; los modelos de aprendizaje automático, como los árboles de "
+      "decisión potenciados; y las redes neuronales profundas diseñadas para series de tiempo. Todos se comparan "
+      "contra una referencia mínima, la **persistencia**, que pronostica que el precio de cada hora será igual al de "
+      "la misma hora del día anterior. Aunque es el pronóstico más simple posible, es difícil de superar en un mercado "
+      "con un ciclo diario tan marcado como el colombiano; por eso un modelo solo aporta valor si su error es "
+      "significativamente menor que el de la persistencia.")
+cur.p("Con este proyecto se construyó una plataforma reproducible que adquiere y sincroniza a resolución horaria "
+      "las series de tiempo provenientes de fuentes públicas que caracterizan el MEM colombiano. Con datos de enero de "
+      "2019 a agosto de 2026, las series se caracterizaron en tiempo y frecuencia para seleccionar variables "
+      "predictoras. Con estas se compararon seis familias de modelos de predicción, que se combinaron en un ensamble "
+      "cuyo error absoluto medio (MAE) a 24 h es 27 % menor que el de la persistencia. Un motor de decisión traduce "
+      "el pronóstico y su incertidumbre en señales de comprar, vender o esperar según el rol del usuario, visibles en "
+      "un dashboard. El trabajo sigue las cinco fases del Anexo 1 {c:anexo1} (adquisición y caracterización, "
+      "modelado, comparación formal y motor de decisión, imágenes de decisión y validación), con evaluación "
+      "estrictamente fuera de muestra y la prueba de Diebold-Mariano {c:diebold1995}, siguiendo las buenas prácticas "
+      "del área de pronóstico de precios de electricidad {c:lago2021}.")
+cur.p("El valor práctico de la plataforma no está solo en la exactitud del pronóstico. Un pronóstico puntual no "
+      "indica cuánto confiar en él, y la literatura reciente advierte que un menor error no se traduce "
+      "automáticamente en mejores decisiones de mercado {c:maciejowska2025}. Por eso el diseño incluye bandas de "
+      "incertidumbre calibradas y un motor de decisión que se evalúa por la ventaja económica de sus "
+      "recomendaciones, y no solo por el error del modelo que lo alimenta.")
 
 # ================================================================================================
 # 3. OBJETIVOS
@@ -462,11 +474,6 @@ cur = Cursor(encabezado("Objetivo general", 2)._p)
 cur.p("Diseñar, implementar y validar una plataforma de procesamiento de datos que permita el análisis y "
       f"pronóstico del precio de la energía en el mercado eléctrico colombiano para la toma de decisiones "
       f"**(avance: {AV_G} %)**.")
-cur.p("El objetivo es verificable en las Conclusiones con tres criterios medibles: que la plataforma procese el "
-      "rango histórico completo sin huecos, que su pronóstico supere a la persistencia con significancia "
-      "estadística (α = 0,05) y que el motor de decisión sea validado mediante backtesting y con usuarios. Los "
-      "objetivos están transcritos del Anexo 1 {c:anexo1}, cuyo numeral 3 no puede modificarse durante el "
-      "semestre; el título, del numeral 1, tampoco.")
 cur = Cursor(encabezado("Objetivos específicos", 2)._p)
 objetivos = [
     ("OE1", "Adquirir, sincronizar y caracterizar temporal y espectralmente las series históricas de las variables "
@@ -484,60 +491,121 @@ cur.viñetas([f"**{k}.** {t} **({AV[k]} %)**" for k, t in objetivos])
 # 4. DELIMITACION
 # ================================================================================================
 cur = Cursor(encabezado("Alcances", 2)._p)
-cur.p("La Tabla 2 resume lo que cubre el proyecto según el Anexo 1 {c:anexo1} y el estado de cada alcance.")
-cur.titulo_tabla(2, "Alcances por objetivo específico y estado a la fecha.")
+cur.p("La Tabla 2 transcribe los alcances del Anexo 1 {c:anexo1} y el estado de cada uno a la fecha.")
+cur.titulo_tabla(2, "Alcances por objetivo específico (Anexo 1) y estado a la fecha.")
 cur.tabla([
     ["Objetivo", "Alcance", "Estado"],
-    ["OE1", "Datos públicos (XM/SIMEM, NOAA); adquisición automatizada por API REST; sincronización horaria de precio, demanda, generación, embalses y aportes; histórico ene-2019 a ago-2026; caracterización temporal y espectral.", "Cumplido (66.576 h)"],
-    ["OE2", "Características compartidas (rezagos, promedios móviles, armónicas de calendario) para al menos 2 modelos; horizonte de 24 a 72 h; evaluación con MAE, RMSE, MAPE, persistencia y costo computacional.", "Cumplido (40 variables, 6 modelos)"],
-    ["OE3", "Motor por percentiles del precio y su incertidumbre según rol; material visual con metadatos; dashboard integrado; biblioteca de 4-5 tipos de imágenes.", "Motor y dashboard funcionales; biblioteca pendiente"],
-    ["OE4", "Backtesting de la estrategia de recomendación; validación del dashboard con 3-5 usuarios.", "Backtest hecho; usuarios pendiente"],
-], [1.6, 10.2, 3.8], sz=8.5, alinear=["center", "left", "left"], negrita_col0=True)
+    ["OE1", "1. El análisis se basará exclusivamente en datos públicos disponibles.\n"
+            "2. Se entregará un pipeline de datos automatizado para la extracción y procesamiento de los datos "
+            "provenientes de las fuentes públicas de XM (API REST) y SIMEM.\n"
+            "3. La sincronización e integración se hará mínimo a resolución horaria, e incluirá, entre otras, las "
+            "siguientes variables: precio de bolsa, demanda, generación, volumen de embalses y aportes hídricos.\n"
+            "4. Se utilizarán datos históricos de enero de 2019 a agosto de 2026 de las variables mencionadas.\n"
+            "5. Se realizará una caracterización temporal y espectral de las series (estadísticas descriptivas, "
+            "estacionalidad, periodograma) para identificar componentes armónicas dominantes.", "Cumplido"],
+    ["OE2", "1. Se realizará la extracción de características temporales compartidas (rezagos, promedios móviles, "
+            "variables armónicas de calendario) para al menos 2 modelos.\n"
+            "2. La comparación de los modelos se hará con horizonte de 24 a 72 horas.\n"
+            "3. Se realizará la evaluación de los modelos utilizando métricas de precisión y error (MAE, RMSE y "
+            "MAPE), persistencia, y costo computacional.", "Cumplido (40 variables, 6 modelos)"],
+    ["OE3", "1. El motor de decisión contará con reglas basadas en percentiles del precio y su incertidumbre, "
+            "diferenciando el rol comprador y vendedor.\n"
+            "2. Se generará material visual de apoyo a la decisión: semáforo de compra/venta/espera, mapa de calor "
+            "día-hora, bandas de incertidumbre y comparación real-vs-pronóstico, con sus metadatos (unidad, "
+            "período, confianza, versión del modelo).\n"
+            "3. Se deberá incluir un dashboard que integre pronósticos, recomendaciones e imágenes de decisión.\n"
+            "4. La biblioteca de imágenes priorizará 4 a 5 tipos con validación funcional.",
+     "Motor y dashboard funcionales; biblioteca pendiente"],
+    ["OE4", "1. La validación de la estrategia de recomendación se realizará mediante backtesting sobre datos "
+            "históricos.\n"
+            "2. La validación del dashboard y las imágenes de decisión se realizará con una muestra de 3-5 usuarios "
+            "mediante un cuestionario de comprensión.", "Backtest hecho; usuarios pendiente"],
+], [1.6, 10.6, 3.4], sz=8.5, alinear=["center", "left", "left"], negrita_col0=True, mantener=False)
 
 cur = Cursor(encabezado("Limitaciones", 2)._p)
-cur.p("La Tabla 3 lista lo que el proyecto no cubre y por qué se excluyó.")
-cur.titulo_tabla(3, "Limitaciones y motivo de su exclusión.")
+cur.p("La Tabla 3 transcribe las limitaciones del Anexo 1 {c:anexo1}.")
+cur.titulo_tabla(3, "Limitaciones por objetivo específico (Anexo 1).")
 cur.tabla([
-    ["Objetivo", "No se cubre", "Motivo"],
-    ["OE1", "Datos propietarios; fenómenos intra-horarios; desglose de generación por tipo de recurso.", "Acceso a datos; el precio se fija por hora; alcance acordado en el Anexo 1 (solo agregados del sistema)."],
-    ["OE2", "Horizontes fuera de 24-72 h; modelos sin respaldo en la literatura.", "Horizonte útil para decisiones de bolsa; exigencia de respaldo bibliográfico."],
-    ["OE3", "Transacciones automáticas o integración con el despacho; simulación estructural del despacho.", "Regulación y responsabilidad; tiempo y alcance técnico del semestre."],
-    ["OE4", "Estudio formal de usabilidad (> 5 personas); garantía fuera del rango histórico.", "Tiempo; el backtesting solo cubre condiciones ya ocurridas."],
-], [1.6, 7.0, 7.0], sz=8.5, alinear=["center", "left", "left"], negrita_col0=True)
+    ["Objetivo", "Limitación"],
+    ["OE1", "1. No se garantiza acceso a datos operativos propietarios de empresas.\n"
+            "2. No se modelarán fenómenos de granularidad intra-horaria.\n"
+            "3. No se realizará el desglose de generación por tipo de recurso (hidráulica/térmica)."],
+    ["OE2", "1. Las predicciones de corto plazo no se encontrarán fuera del intervalo de 24 a 72 horas.\n"
+            "2. No se explorarán modelos distintos a los encontrados en la literatura."],
+    ["OE3", "1. El sistema no ejecuta transacciones automáticas ni se integra con los sistemas de despacho de XM.\n"
+            "2. La validación con usuarios se hará con una muestra reducida, no como estudio formal de usabilidad.\n"
+            "3. No se realizará simulación estructural de nivel 2, es decir, no se construirá un modelo que simule el "
+            "mecanismo físico y económico del despacho eléctrico colombiano."],
+    ["OE4", "1. La validación con usuarios no superará las 5 personas ni será un estudio formal de usabilidad.\n"
+            "2. La validación mediante backtesting se basa en datos históricos y no garantiza el desempeño ante "
+            "condiciones de mercado no observadas previamente (cambios regulatorios o hidrológicos extremos fuera "
+            "del rango histórico)."],
+], [1.6, 14.0], sz=8.5, alinear=["center", "left"], negrita_col0=True, mantener=False)
 
 cur = Cursor(encabezado("Entregables", 2)._p)
-cur.p("Según el Anexo 1 {c:anexo1}: dataset integrado 2019-2026, notebooks de análisis y modelado, repositorio en "
-      "GitHub e informe de avance (**entregados**); módulo de recomendación con backtesting y dashboard (**versión 1 "
-      "funcional**); biblioteca de imágenes de apoyo (**en curso**); manual de uso del motor (**borrador técnico**); e "
-      "informe final, póster, presentación y video de la semana 16 (**pendientes**).")
+cur.p("Entregables del Anexo 1 {c:anexo1}, con su estado a la fecha:")
+cur.viñetas([
+    "Anexo 1 – Formulación del proyecto (**entregado**).",
+    "Dataset integrado y limpio (enero de 2019 – agosto de 2026) (**entregado**).",
+    "Notebooks de análisis exploratorio y de modelado (**entregados**).",
+    "Biblioteca de imágenes de apoyo a la decisión (**en curso**).",
+    "Módulo de recomendación y resultados de backtesting (**versión 1 funcional**).",
+    "Dashboard (**versión 1 funcional**).",
+    "Informe final y repositorio en GitHub (**repositorio activo; informe en elaboración**).",
+    "Informe de avance – Semana 10 (**este documento**).",
+    "Manual de uso del motor de decisión – Semana 16 (**borrador técnico**).",
+    "Informe final – Semana 16 (**pendiente**).",
+    "Póster – Semana 16 (**pendiente**).",
+    "Presentación final – Semana 16 (**pendiente**).",
+    "Video – Semana 16 (**pendiente**).",
+], after=20)
 
 # ================================================================================================
 # 5. REVISION BIBLIOGRAFICA
 # ================================================================================================
 cur = Cursor(encabezado("Planteamiento del problema", 2)._p)
-cur.p("El precio de bolsa colombiano es una señal horaria con saltos y cambios de régimen. En los datos del "
-      f"proyecto (enero 2019 - agosto 2026, {f(C['oe1_filas'], 0)} horas descargadas de la API de XM {{c:xm}}) la "
-      f"mediana es {f(D1['50%'])} COP/kWh, pero el percentil 99 llega a {f(D1['99%'])} y el máximo a {f(D1['max'])} "
-      "COP/kWh: una cola larga que un promedio no describe. La Figura 1 muestra que los tramos de precio alto "
-      "coinciden en buena parte con episodios de El Niño definidos por el índice ONI de NOAA {c:noaa} (2023-2024 y "
-      "2026). Sin embargo, el mayor pico, un promedio diario de 2.499 COP/kWh el 30 de septiembre de 2024, ocurrió "
-      "con ONI neutro, cuando el volumen útil de los embalses era el más bajo de todos los septiembres de 2019 a "
-      "2025: el precio depende de la hidrología acumulada, no solo del índice climático.")
-cur.figura(1, "f_serie_oni.png", "Precio de bolsa promedio diario 2019-2026 y episodios ENSO. Fuente: elaboración "
-           "propia con datos de XM y NOAA.", ancho_cm=12)
-cur.p("El problema impacta a generadores y comercializadores del mercado mayorista, en especial a empresas "
-      "medianas sin herramientas analíticas: comprar en bolsa en la hora equivocada de un evento seco puede costar "
-      "varias veces el precio típico. Ocurre todos los días y se agudiza en temporadas climáticas extremas {c:anexo1}. "
-      "Es un problema complejo de ingeniería (ABET) porque tiene **requerimientos en conflicto** (precisión frente a "
-      "costo computacional e interpretabilidad), **partes interesadas opuestas** (el generador quiere vender caro y el "
-      "comercializador comprar barato), **múltiples disciplinas** (señales, estadística, aprendizaje automático, "
-      "mercado eléctrico, interfaces) y **no tiene solución única**: ningún modelo gana en todos los regímenes "
-      "(Sección 7).")
+cur.p("El precio de bolsa colombiano se puede representar como una serie de tiempo a resolución horaria con saltos "
+      "y cambios de régimen. De la plataforma de XM {c:xm} se obtuvieron "
+      f"{f(C['oe1_filas'], 0)} muestras horarias entre enero de 2019 y agosto de 2026. En una revisión preliminar se "
+      f"encontró que la mediana del precio es {f(D1['50%'])} COP/kWh, pero el percentil 99 llega a {f(D1['99%'])} "
+      f"COP/kWh y el máximo a {f(D1['max'])} COP/kWh: una cola larga que el promedio no describe apropiadamente.")
+cur.p("La Figura 1 muestra el promedio diario del precio (cada punto de la curva resume las 24 horas de un día) "
+      "entre 2019 y 2026. Las franjas de color marcan los episodios del fenómeno ENSO según el índice ONI de NOAA "
+      "{c:noaa}: naranja para El Niño (ONI ≥ 0,5) y azul para La Niña (ONI ≤ −0,5). Los tramos de precio alto "
+      "coinciden en buena parte con El Niño (2023-2024 y 2026). Sin embargo, el mayor pico, un promedio diario de "
+      "2.499 COP/kWh el 30 de septiembre de 2024, ocurrió con ONI neutro, cuando el volumen útil de los embalses era "
+      "el más bajo de todos los septiembres de 2019 a 2025. Por tanto, el precio también depende de la hidrología "
+      "acumulada, no solo del índice climático.")
+cur.figura(1, "f_serie_oni.png", "Precio de bolsa promedio diario entre 2019 y 2026. Franjas naranja: El Niño (ONI ≥ "
+           "0,5); franjas azules: La Niña (ONI ≤ −0,5). Fuente: elaboración propia con datos de XM y NOAA.",
+           ancho_cm=12)
+cur.p("El problema impacta a generadores y comercializadores del MEM, en especial a empresas medianas sin "
+      "herramientas analíticas: comprar en bolsa en la hora equivocada de un evento seco puede costar varias veces el "
+      "precio típico. Ocurre todos los días y se agudiza en temporadas climáticas extremas {c:anexo1}. Es un problema "
+      "complejo de ingeniería (ABET) porque tiene **requerimientos en conflicto** (precisión frente a costo "
+      "computacional e interpretabilidad), **partes interesadas opuestas** (el generador quiere obtener una alta "
+      "ganancia y el comercializador, un precio bajo), **múltiples disciplinas** (señales, estadística, aprendizaje "
+      "automático, mercado eléctrico, interfaces) y **no tiene solución única**: ningún modelo predomina en todos los "
+      "regímenes (Sección 7).")
+cur.p("Además, el diseño exigió tomar decisiones que la literatura no fija para este caso: qué variables construir "
+      "a partir de las cinco series públicas (se adoptaron 40 y se descartaron más de una docena por redundancia o "
+      "fuga de información; Tabla 11), qué familias de modelos combinar y con qué hiperparámetros (6 de las 15 "
+      "familias evaluadas forman el ensamble de 24 h; Tabla 12), el rango de años del histórico, la forma de "
+      "sincronizar series de resolución distinta y la codificación del ONI (Tabla 13). Cada decisión se tomó "
+      "formulando alternativas, evaluándolas fuera de muestra y eligiendo con criterios explícitos (Sección 6.8).")
 
 cur = Cursor(encabezado("Descripción de avances tecnológicos", 2)._p)
-cur.p("El pronóstico de precios eléctricos (EPF) evolucionó de modelos econométricos univariados hacia modelos "
-      "multivariados con selección de variables y redes profundas especializadas {c:weron2014,lago2021}. La Tabla 4 "
-      "compara críticamente los trabajos más cercanos.")
+cur.p("El pronóstico de precios eléctricos (EPF, por sus siglas en inglés) migró de modelos econométricos "
+      "univariados hacia modelos multivariados con selección de variables y redes profundas especializadas "
+      "{c:weron2014,lago2021}. En una primera etapa predominaron los modelos autorregresivos tipo ARIMA y sus "
+      "extensiones con volatilidad condicional (GARCH), que explican el precio a partir de su propio pasado. Luego se "
+      "incorporaron variables externas, como la demanda, la hidrología o el precio de los combustibles, junto con "
+      "métodos de regularización como LASSO {c:tibshirani1996}, que seleccionan automáticamente las variables que "
+      "aportan, y modelos de aprendizaje automático (árboles potenciados y redes neuronales) capaces de representar "
+      "relaciones no lineales. En los últimos años el interés se desplazó del pronóstico puntual al probabilístico, "
+      "que entrega también un intervalo de incertidumbre {c:nowotarski2015}, y a evaluar los pronósticos por su "
+      "utilidad en decisiones de mercado y no solo por su error {c:maciejowska2025}. La Tabla 4 compara los trabajos "
+      "más afines a este proyecto.")
 cur.titulo_tabla(4, "Comparación crítica de trabajos previos frente a este proyecto.")
 cur.tabla([
     ["Trabajo", "Datos y resolución", "Metodología", "Calidad de resultado", "Limitación frente a este proyecto"],
@@ -549,14 +617,35 @@ cur.tabla([
     ["Kapoor y Wichitaksorn 2023 {c:kapoor2023}", "Nueva Zelanda (hidro), diaria", "33 modelos con selección de variables", "Ningún modelo con MASE < 1 (mejor 1,26)", "Resolución diaria; sin recomendación"],
     ["Este proyecto", "Colombia, horaria 2019-2026", "Ensamble de 6 familias, bandas conformes y motor de decisión", f"MAPE {pct(ENS['MAPE'])} a 24 h; MASE {f(LIT['MASE_naive24h'], 3)}", "Validación con usuarios pendiente"],
 ], [3.2, 3.0, 3.4, 3.2, 3.6], sz=8)
-cur.p("La brecha es concreta: los trabajos colombianos usan series mensuales, datos anteriores a la reforma de "
-      "2015 o un solo modelo univariado, y ninguno cuantifica la incertidumbre ni la traduce en una recomendación. "
-      "Los referentes internacionales fijan el método de evaluación {c:lago2021,diebold1995} y muestran que modelos "
-      "simples con buena selección de variables compiten con el aprendizaje profundo {c:ziel2018,kapoor2023}, y la "
-      "literatura reciente advierte que el MAE no basta para medir el valor de un pronóstico en decisiones de "
-      "mercado {c:maciejowska2025}. No existe una plataforma para el mercado colombiano horario que combine "
-      "procesamiento de señales, un ensamble validado por regímenes y un motor de decisión por rol: esa es la brecha "
-      "que cierra este proyecto.")
+cur.p("Los tres antecedentes colombianos usan variantes de dos "
+      "familias clásicas. Agudelo et al. entrenan una red neuronal NARX (autorregresiva no lineal con entradas "
+      "exógenas): la red predice el precio de la hora siguiente a partir de sus propios valores recientes más "
+      "variables externas, y entrega un solo número por hora, sin margen de incertidumbre. Muñoz-Santiago et al. "
+      "combinan un ARIMA, que modela el nivel del precio a partir de su propio historial, con un GARCH integrado, que "
+      "modela cómo la volatilidad del error se agrupa en el tiempo sin disiparse — el mismo principio del ARX+GARCH "
+      "de este proyecto (Tabla 12). Barrientos Marín et al. comparan ese enfoque econométrico contra una red NARX y "
+      "un modelo híbrido de ambos, y con la prueba de Diebold-Mariano {c:diebold1995} no encuentran diferencia "
+      "estadística entre los tres: ni el modelo más simple ni el más complejo gana con claridad, el mismo patrón que "
+      "este proyecto confirma en la Sección 7.")
+cur.p("Los tres referentes internacionales aportan algo distinto: no compiten en exactitud, sino que definen cómo "
+      "medirla. Gallón y Barrientos tratan las 24 horas de un día no como 24 números sueltos, sino como una sola "
+      "curva continua, que descomponen en sus formas dominantes (componentes principales funcionales) para "
+      "pronosticar la forma completa del día siguiente; logran un MAPE de 6,7 % a un día, pero en 2000-2017, un "
+      "período sin los eventos climáticos extremos de 2023-2026 que enfrenta este proyecto. Lago et al. no proponen "
+      "un modelo para un mercado específico: fijan el protocolo que sigue toda la comunidad de pronóstico de "
+      "precios eléctricos, con el LEAR (una regresión lineal cuyas variables se seleccionan automáticamente por "
+      "LASSO) como referencia mínima exigible y la prueba de Diebold-Mariano para decidir si una mejora es real o es "
+      "ruido estadístico — el mismo protocolo que sigue este proyecto (Sección 7.1). Kapoor y Wichitaksorn prueban "
+      "33 combinaciones de modelo y método de selección de variables en Nueva Zelanda, un mercado también "
+      "dominado por la hidroelectricidad; su resultado, y la razón de citarlo en este informe, es que ninguna de "
+      "las 33 logra un MASE (el error del modelo dividido entre el de la referencia más simple posible, repetir el "
+      "precio del día anterior) menor a 1 — ninguna le gana de forma consistente a esa referencia, evidencia de lo "
+      "difícil que es pronosticar el precio en un mercado hidro-dominado incluso con métodos sofisticados.")
+cur.p("Ninguno de los tres trabajos colombianos cuantifica la incertidumbre ni la traduce "
+      "en una recomendación, y ninguno de los referentes internacionales cubre un mercado colombiano horario, "
+      "aunque fijan el método de evaluación {c:lago2021,diebold1995} y muestran que modelos simples compiten con "
+      "el aprendizaje profundo {c:ziel2018,kapoor2023}. No existe una plataforma que combine procesamiento de "
+      "señales, un ensamble validado por regímenes y un motor de decisión por rol.")
 
 # ================================================================================================
 # 6. DISENO
@@ -610,6 +699,9 @@ for fila, (n, dcs) in zip(t_normas.rows[1:], normas):
         for r in _runs(txt, sz=9):
             p.append(r)
 for fila in t_normas.rows[1:]:
+    trpr = fila._tr.get_or_add_trPr()
+    if trpr.find(qn("w:cantSplit")) is None:
+        trpr.append(OxmlElement("w:cantSplit"))
     for celda in fila.cells:
         mar = celda._tc.tcPr.find(qn("w:tcMar"))
         if mar is not None:
@@ -624,25 +716,44 @@ cur.p("También se respeta la Ley 23 de 1982 (derechos de autor): toda fuente se
 
 cur = Cursor(encabezado("Alternativas de solución", 2)._p)
 cur.p("Se plantearon tres alternativas para el bloque de pronóstico, que determina la calidad de la señal que recibe "
-      "el motor. Las tres comparten la cadena de datos de OE1 y el motor de OE3 (Tabla 7).")
+      "el motor. Las tres comparten la cadena de datos de OE1 y el motor de OE3; la Tabla 7 las resume.")
+cur.p("**Solución 1: modelo econométrico único (ARX+GARCH).** Una regresión log-lineal predice el nivel del precio a "
+      "partir de 15 variables (hidrología, ONI, pandemia, calendario y festivos) y de su propio rezago de 24 h "
+      "{c:munoz2017}, y un componente GARCH(1,1) {c:bollerslev1986} modela cómo se agrupa la volatilidad del error en "
+      "el tiempo; de él sale directamente la banda de incertidumbre. Toda la capacidad de ajuste está en una sola "
+      "ecuación con parámetros interpretables, que se entrena en segundos. Su limitación es el supuesto de "
+      "linealidad: en 2026 empata con la persistencia y pierde contra ella en 4 de los 6 orígenes históricos "
+      "(Tabla 15).")
+cur.p("**Solución 2: modelo único de aprendizaje profundo (N-BEATSx).** La red N-BEATSx {c:olivares2023} "
+      "descompone la serie en bloques que aprenden por separado componentes como la tendencia y la estacionalidad, "
+      "con 168 h (una semana) de historia y las mismas variables exógenas. No impone una forma funcional fija, por "
+      "lo que captura relaciones no lineales y pronostica varios horizontes a la vez, pero pierde la interpretación "
+      "directa de sus parámetros y tarda minutos en entrenar. Sus cuantiles se calibran aparte por inferencia "
+      "conforme.")
+cur.p("**Solución 3: ensamble heterogéneo.** Se combinan seis modelos de familias distintas (persistencia, árboles "
+      "de gradiente, el modelo de la solución 1, dos redes neuronales y un GARCH con selección LASSO) con un peso no "
+      "negativo por modelo y por franja horaria de 6 h {c:nowotarski2015}, más un puente a 72 h y las mismas bandas "
+      "conformes. El principio es el de diversificar un portafolio: si los errores de los modelos no están "
+      "perfectamente correlacionados, su combinación reduce el error total aunque ninguno sea el mejor por sí solo. "
+      "A cambio, es la alternativa más costosa de entrenar y mantener.")
 alt = {
     "Descripción": [
-        "Modelo econométrico único ARX+GARCH(1,1) {c:bollerslev1986,munoz2017}: regresión log-lineal del precio sobre "
-        "hidrología, ONI y calendario, con varianza condicional que da la banda.",
-        "Modelo único de aprendizaje profundo N-BEATSx {c:olivares2023} con variables exógenas, contexto de 168 h y "
-        "cuantiles calibrados por inferencia conforme.",
-        "Ensamble de seis modelos de familias distintas combinados por QRA ponderado por sMAPE en franjas de 6 h "
-        "{c:nowotarski2015}, con puente a 72 h y bandas conformes."],
+        "ARX log-lineal (15 variables y rezago de 24 h) con varianza GARCH(1,1).",
+        "Red N-BEATSx con exógenas y 168 h de contexto; bandas por inferencia conforme.",
+        "Seis familias combinadas por QRA en franjas de 6 h; bandas conformes."],
     "Ventajas": [
         "Entrena en segundos; coeficientes interpretables; modela la volatilidad agrupada.",
-        "Captura patrones no lineales e intradía; multi-horizonte nativo.",
-        "Combina errores poco correlacionados: menor error y mayor estabilidad mes a mes; pesos transparentes."],
+        "Capta relaciones no lineales; multihorizonte nativo.",
+        "Menor error y mayor estabilidad mes a mes; pesos transparentes."],
     "Desventajas": [
-        "Supuesto lineal; en 2026 empata con la persistencia y en 4 de 6 orígenes es peor.",
-        "Caja negra; minutos de entrenamiento; en orígenes con corte a las 23:00 empata con la persistencia.",
-        "Mayor costo y más piezas; su robustez histórica solo se mide en 2026."],
+        "Supuesto lineal; empata con la persistencia en 2026 y pierde en 4 de 6 orígenes.",
+        "Caja negra; minutos de entrenamiento.",
+        "Mayor costo y más piezas que mantener."],
 }
 for fila in t_alt.rows[1:]:
+    trpr = fila._tr.get_or_add_trPr()
+    if trpr.find(qn("w:cantSplit")) is None:
+        trpr.append(OxmlElement("w:cantSplit"))
     etiqueta = fila.cells[0].text.strip()
     unicas = []
     for c_ in fila.cells:
@@ -653,7 +764,7 @@ for fila in t_alt.rows[1:]:
         for e in list(p):
             if e.tag != qn("w:pPr"):
                 p.remove(e)
-        for r in _runs(f"**{etiqueta}:** " + alt[etiqueta][k], sz=8.5):
+        for r in _runs(f"**{etiqueta}:** " + alt[etiqueta][k], sz=9):
             p.append(r)
 t_alt._tbl.addprevious(_par("**Tabla 7.** Alternativas de solución para el bloque de pronóstico.", jc="center",
                             after=60, before=120, sz=10, keep_next=True))
@@ -674,6 +785,9 @@ while len(filas_crit) < len(crit):
     filas_crit[-1]._tr.addnext(nueva)
     filas_crit = list(t_crit.rows[1:])
 for fila, valores in zip(filas_crit, crit):
+    trpr = fila._tr.get_or_add_trPr()
+    if trpr.find(qn("w:cantSplit")) is None:
+        trpr.append(OxmlElement("w:cantSplit"))
     unicas = []
     for c_ in fila.cells:
         if not unicas or c_._tc is not unicas[-1]._tc:
@@ -695,10 +809,16 @@ t_crit._tbl.addprevious(_par("**Tabla 8.** Criterios de ingeniería para evaluar
                              after=60, before=120, sz=10, keep_next=True))
 cur = Cursor(t_crit._tbl)
 cur.add(_par("", after=40))
-cur.p("**Método de decisión:** matriz ponderada con puntajes de 1 a 5 y reglas fijadas antes de ver el resultado: "
-      "precisión y robustez 5 si rMAE ≤ 0,75 (robustez ≤ 0,85), 4 si ≤ 0,85 (≤ 0,90), 3 si ≤ 0,95, 2 si ≤ 1,00 y 1 si "
-      "> 1; costo 5 si < 1 min, 4 si < 5 min, 3 si < 10 min; interpretabilidad 5 con coeficientes, 3 con pesos por "
-      "modelo y 2 si es caja negra. La cobertura no se puntúa porque las alternativas 2 y 3 comparten la misma banda.")
+cur.p("Con estos criterios se construyó la matriz de decisión ponderada de la Sección 6.6. Cada alternativa recibe "
+      "un puntaje de 1 a 5 por criterio, con reglas fijadas antes de conocer los resultados para no ajustarlas a favor "
+      "de ninguna. En precisión, el puntaje es 5 si el rMAE es menor o igual a 0,75; 4 si es menor o igual a 0,85; 3 "
+      "si es menor o igual a 0,95; 2 si es menor o igual a 1,00, y 1 si es mayor que 1, es decir, si el modelo pierde "
+      "contra la persistencia. La robustez usa la misma escala, pero con límites de 0,85 y 0,90 para los puntajes 5 y "
+      "4. En costo computacional, el puntaje es 5 si el reentrenamiento toma menos de 1 minuto, 4 si toma menos de 5 "
+      "y 3 si toma menos de 10. En interpretabilidad, es 5 si los coeficientes del modelo se leen directamente, 3 si "
+      "solo se conocen los pesos de cada modelo y 2 si es una caja negra. La cobertura de las bandas no se puntúa "
+      "porque las alternativas 2 y 3 usan la misma banda. Los pesos de los criterios (Tabla 9) reflejan las "
+      "prioridades del cliente: precisión y robustez suman el 60 %.")
 
 cur = Cursor(buscar_parrafo("Matriz de decisión")._p)
 nbx_s = t_nn / 2
@@ -726,7 +846,7 @@ cur.tabla([
     ["Técnico", "Fuga de información (variables no disponibles en el corte).", "Media", "Alto", "Rezago ≥ 24 h verificado por variable; precio de oferta marginal excluido."],
     ["Técnico", "Datos corruptos en la fuente o el procesamiento.", "Media", "Alto", "Pruebas en copia aislada; se detectó y corrigió la demanda del 4-5 de ago. de 2026."],
     ["Regulatorio", "Intervención transitoria de la CREG en la formación del precio.", "Media", "Alto", "Fecha de corte documentada; el ensamble de 24 h se reentrena en < 8 min."],
-    ["Técnico", "Ningún modelo mejora de forma significativa en El Niño.", "Alta", "Medio", "Método «banda»: el motor espera cuando la incertidumbre es alta."],
+    ["Técnico", "Ningún modelo mejora de forma significativa en El Niño.", "Alta", "Medio", "Métodos «banda» e «híbrido»: el motor espera cuando la incertidumbre es alta."],
     ["Social/ético", "El usuario toma la recomendación como garantía.", "Baja", "Alto", "Mostrar la incertidumbre y advertir que no es asesoría financiera."],
     ["Administrativo", "Retraso de OE3/OE4.", "Media", "Alto", "Priorizar su cierre sobre nuevas pruebas de modelos."],
 ], [2.3, 4.5, 1.3, 1.5, 6.0], sz=8.5)
@@ -764,7 +884,7 @@ cur.p("**Definición de modelos.** Los seis votantes se eligieron de la literatu
       "configuración y forma de ajuste.")
 cur.titulo_tabla(12, "Modelos del ensamble: fundamento, configuración y ajuste.")
 cur.tabla([
-    ["Modelo", "Fundamento", "Configuración", "Cómo se ajustó"],
+    ["Modelo", "Fundamento", "Configuración", "Criterio de implementación"],
     ["Persistencia", "Referencia ingenua {c:lago2021}", "ŷ~t~ = y~t−24~", "Sin parámetros"],
     ["XGBoost", "Árboles con gradiente {c:chen2016}", "500 árboles, profundidad 3, tasa 0,01, submuestreo 0,8; objetivo log(y); 40 variables", "Búsqueda en rejilla validada contra 2025"],
     ["ARX+GARCH", "ARIMA-IGARCH colombiano {c:munoz2017,bollerslev1986}", "Media log-lineal con 15 regresoras (hidrología, ONI, pandemia, calendario, festivos) + log y~t−24~; varianza GARCH(1,1)", "27 configuraciones validadas contra 2025; se mantuvo GARCH(1,1) porque el ganador de validación (GJR(2,1)) tenía persistencia 1,02 (explosiva)"],
@@ -774,7 +894,8 @@ cur.tabla([
     ["Combinador", "QRA {c:nowotarski2015}", "Pesos ≥ 0 e intercepto por franja de 6 h; objetivo alineado con el sMAPE (Ec. 1)", "Validación cruzada de 5 pliegues por días; 10 particiones"],
     ["Bandas", "Regresión cuantílica conforme {c:romano2019}", "Cuantiles q10/q90 de N-BEATSx ensanchados por un margen conforme de 30 días móviles", "Cobertura medida en 2026"],
 ], [2.2, 3.3, 5.6, 4.5], sz=8)
-cur.ecuacion("min~w≥0,b~ Σ~t∈g~ ω~t~ · | y~t~ − b − Σ~k~ w~k~ · ŷ~k,t~ |,   ω~t~ = 2 / ( |y~t~| + |ŷ~t~| )", 1)
+cur.ecuacion([r"\mathrm{min}_{w\ge 0,\,b}\sum_{t\in g}{\omega_t\left|y_t-b-\sum_k{w_k\,\hat{y}_{k,t}}\right|}",
+              r"\omega_t=\frac{2}{|y_t|+|\hat{y}_t|}"], 1)
 cur.p("La Ecuación 1 es el programa lineal del combinador para cada franja *g*: ŷ~k,t~ es el pronóstico del modelo "
       "*k* y los pesos ω~t~ se actualizan iterativamente para minimizar el sMAPE. El producto de 72 h reutiliza el "
       "ensamble de 24 h en los pasos 1-23 y combina, en el resto, un LEAR (72 modelos LASSO, uno por paso), dos "
@@ -804,19 +925,42 @@ cur.tabla([
     ["Walk-forward de 6 orígenes con regímenes ENSO distintos", "Un solo corte de prueba", "Un corte único ocultaba que XGBoost pierde contra la persistencia en los 6 orígenes"],
     ["Combinador por franjas de 6 h con objetivo sMAPE", "Pesos globales u objetivo MAE", "Por franja: MAE 43,24 frente a 44,38 global (p = 0,0006); objetivo sMAPE: MAPE 10,66 → 10,47 % en 10/10 particiones"],
     ["Bandas conformes adaptativas (30 días)", "Bandas crudas o calibración estática", "Cobertura 62,6 % cruda y 67-72 % estática, frente a 78 % adaptativa"],
-    ["Motor elegido por backtest con frecuencia de acción del 10 al 40 %", "Un umbral fijo único", "El método «banda» gana en los 4 casos (Tabla 18)"],
+    ["Motor elegido por backtest: frecuencia de acción del 10 al 40 % y criterio de estabilidad (maximin entre mitades del periodo)", "Elegir por la ventaja promedio del año; un umbral fijo único", "«banda» gana el promedio pero actúa en el 1,2 % de las horas de la primera mitad; el criterio estable elige «híbrido» (generador) y «rodante» (comercializador) (Tablas 18 y 19)"],
 ], [4.6, 3.8, 7.2], sz=8)
-cur.p("**Motor de decisión (método «banda»).** (1) Se calculan los percentiles p25 y p75 del precio de entrenamiento "
-      "y el percentil 75 del ancho de banda histórico; (2) si el ancho q90 − q10 de una hora supera ese percentil, se "
-      "emite «esperar»; (3) si no, la mediana q50 se compara con p25 y p75: por debajo de p25 el comercializador "
-      "recibe «comprar» y el generador «retener»; por encima de p75, «evitar compra» y «vender»; en otro caso, "
-      "«esperar».")
+cur.p("**Motor de decisión (cuatro métodos y selección por estabilidad).** (1) Cada método fija un umbral bajo y "
+      "uno alto y compara con ellos la mediana q50 de cada hora: por debajo del bajo el comercializador recibe "
+      "«comprar» y el generador «retener»; por encima del alto, «evitar compra» y «vender»; en otro caso, «esperar». "
+      "Los umbrales por defecto son los percentiles 25 y 75, el rango intercuartílico convencional para separar "
+      "valores típicos de extremos {c:tukey1977}. (2) Los métodos difieren en la referencia: «fijo» usa los "
+      "percentiles del precio de entrenamiento 2019-2025; «rodante», los de una ventana móvil causal de 30 días sobre "
+      "q50, que se adapta al régimen vigente {c:gama2014}; «banda» es el fijo más un filtro que emite «esperar» "
+      "cuando el ancho q90 − q10 supera su percentil 75 histórico; e «híbrido», agregado en esta etapa, combina el "
+      "umbral rodante con ese filtro de confianza. (3) El método activo se elige por backtesting: solo son admisibles "
+      "los que actúan entre 10 % y 40 % de las horas y, entre ellos, gana el de mayor ventaja en la mitad más débil "
+      "del periodo (criterio maximin {c:wald1950}) y no el de mayor ventaja promedio, para descartar un método cuyo "
+      "buen promedio dependa de un solo tramo del año.")
+cur.p("La Figura 3 muestra el motor en operación durante una semana de julio de 2026 con el método que elige el "
+      "criterio de estabilidad para el generador («híbrido»). Cuando la mediana del pronóstico supera el umbral "
+      "alto, el motor recomienda vender, y cuando cae bajo el umbral bajo, retener; si en esas horas la banda es "
+      "más ancha que su percentil 75, la confianza es baja y el motor espera. El 13 de julio, por ejemplo, recomendó "
+      "vender en horas en que el precio real cayó, un error que proviene del pronóstico y que la banda no alcanzó a "
+      "señalar. Hoy el motor usa las bandas de N-BEATSx; conectarlo al ensamble de seis votantes es trabajo "
+      "pendiente (Sección 9).")
+cur.figura(3, "f_motor_hibrido.png", "Motor de decisión en operación, método «híbrido» para el generador (13 al "
+           "19 de julio de 2026): pronóstico mediano, banda [q10, q90], umbrales rodantes y acción recomendada en "
+           "cada hora.", ancho_cm=12.5)
+cur.p("**Dashboard.** La vista Operador aplica el método que elige el criterio de estabilidad y muestra, para la "
+      "hora seleccionada, la acción recomendada, la posición del precio esperado entre los umbrales y un nivel de "
+      "confianza según el ancho de la banda; la hora se elige con un selector o haciendo clic sobre la franja de 24 "
+      "horas del día. La vista Analista permite fijar a mano el método (incluido «híbrido») y los percentiles, y "
+      "recalcula el método sugerido sobre el rango de fechas elegido. Ambas vistas se verificaron sin errores con "
+      "pruebas automatizadas de Streamlit en las cuatro combinaciones de rol y horizonte.")
 cur.p("**Funcionamiento del prototipo.** El pipeline se ejecutó de principio a fin: los notebooks 01 a 03 se "
       "reejecutaron sin errores (01 y 02 en una copia aislada del proyecto), el ensamble se regeneró con los datos "
-      "corregidos y el dashboard corre localmente con los datos de 2026 (Figura 3). El código completo está en el "
+      "corregidos y el dashboard corre localmente con los datos de 2026 (Figura 4). El código completo está en el "
       "Anexo 3 y los resultados que demuestran el funcionamiento de cada bloque, en la Sección 7.")
-cur.figura(3, "f_dashboard_operador.png", "Prototipo del dashboard en funcionamiento, vista Operador (5 de "
-           "agosto de 2026, 08:00 h, rol generador).", ancho_cm=9.5)
+cur.figura(4, "f_dashboard_operador.png", "Prototipo del dashboard en funcionamiento, vista Operador (5 de "
+           "agosto de 2026, 08:00 h, rol generador).", ancho_cm=8.5)
 
 # ================================================================================================
 # 7. PRUEBAS
@@ -859,19 +1003,24 @@ cur.p("El plan se ejecutó en el orden previsto: dataset maestro, característic
       "motor. Hubo dos ajustes: la corrección de la demanda (que obligó a repetir el entrenamiento y la combinación) "
       "y el análisis de la hora de lanzamiento, al detectar que las redes usan un corte a las 00:00, más favorable "
       "que el de las 23:00. Ecuaciones de procesamiento (N horas, y~t~ real, ŷ~t~ pronóstico):")
-cur.ecuacion("MAE = (1/N) Σ~t~ | y~t~ − ŷ~t~ |,     RMSE = √[ (1/N) Σ~t~ ( y~t~ − ŷ~t~ )² ]", 2)
-cur.ecuacion("MAPE = (100 %/N) Σ~t~ | y~t~ − ŷ~t~ | / y~t~,     sMAPE = (100 %/N) Σ~t~ | y~t~ − ŷ~t~ | / [ ( |y~t~| + |ŷ~t~| ) / 2 ]", 3)
-cur.ecuacion("rMAE = MAE~modelo~ / MAE~pers~,     MASE = MAE~modelo~ / [ (1/(T−24)) Σ~t~ | y~t~ − y~t−24~ | ]~entrenamiento~", 4)
-cur.ecuacion("DM = d̄ / √( V̂~HAC~(d̄) ),     d~t~ = | e~t~^ref^ | − | e~t~^modelo^ |", 5)
-cur.ecuacion("P(f~k~) = (1/N) | Σ~n=0~^N−1^ x[n] · e^−j2πkn/N^ |²,     f~s~ = 1 muestra/h", 6)
+cur.ecuacion([r"\mathrm{MAE}=\frac{1}{N}\sum_t{|y_t-\hat{y}_t|}",
+              r"\mathrm{RMSE}=\sqrt{\frac{1}{N}\sum_t{(y_t-\hat{y}_t)^2}}"], 2)
+cur.ecuacion([r"\mathrm{MAPE}=\frac{100\,\%}{N}\sum_t{\frac{|y_t-\hat{y}_t|}{y_t}}",
+              r"\mathrm{sMAPE}=\frac{100\,\%}{N}\sum_t{\frac{|y_t-\hat{y}_t|}{(|y_t|+|\hat{y}_t|)/2}}"], 3)
+cur.ecuacion([r"\mathrm{rMAE}=\frac{\mathrm{MAE}_{\mathrm{modelo}}}{\mathrm{MAE}_{\mathrm{pers}}}",
+              r"\mathrm{MASE}=\frac{\mathrm{MAE}_{\mathrm{modelo}}}{\frac{1}{T-24}\sum_t{|y_t-y_{t-24}|}}"], 4)
+cur.ecuacion([r"DM=\frac{\bar{d}}{\sqrt{\hat{V}_{\mathrm{HAC}}(\bar{d})}}",
+              r"d_t=|e_t^{\mathrm{ref}}|-|e_t^{\mathrm{modelo}}|"], 5)
+cur.ecuacion([r"P(f_k)=\frac{1}{N}\left|\sum_{n=0}^{N-1}{x[n]\,e^{-j2\pi kn/N}}\right|^2",
+              r"f_s=1\ \mathrm{muestra/h}"], 6)
 cur.p("La Ecuación 6 es el periodograma de la serie sin tendencia {c:oppenheim2010}; con f~s~ = 1 muestra/h, el "
       "período en horas es 1/f. El filtro de Savitzky-Golay {c:savitzky1964} ajusta en cada ventana de 721 h un "
-      "polinomio de orden 3 por mínimos cuadrados. La cobertura es el porcentaje de horas con q10 ≤ y~t~ ≤ q90 y la "
+      "polinomio de orden 3 por mínimos cuadrados; en la Ecuación 4, T es el número de horas de entrenamiento. La cobertura es el porcentaje de horas con q10 ≤ y~t~ ≤ q90 y la "
       "ventaja del motor, la diferencia entre el precio medio en las horas de acción y el del periodo.")
 
 cur = Cursor(encabezado("Resultados", 2)._p)
 cur.p(f"**OE1 — Datos y caracterización.** El dataset tiene {f(C['oe1_filas'], 0)} horas continuas (1-ene-2019 a "
-      "5-ago-2026), sin huecos ni duplicados. En el periodograma (Figura 4) la componente de 24 h es la dominante: "
+      "5-ago-2026), sin huecos ni duplicados. En el periodograma (Figura 5) la componente de 24 h es la dominante: "
       f"su pico concentra por sí solo el {pct(C['oe1_picos'][0][1], 1)} de la potencia entre 2 y 2.000 h, el mayor del "
       "espectro; le siguen el armónico de 12 h, una componente semanal de 168 h y ciclos de 20 a 42 días asociados "
       "a la hidrología. En la comparación de filtros de tendencia sobre El Niño 2023-2024, Savitzky-Golay alcanzó el "
@@ -879,7 +1028,7 @@ cur.p(f"**OE1 — Datos y caracterización.** El dataset tiene {f(C['oe1_filas']
       "(desviación estándar de 117,70 frente a 138,03 COP/kWh). La correlación con el precio fue positiva para el "
       f"ONI ({f(COR['oni'], 3)}), la demanda ({f(COR['demanda'], 3)}) y la generación ({f(COR['generacion'], 3)}), y "
       f"negativa para aportes ({f(COR['aportes_hidricos'], 3)}) y embalses ({f(COR['volumen_embalses'], 3)}).")
-cur.figura(4, "f_periodograma.png", "Periodograma del precio de bolsa sin tendencia. Líneas rojas: períodos de "
+cur.figura(5, "f_periodograma.png", "Periodograma del precio de bolsa sin tendencia. Líneas rojas: períodos de "
            "12, 24 y 168 h.", ancho_cm=11.5)
 cur.p("**OE2 — Pronóstico de 24 h.** La Tabla 14 resume el desempeño sobre las 5.184 horas de prueba de 2026.")
 cur.titulo_tabla(14, "Desempeño a 24 h fuera de muestra (1-ene a 5-ago de 2026, n = 5.184 h).")
@@ -923,17 +1072,60 @@ cur.tabla([
     ["", "", "", "Combinador QRA", f"{f(COSTO['Combinador_sMAPE_s'], 1)} s"],
     ["", "", "", "**Total bloque 24 h**", f"**{f(t_total / 60, 1)} min**"],
 ], [2.8, 2.4, 2.8, 4.2, 2.4], alinear=["left", "center", "center", "left", "center"], sz=8.5)
-cur.p("**OE3 y OE4 — Motor de decisión.** La Tabla 18 muestra el método elegido para cada horizonte y rol "
-      f"(precio medio 2026: {f(C['oe3_precio_medio_2026'], 1)} COP/kWh). La ventaja es la diferencia entre el precio "
-      "medio en las horas en que el motor recomienda actuar y el del periodo. En los cuatro casos gana el método "
-      "«banda»; los métodos fijo y rodante dan ventajas menores (156,8 a 313,3 COP/kWh), y el fijo a 72 h para el "
-      "generador actúa en el 41 % de las horas, fuera del rango válido.")
-cur.titulo_tabla(18, "Backtesting del motor de decisión sobre 2026 (método elegido).")
-filas = [["Horizonte", "Rol", "Método", "Ventaja (COP/kWh)", "Frecuencia de acción"]]
-for r in BT:
-    if r["ganador"]:
-        filas.append([r["horizonte"], r["rol"], r["metodo"], f(r["ventaja_cop_kwh"], 1), pct(r["frecuencia_accion"] * 100, 1)])
-cur.tabla(filas, [2.2, 3.6, 2.4, 3.4, 3.4], sz=8.5, alinear=["center", "left", "left", "center", "center"])
+cur.p("**OE3 y OE4 — Motor de decisión.** La ventaja es la diferencia entre el precio medio en las horas en que el "
+      "motor recomienda actuar y el del periodo (precio medio 2026: "
+      f"{f(C['oe3_precio_medio_2026'], 1)} COP/kWh). Con el criterio de ventaja promedio, «banda» gana en los cuatro "
+      "casos (345,6, 281,6, 299,7 y 279,5 COP/kWh). Al evaluar por separado las dos mitades del periodo (corte: 19 de "
+      "abril) ese resultado no se sostiene: para el generador a 24 h, «banda» actúa en el 1,2 % de las horas de la "
+      "primera mitad y en el 32,6 % de la segunda, y para el comercializador no actúa en ninguna hora de la segunda "
+      "mitad (Tabla 19, Figura 6). La causa es la referencia fija: el precio de 2026 se alejó del rango 2019-2025, de "
+      "modo que casi todas las horas quedan por encima o por debajo de los percentiles históricos. Con el criterio de "
+      "estabilidad el motor elige «híbrido» para el generador y «rodante» para el comercializador en ambos "
+      "horizontes, los únicos métodos con ventaja positiva y frecuencia válida en las dos mitades (Tabla 18). Su "
+      "ventaja promedio es menor (149,9 a 169,6 COP/kWh), pero se mantiene en todo el año.")
+cur.titulo_tabla(18, "Backtesting del motor de decisión sobre 2026: método elegido por el criterio de estabilidad.")
+cur.tabla([
+    ["Horizonte", "Rol", "Método", "Ventaja 1.ª / 2.ª mitad (COP/kWh)", "Frecuencia 1.ª / 2.ª mitad"],
+    ["24h", "generador", "híbrido", "78,1 / 183,5", "16,6 % / 22,3 %"],
+    ["24h", "comercializador", "rodante", "82,7 / 248,2", "15,1 % / 14,1 %"],
+    ["72h", "generador", "híbrido", "73,3 / 146,0", "19,1 % / 27,0 %"],
+    ["72h", "comercializador", "rodante", "71,9 / 219,6", "17,5 % / 14,6 %"],
+], [2.2, 3.6, 2.4, 3.6, 3.8], sz=8.5, alinear=["center", "left", "left", "center", "center"])
+cur.titulo_tabla(19, "Métodos del motor a 24 h: ventaja del año completo frente a cada mitad del periodo.")
+cur.tabla([
+    ["Rol", "Método", "Ventaja año (COP/kWh)", "Frecuencia año", "Ventaja 1.ª / 2.ª mitad", "Frecuencia 1.ª / 2.ª mitad", "¿Estable?"],
+    ["generador", "fijo", "313,3", "37,6 %", "305,7 / 125,0", "2,6 % / 72,5 %", "no"],
+    ["generador", "rodante", "244,1", "29,4 %", "110,8 / 201,2", "18,6 % / 40,1 %", "no"],
+    ["generador", "banda", "345,6", "16,9 %", "185,7 / 162,5", "1,2 % / 32,6 %", "no"],
+    ["generador", "híbrido", "166,8", "19,5 %", "78,1 / 183,5", "16,6 % / 22,3 %", "sí"],
+    ["comercializador", "fijo", "281,4", "14,4 %", "85,9 / 426,2", "28,7 % / 0,1 %", "no"],
+    ["comercializador", "rodante", "169,6", "14,6 %", "82,7 / 248,2", "15,1 % / 14,1 %", "sí"],
+    ["comercializador", "banda", "281,6", "14,3 %", "85,9 / sin acción", "28,7 % / 0,0 %", "no"],
+    ["comercializador", "híbrido", "225,0", "10,8 %", "82,7 / 293,9", "15,1 % / 6,4 %", "no"],
+], [2.6, 1.9, 2.1, 1.9, 2.6, 2.7, 1.8], sz=8.5, alinear=["center", "left", "center", "center", "center", "center", "center"])
+cur.figura(6, "f_motor_mitades.png", "Horas con acción del generador a 24 h en cada mitad del periodo 2026, por "
+           "método. Franja verde: rango válido de 10 a 40 %.", ancho_cm=12.45)
+cur.p("**Sensibilidad de los umbrales.** Se barrieron seis pares de percentiles (10/90 a 35/65) con el método fijo "
+      "para el generador a 24 h (Figura 7). No aparece un óptimo interior: los pares más extremos dan más ventaja por "
+      "hora de acción pero actúan menos (433,2 COP/kWh en el 20,8 % de las horas con 10/90, frente a 225,8 COP/kWh en "
+      "el 49,1 % con 35/65). El par 25/75 queda en un punto intermedio (313,3 COP/kWh, 37,6 % de las horas), y para "
+      "el comercializador la ventaja casi no cambia con el par elegido (272,7 a 286,4 COP/kWh). En el barrido "
+      "documentado en la bitácora también se probaron ventanas rodantes de 7 a 90 días y percentiles del filtro de "
+      "ancho de 60 a 90: la ventana de 30 días fue más pareja entre mitades que la de 90, y el filtro mostró una "
+      "curva plana alrededor de 75, por lo que se conservaron los valores por defecto.")
+cur.figura(7, "f_sensibilidad_percentiles.png", "Ventaja frente a frecuencia de acción para seis pares de "
+           "percentiles (método fijo, generador, 24 h).", ancho_cm=12.45)
+cur.p("**Último mes y traducción a pesos.** Entre el 7 de julio y el 5 de agosto de 2026 la banda del pronóstico "
+      "cubrió el 73,2 % de las horas (objetivo 80 %) y el MAE subió a 93,6 COP/kWh. Para el generador a 24 h, "
+      "«banda» dio una ventaja de −16,8 COP/kWh, «fijo» actuó en el 100 % de las horas (ventaja nula), «híbrido» dio "
+      "+58,8 COP/kWh en el 25 % de las horas y «rodante» +80,5 COP/kWh en el 51 %. Para un cliente de ejemplo de "
+      "100 kW que opere a potencia constante en las horas de acción, esto equivale a −0,65 millones de COP con "
+      "«banda», +1,06 millones con «híbrido» y +2,93 millones con «rodante» (Figura 8). Al usar ese mismo mes como "
+      "referencia en lugar de 2019-2025, el método fijo también da ventaja positiva con el mismo pronóstico: la "
+      "pérdida de «banda» se debe sobre todo a la referencia histórica fija y no al modelo de pronóstico. La "
+      "traducción a pesos es ilustrativa y no sustituye una evaluación económica completa {c:maciejowska2025}.")
+cur.figura(8, "f_ganancia_ultimo_mes.png", "Ganancia o pérdida total por método en el último mes (generador, "
+           "24 h, cliente de ejemplo de 100 kW).", ancho_cm=12.45)
 
 cur = Cursor(encabezado("Análisis e interpretación de resultados", 2)._p)
 cur.p("**Comparación con los criterios.** El ensamble cumple la precisión con holgura: rMAE de "
@@ -958,12 +1150,10 @@ cur.p("**Validación externa (Tabla 4).** El MAPE es mayor que el del antecedent
       "modelo univariado. Frente a Nueva Zelanda {c:kapoor2023}, el MASE es menor que 1 mientras ninguno de sus 33 "
       "modelos baja de 1,26; como ellos pronostican precio diario transformado con Box-Cox, se lee como «superar al "
       "propio ingenuo en una tarea más difícil», no como comparación numérica directa.")
-cur.p("**Evidencia por objetivo.** OE1: 66.576 horas sin huecos y armónicos de 24, 12 y 168 h que definieron las "
-      "variables (Figura 4, Tabla 11). OE2: seis modelos comparados en precisión, robustez, costo e "
-      "interpretabilidad (Tablas 14 a 17); SHAP {c:lundberg2017} y permutación sobre XGBoost coinciden en las tres "
-      "variables más importantes (precio rezagado 24 h, media de 24 h y precio rezagado 168 h; Spearman 0,811). OE3: "
-      "motor con tres métodos, dos roles y dos horizontes (Tabla 18, Figura 3). OE4: backtesting hecho; falta la "
-      "validación con usuarios.")
+cur.p("**Interpretabilidad (criterio de OE2).** SHAP {c:lundberg2017} y permutación sobre XGBoost coinciden en las "
+      "tres variables más importantes (precio rezagado 24 h, media de 24 h y precio rezagado 168 h; correlación de "
+      "Spearman entre ambos rankings de 0,811), evidencia cruzada de que el modelo se apoya en las variables que la "
+      "caracterización de OE1 ya señalaba como dominantes.")
 
 # ================================================================================================
 # 8. IMPACTOS
@@ -982,40 +1172,44 @@ cur.p("Solo se usa información pública de XM/SIMEM {c:creg2022}, no se recolec
       "documenta su fecha de corte y el pipeline permite reentrenar rápidamente.")
 cur = Cursor(encabezado("Impacto económico y financiero", 2)._p)
 cur.p(f"El costo del proyecto es de ${f(tot_p, 0)} (Tabla 1), casi todo en horas de personal. En el backtesting de "
-      "2026, las horas en que el motor recomienda vender tuvieron un precio medio 345,6 COP/kWh por encima del "
-      "promedio, y las de comprar, 281,6 COP/kWh por debajo. No es una ganancia garantizada: no modela contratos, "
+      "2026 a 24 h, con el método que elige el criterio de estabilidad, las horas en que el motor recomienda vender "
+      "tuvieron un precio medio 166,8 COP/kWh por encima del promedio, y las de comprar, 169,6 COP/kWh por debajo. "
+      "Para un cliente de ejemplo de 100 kW, en el último mes evaluado esto equivale a +1,06 millones de COP con "
+      "«híbrido», frente a −0,65 millones con «banda». No es una ganancia garantizada: no modela contratos, "
       "capacidad ni costos de transacción.")
 
 # ================================================================================================
 # 9. CONCLUSIONES
 # ================================================================================================
 cur = Cursor(encabezado("Conclusiones y recomendaciones", 1)._p)
-cur.p("**OE1 (100 %): cumplido.** Se sincronizaron a resolución horaria las cinco variables del mercado y el ONI "
-      "entre enero de 2019 y agosto de 2026 (66.576 horas, sin huecos). La caracterización identificó la componente "
-      "de 24 h como dominante, con armónicos de 12 y 168 h, que definieron las 40 variables predictoras; el filtro "
-      "de Savitzky-Golay detecta cambios de régimen 376 h antes que el promedio móvil.")
-cur.p("**OE2 (90 %): cumplido en lo técnico, en consolidación.** Se compararon seis modelos de familias distintas "
-      "y nueve descartados. El ensamble reduce el MAE en 27 % frente a la persistencia a 24 h "
-      f"({f(ENS['MAE'])} frente a {f(PER['MAE'])} COP/kWh) y en 23 % a 72 h, con significancia estadística. Falta "
-      "validar el ensamble completo en los orígenes históricos 1 a 5.")
-cur.p("**OE3 (70 %): en ejecución.** El motor traduce las bandas en señales de comprar, vender o esperar para dos "
-      "roles y dos horizontes, y el dashboard funciona. Faltan la biblioteca de imágenes y conectar el motor al "
-      "ensamble de seis votantes (hoy usa las bandas de N-BEATSx).")
-cur.p("**OE4 (35 %): en ejecución.** El backtesting eligió el método «banda» en los cuatro casos, con ventajas de "
-      "280 a 346 COP/kWh. Falta la validación con 3 a 5 usuarios, planeada en la Fase 4.")
-cur.p(f"**Objetivo general ({AV_G} %).** La plataforma procesa, pronostica y recomienda de principio a fin con "
-      "resultados verificados estadísticamente; se cumplirá al cerrar OE3 y OE4.")
-cur.p("**Recomendaciones:**", before=100)
-cur.numerada([
-    "Validar el dashboard con 3-5 usuarios mediante un cuestionario de comprensión (OE4).",
-    "Conectar el motor al ensamble de seis votantes y ajustar su confianza según la hora de lanzamiento (el error "
-    "sube de 41 a 52 COP/kWh entre el corte de las 00:00 y el de las 23:00).",
-    "Usar umbrales relativos móviles de 90 días para el régimen hidrológico: en 2026 ninguna hora cae bajo el "
-    "umbral absoluto de «embalse bajo».",
-    "Evaluar el ensamble completo en los orígenes 1 a 5 y completar la biblioteca de imágenes (OE3).",
-    "En una fase posterior, incorporar métricas de decisión basadas en la forma del día {c:maciejowska2025} e "
-    "información de ofertas por planta, hoy fuera del alcance, que explica buena parte del error residual.",
-])
+cur.p("El primer objetivo específico está cumplido (100 %). Se sincronizaron a resolución horaria las cinco "
+      "variables del mercado y el ONI entre enero de 2019 y agosto de 2026, en 66.576 horas sin huecos. La "
+      "caracterización identificó la componente de 24 h como dominante, con armónicos de 12 y 168 h, y esos "
+      "resultados definieron las 40 variables predictoras; además, el filtro de Savitzky-Golay detecta los cambios de "
+      "régimen 376 h antes que el promedio móvil.")
+cur.p("El segundo objetivo está cumplido en lo técnico y en consolidación (90 %). Se compararon seis modelos de "
+      "familias distintas y nueve descartados, y el ensamble reduce el error absoluto medio en 27 % frente a la "
+      f"persistencia a 24 h ({f(ENS['MAE'])} frente a {f(PER['MAE'])} COP/kWh) y en 23 % a 72 h, con significancia "
+      "estadística. Para cerrarlo falta validar el ensamble completo en los orígenes históricos 1 a 5.")
+cur.p("El tercer objetivo está en ejecución (70 %). El motor traduce las bandas en señales de comprar, vender o "
+      "esperar para dos roles y dos horizontes con cuatro métodos, y elige el método activo por un criterio de "
+      "estabilidad entre las dos mitades del periodo; el dashboard funciona y se verificó con pruebas automatizadas. "
+      "Faltan la biblioteca de imágenes, conectar el motor al ensamble de seis votantes, que hoy usa las bandas de "
+      "N-BEATSx, e integrar métricas de decisión basadas en la forma del día {c:maciejowska2025}.")
+cur.p("El cuarto objetivo está en ejecución (35 %). El backtesting por mitades mostró que el método con mejor "
+      "promedio («banda») no se sostiene en todo 2026, mientras que el criterio de estabilidad elige «híbrido» y "
+      "«rodante», con ventaja positiva y frecuencia válida en ambas mitades. Falta la validación con 3 a 5 usuarios, "
+      f"planeada en la Fase 4. En conjunto, el objetivo general tiene un avance del {AV_G} %: la plataforma procesa, "
+      "pronostica y recomienda de principio a fin con resultados verificados estadísticamente, y se cumplirá al "
+      "cerrar OE3 y OE4.")
+cur.p("Como recomendaciones para la etapa final, lo prioritario es validar el dashboard con 3 a 5 usuarios mediante "
+      "un cuestionario de comprensión, conectar el motor al ensamble de seis votantes y ajustar su confianza según la "
+      "hora de lanzamiento del pronóstico, ya que el error sube de 41 a 52 COP/kWh entre el corte de las 00:00 y el de "
+      "las 23:00. También conviene usar umbrales relativos móviles de 90 días para el régimen hidrológico, porque en "
+      "2026 ninguna hora cae bajo el umbral absoluto de «embalse bajo», evaluar el ensamble completo en los orígenes 1 "
+      "a 5 y completar la biblioteca de imágenes. En una fase posterior, el trabajo podría incorporar información de "
+      "ofertas por planta, hoy fuera del alcance, que explica buena parte del error residual, y evaluar el criterio de "
+      "estabilidad con más de dos subperiodos o con una formulación de bandits no estacionarios {c:garivier2011}.")
 
 # ================================================================================================
 # 10. BIBLIOGRAFIA
@@ -1036,6 +1230,37 @@ cur.p("Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Zis
 for p_ in doc.paragraphs:
     if (p_.style.name in ("Heading 1", "Heading 2", "Heading 3") and p_.text.strip()) or p_.text.strip() == "Matriz de decisión":
         p_.paragraph_format.keep_with_next = True
+
+# La plantilla fuerza cada salto con [párrafo vacío tipo Título 1][párrafo con solo un salto de página]; si la
+# página anterior queda llena, ambos se desbordan y aparece una página en blanco. Se reemplazan por
+# pageBreakBefore en el título siguiente, conservando los marcadores del índice.
+for br_p in [p for p in doc.element.body.iter(qn("w:p"))
+             if any(b.get(qn("w:type")) == "page" for b in p.iter(qn("w:br")))
+             and not "".join(t.text or "" for t in p.iter(qn("w:t"))).strip()
+             and all(p.find(".//" + qn(x)) is None for x in ("w:fldChar", "w:instrText", "w:fldSimple"))]:
+    nxt = br_p.getnext()
+    if nxt is None or nxt.tag != qn("w:p"):
+        continue
+    ancla = nxt.find(qn("w:pPr"))
+    vacios = [br_p]
+    prev = br_p.getprevious()
+    if (prev is not None and prev.tag == qn("w:p")
+            and not "".join(t.text or "" for t in prev.iter(qn("w:t"))).strip()
+            and all(prev.find(".//" + qn(x)) is None
+                    for x in ("w:sectPr", "w:drawing", "w:fldChar", "w:instrText", "w:fldSimple"))):
+        vacios.insert(0, prev)
+    elif prev is not None and prev.tag == qn("w:p") and not "".join(t.text or "" for t in prev.iter(qn("w:t"))).strip():
+        pf = docx.text.paragraph.Paragraph(prev, None).paragraph_format
+        pf.space_before = pf.space_after = Pt(0)
+        pf.line_spacing = Pt(1)
+        pf.line_spacing_rule = docx.enum.text.WD_LINE_SPACING.EXACTLY
+        pf.keep_with_next = False
+    for v in vacios:
+        for bm in list(v.iter(qn("w:bookmarkStart"))) + list(v.iter(qn("w:bookmarkEnd"))):
+            ancla.addnext(bm)
+            ancla = bm
+        v.getparent().remove(v)
+    docx.text.paragraph.Paragraph(nxt, None).paragraph_format.page_break_before = True
 doc.save(str(SALIDA))
 print("Guardado:", SALIDA)
 print("Referencias citadas:", len(ORDEN))
