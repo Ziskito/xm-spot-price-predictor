@@ -70,7 +70,7 @@ def expandir(texto):
 T = {k: i for i, k in enumerate(["objetivos", "fuentes", "variables", "walkforward", "72h", "desempeno",
                                  "motor_elegido", "motor_mitades", "fases", "gantt"], 1)}
 F = {k: i for i, k in enumerate(["bloques", "serie", "periodograma", "filtros", "walkforward", "pronostico",
-                                 "motor", "dashboard", "mitades", "ganancia"], 1)}
+                                 "motor", "dashboard", "analista", "mitades", "ganancia"], 1)}
 E = {k: i for i, k in enumerate(["periodograma", "savgol", "pearson", "arx", "qra", "conforme", "metricas",
                                  "dm", "motor", "maximin"], 1)}
 
@@ -876,18 +876,30 @@ c.p("Se diseñaron primero bocetos editables de tres vistas (Operador, Analista 
     "posición del precio esperado entre los umbrales y un nivel de confianza según el ancho de la banda; la hora se "
     "elige con un selector o haciendo clic en la franja de 24 horas del día. La vista **Analista** permite fijar a "
     "mano el método y los percentiles, y recalcula el método sugerido para el rango de fechas elegido.")
+c.p(f"La Figura {F['dashboard']} muestra la vista Operador para el comercializador el 5 de agosto de 2026 a las "
+    "08:00 h. La tarjeta superior da la recomendación en lenguaje simple («Evitar la bolsa», es decir, cubrirse con "
+    "contratos), ubica el precio esperado (974 COP/kWh) frente a los umbrales barato (≤ 722) y caro (≥ 952) y "
+    "advierte «confianza baja» porque la banda de esa hora (±230 COP/kWh) es más ancha que el 96 % de las horas "
+    "típicas; debajo, la franja de 24 horas colorea la señal de cada hora y la gráfica muestra la semana alrededor "
+    f"del día elegido. La Figura {F['analista']} muestra la vista Analista para el mismo rol con la comparación de "
+    "los cuatro métodos sobre todo 2026: por el promedio del año gana «banda» (281,6 COP/kWh), pero la vista "
+    "Operador usa «rodante», que es el que elige el criterio de estabilidad (Tabla 7).")
+c.figura("dashboard", "f_dash_operador_comercializador.png", "Dashboard en funcionamiento, vista Operador (5 de "
+         "agosto de 2026, 08:00 h, rol comercializador, horizonte 24 h, método «rodante» elegido por estabilidad).",
+         ancho_cm=11.0)
+c.figura("analista", "f_dash_analista_comercializador.png", "Dashboard en funcionamiento, vista Analista (rol "
+         "comercializador, horizonte 24 h, método «banda», percentiles 25/75, 1 de enero al 5 de agosto de 2026).",
+         ancho_cm=9.0)
 c.dato("Responsables:", RAFA + ".")
 c.dato("Herramientas:", "Streamlit, Python 3, matplotlib; bocetos en dashboard/mockups.")
 c.cierre_actividad("28 días", 15, 100)
 
 actividad("Integración del dashboard con datos y modelos reales")
-c.p("El dashboard corre localmente con los pronósticos y bandas de 2026 (Figura 8), y ambas vistas se verificaron "
+c.p("El dashboard corre localmente con los pronósticos y bandas de 2026 (Figuras 8 y 9), y ambas vistas se verificaron "
     "sin errores con pruebas automatizadas de Streamlit en las cuatro combinaciones de rol (generador y "
     "comercializador) y horizonte (24 y 72 h). La actividad está al **50 %**: el motor todavía consume las bandas "
     "de N-BEATSx y no el ensamble de seis votantes, y su nivel de confianza aún no considera que el error sube de 41 "
     "a 52 COP/kWh cuando el pronóstico se lanza a las 23:00 en lugar de a las 00:00.")
-c.figura("dashboard", "f_dashboard_operador.png", "Prototipo del dashboard en funcionamiento, vista Operador (5 de "
-         "agosto de 2026, 08:00 h, rol generador).", ancho_cm=9.0)
 c.dato("Responsables:", RAFA + ".")
 c.dato("Herramientas:", "Streamlit y su módulo de pruebas automatizadas (AppTest), Python 3; dashboard/app.py.")
 c.cierre_actividad("14 días", 20, 50)
@@ -912,7 +924,7 @@ c.p("Se evaluó el motor sobre las 5.184 horas de 2026 con los pronósticos fuer
     "casos (345,6, 281,6, 299,7 y 279,5 COP/kWh). Sin embargo, al evaluar por separado las dos mitades del periodo "
     "(corte: 19 de abril), ese resultado no se sostiene: para el generador a 24 h, «banda» actúa en el 1,2 % de las "
     "horas de la primera mitad y en el 32,6 % de la segunda, y para el comercializador no actúa en ninguna hora de "
-    "la segunda mitad (Tabla 8, Figura 9). La causa es la referencia fija: el precio de 2026 se alejó del rango "
+    "la segunda mitad (Tabla 8, Figura 10). La causa es la referencia fija: el precio de 2026 se alejó del rango "
     "2019-2025. Con el criterio de estabilidad el motor elige «híbrido» para el generador y «rodante» para el "
     "comercializador en ambos horizontes (Tabla 7), con una ventaja promedio menor (149,9 a 169,6 COP/kWh) pero "
     "sostenida en todo el año.")
@@ -945,7 +957,7 @@ c.p("Se barrieron además seis pares de percentiles (10/90 a 35/65) sin encontra
     "a 225,8 en el 49,1 % con 35/65), y 25/75 queda en un punto intermedio. En el último mes evaluado (7 de julio a "
     "5 de agosto de 2026), para un cliente de ejemplo de 100 kW que opere a potencia constante en las horas de "
     "acción, el método elegido para el generador («híbrido») habría significado +1,06 millones de COP, frente a "
-    "−0,65 millones con «banda» (Figura 10). La traducción a pesos es ilustrativa y no reemplaza una evaluación "
+    "−0,65 millones con «banda» (Figura 11). La traducción a pesos es ilustrativa y no reemplaza una evaluación "
     "económica completa {c:maciejowska2025}.")
 c.figura("ganancia", "f_ganancia_ultimo_mes.png", "Ganancia o pérdida total por método en el último mes "
          "(generador, 24 h, cliente de ejemplo de 100 kW).", ancho_cm=12.5)

@@ -316,6 +316,106 @@ En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que re
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.
 
+### 2026-09-24 (tarde) — Motor de decisión: método `hibrido`, selección "estable" del ganador, y arreglo del filtro de fechas en Analista
+
+Implementado en `src/motor_decision.py` y `dashboard/app.py`, siguiendo el hallazgo de la entrada
+anterior (misma fecha, barrido de sensibilidad) de que `banda` gana el backtest del año completo
+pero pierde feo en la mitad más reciente del periodo.
+
+**Cambios:**
+
+1. **Método `hibrido`** (nuevo, cuarto valor de `METODOS`): umbral **rodante** (se adapta al régimen
+   reciente) + el mismo filtro de "esperar si la banda es ancha" que ya usaba `banda` (que a su vez
+   usa el umbral **fijo**). Nunca se había probado esa combinación.
+2. **`comparar_metodos_estable()` / `elegir_mejor_metodo_estable()`** (nuevas funciones): en vez de
+   elegir el método con mejor ventaja *promedio* del periodo completo (lo que hace
+   `elegir_mejor_metodo()`), parten el periodo en dos mitades y eligen el que mejor se sostiene en su
+   **mitad más débil** (criterio maximin). Un método solo se marca "estable" si su frecuencia de
+   acción es válida (10-40%) **y** su ventaja es ≥0 en las **dos** mitades, no solo en promedio.
+3. **La vista Operador ahora usa la selección estable**, no la de promedio — es la que se presenta
+   como "el motor eligió esto automáticamente", así que se le exige más que un buen promedio.
+   Resultado con esto activo: para **generador** el ganador estable pasa de `banda` a `hibrido`
+   (24h y 72h); para **comercializador**, de `banda` a `rodante` (24h y 72h) — los cuatro casos
+   quedan marcados como `estable=True`.
+4. **Arreglado un bug real en la vista Analista**: el slider de "Rango de fechas" filtraba el backtest
+   del método ya seleccionado, pero **no** recalculaba cuál método quedaba "sugerido" — ese sugerido
+   siempre venía del año completo, sin importar qué rango se eligiera. Ahora `comparacion()` acepta
+   `inicio`/`fin` opcionales y el sugerido responde al rango filtrado. Verificado: con el rango
+   completo el sugerido es `banda`; filtrando al último mes, cambia a `hibrido` — el bug era real y
+   ocultaba exactamente el problema que motivó este cambio.
+
+Verificado con `streamlit.testing.v1.AppTest`: sin excepciones en las 4 combinaciones rol×horizonte,
+en la selección manual de `hibrido` en Analista, y confirmado que el filtro de fechas ahora sí cambia
+el método sugerido.
+
+**Nota de investigación pendiente — esto NO tiene todavía respaldo de literatura, no implementar más
+sobre esta base sin revisar primero:** el método `hibrido` es una combinación de piezas ya validadas
+por separado, no una técnica citada; y el criterio maximin de dos mitades fijas es razonable pero
+no es más que una elección de ingeniería propia (ver `docs/Informe_Diseno_Motor_Decision_Dashboard.docx`
+para el resto de decisiones en la misma situación). Antes de defender esto formalmente o de seguir
+construyendo encima, hay que leer:
+
+- **Wald (1950), "Statistical Decision Functions"** — el origen del criterio maximin/minimax usado
+  para "elegir por la peor mitad, no por el promedio". Confirmar que la forma en que se aplicó aquí
+  (dos mitades fijas del año) es una instancia razonable de ese criterio, o si conviene una versión
+  más formal (ej. más de 2 sub-periodos, ponderación en vez de corte duro).
+- **Garivier & Moulines (2011), "On Upper-Confidence Bound Policies for Non-Stationary Bandit
+  Problems"** — el marco formal más cercano a "elegir automáticamente la mejor opción entre varias
+  cuando el entorno cambia con el tiempo" (aquí, los 4 métodos serían los "brazos"). Revisar si su
+  mecanismo de ventana deslizante da una base más sólida que el corte fijo en dos mitades.
+- **Cesa-Bianchi & Lugosi (2006), "Prediction, Learning, and Games"** — aprendizaje con expertos:
+  combinar/elegir entre reglas según desempeño reciente, con garantías matemáticas. Relevante si se
+  quiere reemplazar el corte de dos mitades por una ponderación continua.
+- **Gama, Žliobaitė, Bifet, Pechenizkiy & Bouchachia (2014), "A Survey on Concept Drift Adaptation"**,
+  ACM Computing Surveys — survey sobre cómo detectar y adaptarse a que la distribución de los datos
+  cambió (el fenómeno de fondo detrás de todo esto: el precio de 2026 se alejó del histórico
+  2019-2025).
+
+Mientras esa revisión no se haga, tratar `hibrido` y la selección "estable" como una mejora empírica
+razonable (se probó y funcionó mejor que las alternativas en los datos disponibles), no como una
+técnica con respaldo formal — la diferencia importa si se defiende esto ante los asesores.
+
+### 2026-09-24 — Barrido de sensibilidad de los parámetros del motor de decisión (OE3): percentiles, ventana rodante y ancho de banda
+
+Se probó si los valores por defecto de `src/motor_decision.py` (percentiles 25/75, ventana del método
+`rodante` = 30 días, percentil de ancho de banda del método `banda` = 75) son razonables o si otro
+valor da una ventaja económica claramente mejor. Barrido: percentiles 10/90 a 35/65, ventana rodante
+7/14/30/60/90 días, percentil de banda 60-90, sobre las bandas de 24h y 72h, ambos roles. Para evitar
+reportar un "óptimo" que en realidad sea sobreajuste a un solo periodo, además del promedio del
+holdout 2026 completo se evaluó cada valor por separado en las dos mitades del año (ene-abr / may-ago,
+el mismo corte ya usado para diagnosticar el cambio de régimen de precio en la calibración de bandas).
+
+**Resultado 1 — los 3 valores por defecto se mantienen.** Ninguno quedó lejos de su mejor punto en el
+barrido: los percentiles 25/75 están cerca del mejor balance ventaja/frecuencia para el rol generador
+(y casi no afectan al comercializador, cuya ventaja es prácticamente plana en todo el rango probado);
+el percentil de banda 75 está a solo unos pocos COP/kWh del pico de una curva bastante plana (70-80);
+y la ventana de 30 días, aunque no da el promedio anual más alto (90 días se ve mejor en el agregado),
+es más estable entre las dos mitades del año que 90 días (ver Resultado 3). No se encontró evidencia
+que justifique cambiar ninguno de los tres.
+
+**Resultado 2 — el hallazgo más importante no es el percentil, es la inestabilidad del método `fijo`/
+`banda` dentro de un mismo año.** Para el rol generador, la frecuencia de acción pasa de ~0% en
+ene-abr a 50-90% en may-ago, **sin importar qué percentil se elija** — el precio de 2026 se disparó
+tan por encima del histórico 2019-2025 (la referencia que usa el método `fijo`) que un umbral fijo
+queda mal calibrado durante meses seguidos. Es una limitación estructural del método frente a un
+cambio de régimen, no un problema de tuning del valor exacto del percentil.
+
+**Resultado 3 — ejemplo concreto de por qué optimizar solo sobre el promedio anual puede engañar.**
+Para el método `rodante`, una ventana de 90 días da el mejor promedio del año completo, pero al separar
+por mitades mejora fuerte en ene-abr y empeora fuerte en may-ago (la ventana larga reacciona demasiado
+lento a la escalada de precio). La ventana de 30 días actual es más pareja entre ambos tramos, aunque
+su promedio anual sea menor que el de 90 días.
+
+**Siguiente paso sugerido** (no implementado todavía): en vez de seguir afinando el percentil exacto
+del método `fijo`, podría valer más la pena investigar cómo hacer que el umbral de referencia se
+adapte al régimen de precio vigente — en la línea de lo que ya hace la calibración adaptativa de las
+bandas de incertidumbre, pero para el umbral de decisión.
+
+Script del barrido no comiteado todavía (vive fuera del repo por ahora) — es una consulta rápida y
+reproducible en minutos con las funciones ya existentes en `motor_decision.py`, sin necesidad de
+entrenar nada; misma práctica que ya se usó en sesiones anteriores para análisis exploratorios que no
+ameritan quedar en el historial de inmediato.
+
 ### 2026-09-18 — Investigación a fondo del origen de pronóstico de N-BEATSx/N-HiTS: lo que parecía un bug NO lo era, se documenta el salto de precio de medianoche, y se corrige la identificación de las horas de mayor error
 
 Entrada larga a propósito: esta investigación arrancó por una observación del usuario sobre un gráfico, terminó tocando los números centrales del proyecto, y el desenlace fue que **los números originales eran correctos y quedaron restaurados**. Vale la pena dejar el recorrido completo para no repetirlo.
@@ -358,6 +458,7 @@ Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron
 - **Hallazgos a decir con honestidad (están en el informe)**: (1) en los orígenes walk-forward 1-5 (corte 23:00) ningún modelo individual supera de forma consistente a la persistencia (N-BEATSx empata en MAE medio, 49,88 vs 49,82); el ensamble solo es evaluable en 2026. (2) La composición del ensamble se eligió mirando 2026, por eso la cifra desplegable es la de referencia. (3) El mayor pico de precio (2 499 COP/kWh diario, 30-sep-2024) ocurrió con ONI neutro y el volumen de embalses más bajo de todos los septiembres 2019-2025: el ONI solo no explica el precio.
 - Porcentajes de avance propuestos en el informe (a confirmar con Rafael): OE1 100%, OE2 90%, OE3 70%, OE4 35%, general 74%.
 - **Revisión posterior del documento (misma noche)**, leyendo el texto completo del PDF: (1) el "MAE medio 49,88 vs 49,82" que se atribuía a los orígenes 1-5 era la media de los 6 orígenes; en los orígenes 1-5 N-BEATSx queda **50,83 vs 48,50** (no gana en ninguno, pierde en O1) — corregido. (2) "Reentrenamiento completo 7,2 min" era exagerado: solo se cronometró el ensamble de 24 h; ahora se dice así y que el canal de 72 h no se cronometró. (3) Spearman SHAP/permutación actualizado a **0,811** (salida vigente del notebook 06; el 0,791 era de una versión anterior). (4) El MAE de 51,90 con corte a las 23:00 se marca como calculado antes del arreglo de la demanda (afecta 48 de 5.184 h). (5) Se precisó que los hiperparámetros de XGBoost, ARX+GARCH, N-BEATSx y N-HiTS se validaron contra 2025 (verificado en los notebooks), y que la elección de GARCH-ged sí se hizo mirando 2026. (6) Referencias verificadas contra Crossref: se agregaron DOI y se corrigieron N-HiTS (páginas 6989-6997, nombres completos) y Maciejowska et al. (ya publicado: *Energy Convers. Manag.* 356, 121408, 2026); revistas en cursiva. (7) Formato numérico uniforme (punto de miles, signo menos tipográfico).
+- **Fusión con el trabajo de Rafael (30-sep)**: Rafael subió `ff4a69c`, con las capturas del dashboard que pidió la profesora. Las agregó editando directamente el `.docx` del informe final, que partía de `b67f1a1` y por eso no tenía los apuntes de la reunión. Se compararon ambas versiones: lo único que él cambió en el informe fue el bloque "Funcionamiento del prototipo" (6 capturas, Figuras 4-9, cada una con su texto) y la renumeración de las figuras siguientes (10-13). Ese bloque se pasó, con su texto e imágenes, al script generador (`scripts_experimento/informe_avance_assets/f_dash_*.png`), así que el informe final tiene ahora lo de ambos y no se pierde al regenerarlo. En el informe de avance (formato PF, el principal) se reemplazó la captura antigua por las dos más representativas del dashboard actual, vista Operador y vista Analista del comercializador, con una explicación condensada. Sus cambios a `dashboard/app.py`, `src/motor_decision.py` (método «híbrido» y selección estable), el notebook de pruebas y el README entraron sin conflicto y son coherentes con las Tablas 18 y 19. Resultado: informe final, 30 páginas; informe de avance, 24. **Importante para editar los informes:** la fuente es el script generador (`generar_informe_avance.py` y `generar_informe_avance_pf.py`). Si se edita el `.docx` a mano, la próxima regeneración borra esos cambios.
 - **Apuntes de la reunión con asesores del 25-sep aplicados (28-sep)**: (1) en 6.1 del informe final, el problema se plantea como la ausencia de un sistema de procesamiento de señales y gestión que integre los datos dispersos del mercado; (2) antes de la tabla de variables (Tabla 11 del informe final, Tabla 3 del de avance) se explica qué se descargó y de dónde sale cada familia: 66.576 registros horarios de cada serie horaria (precio, demanda, generación), 2.776 diarios de embalses y de aportes, y 90 valores trimestrales del ONI (DJF 2019 a MJJ 2026). La generación no se usa como predictora porque correlaciona 0,996 con la demanda; (3) nuevo análisis del error diario (`scripts_experimento/informe_avance_error_diario.py` → `data/processed/resultados/informe_avance/error_diario_2026.json`): MAE diario del ensamble con media 40,97 y desviación estándar 35,59, IC95 de la media [31,1; 50,8] con bootstrap por bloques de 7 días (el MAE diario tiene autocorrelación de 0,67, así que el IC t clásico lo subestimaría), frente a [43,1; 68,9] de la persistencia; 69,4 % de los días con MAE < 50 COP/kWh (58,3 % la persistencia); diferencia diaria media de 15,4 COP/kWh [10,5; 19,9]; y sesgo de +4,6 [0,6; 9,8], una leve subestimación del precio. Quedan sin aplicar, por decisión del usuario: la frase explícita del "hueco" en 5.2, el título (se consultará) y el límite de páginas (se consultará). La prueba de usabilidad del dashboard queda a cargo de Rafael.
 - **Comentarios de la profesora Daniela Charris aplicados a ambos informes (28-sep)**: su revisión está en `docs/Informe_Avance_ABET_Barcelo_Dede (1) con comentarios daniela.docx` (23 comentarios y ediciones con control de cambios). Sus ediciones de redacción (Resumen, Introducción, 5.1, 5.2 y 6.5) se pasaron al script generador con las erratas corregidas. Comentarios aplicados en el informe ABET: se quitó "(5.184 horas)" del Resumen (208 palabras, límite 300) y se rehízo el Abstract; la Introducción se amplió con las familias de métodos, qué es la persistencia y por qué es la referencia; "el error" pasó a "error absoluto medio" y "el área", a "el área de pronóstico de precios de electricidad"; se eliminó el párrafo de "objetivo verificable"; alcances, limitaciones y entregables quedaron copiados literalmente del Anexo 1; se describe qué muestra la Figura 1; el párrafo de "experiencia de diseño" se reescribió en estilo técnico; 5.2 se amplió con la evolución del EPF; las alternativas (6.4) pasaron a prosa, con la Tabla 7 como resumen corto; el método de puntuación (6.5) se reescribió de forma más clara; las ecuaciones ahora son ecuaciones nativas de Word (`scripts_experimento/ecuaciones_omml.py`, LaTeX → MathML → OMML con la hoja MML2OMML.XSL de Office; se agregó `latex2mathml` a requirements); hay una figura nueva del motor en operación (`informe_avance_figura_motor.py`, que reproduce exactamente la Tabla 19 con el código del repo); y las conclusiones y recomendaciones están redactadas como texto. En el informe de avance (formato PF) se aplicaron los que le corresponden: ecuaciones nativas, figura del motor, "cuál error", "cuál área" y la descripción de la Figura 2. Resultado: ABET, 26 páginas; PF, 24 páginas. **Quedan dos pendientes:** (1) el título tiene 26 palabras y la plantilla pide máximo 15, pero viene fijado por el Anexo 1 (numeral 1), así que hay que consultarlo con el profesor Lácides, como dice el comentario; (2) las capturas adicionales del dashboard dependen de Rafael, porque su versión nueva del motor y del dashboard (4 métodos, criterio de estabilidad) no está en el repositorio, que todavía tiene la versión de 3 métodos.
 - **Informe de avance en la plantilla correcta (26-sep)**: el profesor aclaró que la plantilla ABET era la del *informe final*; la del informe de avance es `docs/TEMPLATE_INFORME_AVANCE_PF.docx` (copia sin modificar de la que envió). Se generó `docs/Informe_Avance_PF_Barcelo_Dede.docx/.pdf` (22 páginas) con un generador nuevo, `scripts_experimento/generar_informe_avance_pf.py`. El informe ABET y su script **se conservan intactos** para el informe final. El nuevo sigue las seis secciones de la plantilla: (1) Tabla 1 con avance y peso por objetivo, donde cada OE pesa 25 % y su avance es la suma ponderada de sus actividades; (2) actividades realizadas por objetivo, cada una con descripción técnica, ecuaciones (periodograma, Savitzky-Golay, Pearson, ARX+GARCH, QRA, bandas conformes, métricas, Diebold-Mariano, regla del motor y criterio maximin), responsables, herramientas, tiempo, peso y avance; (3) cronograma: las 36 tareas del Gantt del Anexo 1 con su % de logro y la comparación planeado/logrado a la semana 9 (87 % planeado frente a 77 % logrado, con el atraso concentrado en la Fase 4); (4) ocho dificultades reales con su solución; (5) plan de las semanas 11-16; y (6) 30 referencias citadas más 6 "encontradas hasta el momento". **Estimaciones que hay que validar con Rafael:** el desglose de pesos y avances por actividad (está construido para reproducir los porcentajes ya acordados: 100/90/70/35), el % de logro de cada tarea del Gantt y la asignación de responsables (OE1-OE2 Juan; XGBoost y LightGBM iniciales, el motor, el dashboard y el backtesting, Rafael). Se usó como fecha el 26/09/2026. De paso se corrigió el diagrama de bloques (`informe_avance_diagrama.py`), que decía "33 variables" (son 40) y no incluía el método «híbrido» del motor. El PDF del informe ABET no se regeneró, así que conserva la versión anterior de esa figura.

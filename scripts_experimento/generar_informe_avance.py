@@ -973,12 +973,17 @@ cur.p("**Dashboard.** La vista Operador aplica el método que elige el criterio 
       "horas del día. La vista Analista permite fijar a mano el método (incluido «híbrido») y los percentiles, y "
       "recalcula el método sugerido sobre el rango de fechas elegido. Ambas vistas se verificaron sin errores con "
       "pruebas automatizadas de Streamlit en las cuatro combinaciones de rol y horizonte.")
-cur.p("**Funcionamiento del prototipo.** El pipeline se ejecutó de principio a fin: los notebooks 01 a 03 se "
-      "reejecutaron sin errores (01 y 02 en una copia aislada del proyecto), el ensamble se regeneró con los datos "
-      "corregidos y el dashboard corre localmente con los datos de 2026 (Figura 4). El código completo está en el "
-      "Anexo 3 y los resultados que demuestran el funcionamiento de cada bloque, en la Sección 7.")
-cur.figura(4, "f_dashboard_operador.png", "Prototipo del dashboard en funcionamiento, vista Operador (5 de "
-           "agosto de 2026, 08:00 h, rol generador).", ancho_cm=8.5)
+cur.p('**Funcionamiento del prototipo.** El pipeline se ejecutó de principio a fin: los notebooks 01 a 03 se reejecutaron sin errores (01 y 02 en una copia aislada del proyecto), el ensamble se regeneró con los datos corregidos y el dashboard corre localmente con los datos de 2026 (Figuras 4 a 9). El código completo está en el Anexo 3 y los resultados que demuestran el funcionamiento de cada bloque, en la Sección 7.')
+cur.p('**Vista Operador.** La Figura 4 muestra la vista Operador para el comercializador el 5 de agosto de 2026 a las 08:00 h. La tarjeta superior da la recomendación en lenguaje simple («Evitar la bolsa»: conviene cubrirse con contratos) y una barra que ubica el precio esperado, 974 COP/kWh, frente a los umbrales barato (≤ 722) y caro (≥ 952). La etiqueta «Confianza baja» advierte que la banda de esa hora (±230 COP/kWh) es más ancha que el 96 % de las horas típicas. Debajo, la franja de 24 horas colorea la señal de cada hora del día (verde, comprar; rojo, cubrirse; ámbar, esperar) y permite elegir la hora con un clic; tres indicadores resumen las horas para actuar ese día, la ventaja histórica de la regla (+170 COP/kWh en el backtest 2026) y su frecuencia de acción (15 % del tiempo, 760 horas). La gráfica inferior muestra la semana alrededor del día elegido con el precio real, la banda [q10, q90] y las señales. La regla activa es «rodante», que el motor elige solo por el criterio de estabilidad (Tabla 18).')
+cur.figura(4, 'f_dash_operador_comercializador.png', 'Dashboard en funcionamiento, vista Operador (5 de agosto de 2026, 08:00 h, rol comercializador, horizonte 24 h, método «rodante» elegido por estabilidad).', ancho_cm=13.0)
+cur.p('**Rol generador.** La misma hora vista por el generador (Figura 5) cambia la lectura: con umbrales barato ≤ 127 y caro ≥ 406, el precio esperado de 974 COP/kWh es alto, pero la banda es tan ancha que el motor recomienda esperar antes que vender con una señal poco confiable. Ese día el generador tenía 9 de 24 horas para despachar y vender, con una ventaja histórica de +346 COP/kWh y una frecuencia de acción del 17 % (880 horas). Esta captura corresponde a la versión anterior del dashboard, con la hora elegida en un deslizador y el método «banda» seleccionado por el mejor promedio; se conserva para mostrar la vista del generador y el cambio frente al criterio de estabilidad. En ambas versiones, el día operativo se escoge en un calendario que solo habilita las fechas con pronóstico disponible, hasta el 5 de agosto de 2026 (Figura 6).')
+cur.figura(5, 'f_dashboard_operador.png', 'Dashboard, vista Operador para el rol generador (5 de agosto de 2026, 08:00 h, horizonte 24 h; versión anterior, método «banda»).', ancho_cm=9.5)
+cur.figura(6, 'f_dash_calendario.png', 'Selección del día operativo en la vista Operador: solo se habilitan los días con pronóstico disponible.', ancho_cm=11.0)
+cur.p('**Vista Analista.** La Figura 7 muestra la vista Analista para el comercializador a 24 h con todo el periodo 2026 (1 de enero al 5 de agosto) y los percentiles 25/75. La tabla compara los cuatro métodos por ventaja y frecuencia de acción: con el promedio del año, «banda» (281,6 COP/kWh; 14,3 % de las horas) y «fijo» (281,4 COP/kWh) quedan arriba, seguidos de «híbrido» (225,0) y «rodante» (169,6). Por eso la vista Operador no usa el mejor promedio sino el criterio de estabilidad: «banda» concentra su ventaja en una sola mitad del año (Tabla 19, Figura 11). La gráfica confirma el patrón: las señales de compra (verde) se agrupan entre enero y marzo, cuando el precio estuvo bajo, y las de evitar la bolsa (rojo) entre mayo y julio.')
+cur.figura(7, 'f_dash_analista_comercializador.png', 'Dashboard en funcionamiento, vista Analista (rol comercializador, horizonte 24 h, método «banda», percentiles 25/75, 1 de enero al 5 de agosto de 2026).', ancho_cm=12.0)
+cur.p('**Rol generador en la vista Analista.** Con el rol generador (Figura 8) el orden de los métodos por promedio es «banda» (345,6 COP/kWh; 16,9 % de las horas), «fijo» (313,3), «rodante» (244,1) e «híbrido» (166,8), y las señales se invierten respecto al comercializador: retener generación (rojo) entre enero y marzo, con precios bajos, y despachar y vender (verde) entre abril y julio. De nuevo, el mejor promedio lo tiene «banda», pero el criterio de estabilidad elige «híbrido» para el generador (Tabla 18). Desde esta vista se puede fijar a mano cualquiera de los cuatro métodos (Figura 9a) y revisar hora por hora los datos filtrados, con el precio real, los cuantiles q10, q50 y q90 del pronóstico y la señal del motor (Figura 9b). Esa tabla permite auditar cada recomendación: por ejemplo, el 1 de enero a las 00:00 h la mediana (268,6 COP/kWh) quedó entre los umbrales y el motor recomendó esperar.')
+cur.figura(8, 'f_dash_analista_generador.png', 'Dashboard, vista Analista para el rol generador (horizonte 24 h, método «banda», percentiles 25/75, 1 de enero al 5 de agosto de 2026).', ancho_cm=12.0)
+cur.figura(9, 'f_dash_analista_detalle.png', 'Detalle de la vista Analista: (a) selección manual del método de umbral; (b) datos filtrados hora por hora con el precio real, los cuantiles del pronóstico y la señal del motor.', ancho_cm=14.0)
 
 # ================================================================================================
 # 7. PRUEBAS
@@ -1038,7 +1043,7 @@ cur.p("La Ecuación 6 es el periodograma de la serie sin tendencia {c:oppenheim2
 
 cur = Cursor(encabezado("Resultados", 2)._p)
 cur.p(f"**OE1 — Datos y caracterización.** El dataset tiene {f(C['oe1_filas'], 0)} horas continuas (1-ene-2019 a "
-      "5-ago-2026), sin huecos ni duplicados. En el periodograma (Figura 5) la componente de 24 h es la dominante: "
+      "5-ago-2026), sin huecos ni duplicados. En el periodograma (Figura 10) la componente de 24 h es la dominante: "
       f"su pico concentra por sí solo el {pct(C['oe1_picos'][0][1], 1)} de la potencia entre 2 y 2.000 h, el mayor del "
       "espectro; le siguen el armónico de 12 h, una componente semanal de 168 h y ciclos de 20 a 42 días asociados "
       "a la hidrología. En la comparación de filtros de tendencia sobre El Niño 2023-2024, Savitzky-Golay alcanzó el "
@@ -1046,7 +1051,7 @@ cur.p(f"**OE1 — Datos y caracterización.** El dataset tiene {f(C['oe1_filas']
       "(desviación estándar de 117,70 frente a 138,03 COP/kWh). La correlación con el precio fue positiva para el "
       f"ONI ({f(COR['oni'], 3)}), la demanda ({f(COR['demanda'], 3)}) y la generación ({f(COR['generacion'], 3)}), y "
       f"negativa para aportes ({f(COR['aportes_hidricos'], 3)}) y embalses ({f(COR['volumen_embalses'], 3)}).")
-cur.figura(5, "f_periodograma.png", "Periodograma del precio de bolsa sin tendencia. Líneas rojas: períodos de "
+cur.figura(10, "f_periodograma.png", "Periodograma del precio de bolsa sin tendencia. Líneas rojas: períodos de "
            "12, 24 y 168 h.", ancho_cm=11.5)
 cur.p("**OE2 — Pronóstico de 24 h.** La Tabla 14 resume el desempeño sobre las 5.184 horas de prueba de 2026.")
 cur.titulo_tabla(14, "Desempeño a 24 h fuera de muestra (1-ene a 5-ago de 2026, n = 5.184 h).")
@@ -1122,7 +1127,7 @@ cur.p("**OE3 y OE4 — Motor de decisión.** La ventaja es la diferencia entre e
       "casos (345,6, 281,6, 299,7 y 279,5 COP/kWh). Al evaluar por separado las dos mitades del periodo (corte: 19 de "
       "abril) ese resultado no se sostiene: para el generador a 24 h, «banda» actúa en el 1,2 % de las horas de la "
       "primera mitad y en el 32,6 % de la segunda, y para el comercializador no actúa en ninguna hora de la segunda "
-      "mitad (Tabla 19, Figura 6). La causa es la referencia fija: el precio de 2026 se alejó del rango 2019-2025, de "
+      "mitad (Tabla 19, Figura 11). La causa es la referencia fija: el precio de 2026 se alejó del rango 2019-2025, de "
       "modo que casi todas las horas quedan por encima o por debajo de los percentiles históricos. Con el criterio de "
       "estabilidad el motor elige «híbrido» para el generador y «rodante» para el comercializador en ambos "
       "horizontes, los únicos métodos con ventaja positiva y frecuencia válida en las dos mitades (Tabla 18). Su "
@@ -1147,28 +1152,28 @@ cur.tabla([
     ["comercializador", "banda", "281,6", "14,3 %", "85,9 / sin acción", "28,7 % / 0,0 %", "no"],
     ["comercializador", "híbrido", "225,0", "10,8 %", "82,7 / 293,9", "15,1 % / 6,4 %", "no"],
 ], [2.6, 1.9, 2.1, 1.9, 2.6, 2.7, 1.8], sz=8.5, alinear=["center", "left", "center", "center", "center", "center", "center"])
-cur.figura(6, "f_motor_mitades.png", "Horas con acción del generador a 24 h en cada mitad del periodo 2026, por "
+cur.figura(11, "f_motor_mitades.png", "Horas con acción del generador a 24 h en cada mitad del periodo 2026, por "
            "método. Franja verde: rango válido de 10 a 40 %.", ancho_cm=12.45)
 cur.p("**Sensibilidad de los umbrales.** Se barrieron seis pares de percentiles (10/90 a 35/65) con el método fijo "
-      "para el generador a 24 h (Figura 7). No aparece un óptimo interior: los pares más extremos dan más ventaja por "
+      "para el generador a 24 h (Figura 12). No aparece un óptimo interior: los pares más extremos dan más ventaja por "
       "hora de acción pero actúan menos (433,2 COP/kWh en el 20,8 % de las horas con 10/90, frente a 225,8 COP/kWh en "
       "el 49,1 % con 35/65). El par 25/75 queda en un punto intermedio (313,3 COP/kWh, 37,6 % de las horas), y para "
       "el comercializador la ventaja casi no cambia con el par elegido (272,7 a 286,4 COP/kWh). En el barrido "
       "documentado en la bitácora también se probaron ventanas rodantes de 7 a 90 días y percentiles del filtro de "
       "ancho de 60 a 90: la ventana de 30 días fue más pareja entre mitades que la de 90, y el filtro mostró una "
       "curva plana alrededor de 75, por lo que se conservaron los valores por defecto.")
-cur.figura(7, "f_sensibilidad_percentiles.png", "Ventaja frente a frecuencia de acción para seis pares de "
+cur.figura(12, "f_sensibilidad_percentiles.png", "Ventaja frente a frecuencia de acción para seis pares de "
            "percentiles (método fijo, generador, 24 h).", ancho_cm=12.45)
 cur.p("**Último mes y traducción a pesos.** Entre el 7 de julio y el 5 de agosto de 2026 la banda del pronóstico "
       "cubrió el 73,2 % de las horas (objetivo 80 %) y el MAE subió a 93,6 COP/kWh. Para el generador a 24 h, "
       "«banda» dio una ventaja de −16,8 COP/kWh, «fijo» actuó en el 100 % de las horas (ventaja nula), «híbrido» dio "
       "+58,8 COP/kWh en el 25 % de las horas y «rodante» +80,5 COP/kWh en el 51 %. Para un cliente de ejemplo de "
       "100 kW que opere a potencia constante en las horas de acción, esto equivale a −0,65 millones de COP con "
-      "«banda», +1,06 millones con «híbrido» y +2,93 millones con «rodante» (Figura 8). Al usar ese mismo mes como "
+      "«banda», +1,06 millones con «híbrido» y +2,93 millones con «rodante» (Figura 13). Al usar ese mismo mes como "
       "referencia en lugar de 2019-2025, el método fijo también da ventaja positiva con el mismo pronóstico: la "
       "pérdida de «banda» se debe sobre todo a la referencia histórica fija y no al modelo de pronóstico. La "
       "traducción a pesos es ilustrativa y no sustituye una evaluación económica completa {c:maciejowska2025}.")
-cur.figura(8, "f_ganancia_ultimo_mes.png", "Ganancia o pérdida total por método en el último mes (generador, "
+cur.figura(13, "f_ganancia_ultimo_mes.png", "Ganancia o pérdida total por método en el último mes (generador, "
            "24 h, cliente de ejemplo de 100 kW).", ancho_cm=12.45)
 
 cur = Cursor(encabezado("Análisis e interpretación de resultados", 2)._p)

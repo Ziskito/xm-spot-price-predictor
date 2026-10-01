@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 ROLES = ("generador", "comercializador")
-METODOS = ("fijo", "rodante", "banda")
+METODOS = ("fijo", "rodante", "banda", "hibrido")
 COLUMNAS_CONTRATO = ["fecha_hora", "real", "q10", "q50", "q90"]
 RUTA_CONFIG_FUENTES = Path("data") / "processed" / "resultados" / "fuentes_pronostico.json"
 
@@ -122,9 +122,19 @@ def generar_senales(df, metodo, rol, precio_historico_train=None,
                      p_bajo=25, p_alto=75, ventana_dias=30, percentil_ancho_filtro=75):
     """
     df: DataFrame con columnas fecha_hora, real, q10, q50, q90 (una fila por hora).
-    metodo: "fijo" | "rodante" | "banda" (banda = fijo + "esperar" forzado
-        cuando el ancho de la banda [q10,q90] esta en el percentil alto,
-        es decir, cuando el pronostico tiene poca confianza).
+    metodo: "fijo" | "rodante" | "banda" | "hibrido".
+        - "fijo": percentiles del historico de entrenamiento (2019-2025).
+        - "rodante": percentiles con ventana movil causal de `ventana_dias`.
+        - "banda": fijo + "esperar" forzado cuando el ancho de la banda
+          [q10,q90] esta en el percentil alto (poca confianza).
+        - "hibrido": igual que "banda" pero con el umbral RODANTE en vez del
+          fijo -- umbral que se adapta al regimen reciente Y filtro de
+          confianza por ancho de banda, combinados. Agregado 2026-09-24 tras
+          encontrar que "banda" (fijo) pierde toda capacidad de discriminar
+          cuando el precio del periodo evaluado se aleja mucho del historico
+          2019-2025 (ver bitacora del README) -- no tiene todavia respaldo de
+          literatura especifica, es una combinacion de piezas ya validadas
+          por separado (ver seccion de investigacion pendiente en el README).
     rol: "generador" | "comercializador".
     precio_historico_train: requerido para metodo "fijo"/"banda" -- serie de
         precio_bolsa historico (ej. 2019-2025) sobre la que se calculan los
@@ -139,9 +149,9 @@ def generar_senales(df, metodo, rol, precio_historico_train=None,
 
     precio = df["q50"]
 
-    if metodo == "rodante":
+    if metodo in ("rodante", "hibrido"):
         bajo, alto = umbrales_rodantes(precio, ventana_dias, p_bajo, p_alto)
-    else:  # "fijo" y "banda" comparten el mismo umbral base
+    else:  # "fijo" y "banda" comparten el mismo umbral fijo sobre el historico
         if precio_historico_train is None:
             raise ValueError(f"metodo='{metodo}' requiere precio_historico_train")
         u = umbrales_fijos(precio_historico_train, p_bajo, p_alto)
@@ -159,7 +169,7 @@ def generar_senales(df, metodo, rol, precio_historico_train=None,
 
     senal = pd.Series(senal, index=df.index)
 
-    if metodo == "banda":
+    if metodo in ("banda", "hibrido"):
         ancho = df["q90"] - df["q10"]
         umbral_ancho = np.nanpercentile(ancho, percentil_ancho_filtro)
         senal = senal.mask(ancho > umbral_ancho, "esperar")
@@ -197,17 +207,28 @@ def evaluar_backtest(df, senal, rol):
 
 def comparar_metodos(df, rol, precio_historico_train, p_bajo=25, p_alto=75,
                       ventana_dias=30, percentil_ancho_filtro=75,
-                      frecuencia_min=0.10, frecuencia_max=0.40):
-    """Corre los 3 metodos para un rol dado y devuelve una tabla comparativa,
+                      frecuencia_min=0.10, frecuencia_max=0.40, mascara_evaluacion=None):
+    """Corre los 4 metodos para un rol dado y devuelve una tabla comparativa,
     marcando como 'valido' solo los metodos cuya frecuencia de accion cae en
     un rango razonable (por defecto 10%-40% de las horas) -- una regla que
     casi nunca actua o que actua case siempre no es una regla util, aunque su
-    ventaja promedio se vea bien en las pocas veces que dispara."""
+    ventaja promedio se vea bien en las pocas veces que dispara.
+
+    mascara_evaluacion: booleano opcional alineado al indice de `df`. Si se
+        da, la senal se calcula sobre TODO `df` (necesario para que "rodante"/
+        "hibrido" tengan continuidad en su ventana movil) pero el backtest se
+        mide solo en las filas donde la mascara es True -- permite comparar
+        metodos en un rango de fechas mas chico sin romper el calculo de los
+        umbrales que dependen de continuidad temporal. Si no se da, se mide
+        sobre todo `df` (comportamiento de siempre)."""
     filas = []
     for metodo in METODOS:
         senal = generar_senales(df, metodo, rol, precio_historico_train,
                                  p_bajo, p_alto, ventana_dias, percentil_ancho_filtro)
-        resultado = evaluar_backtest(df, senal, rol)
+        if mascara_evaluacion is None:
+            resultado = evaluar_backtest(df, senal, rol)
+        else:
+            resultado = evaluar_backtest(df[mascara_evaluacion], senal[mascara_evaluacion], rol)
         resultado["metodo"] = metodo
         resultado["valido"] = frecuencia_min <= resultado["frecuencia_accion"] <= frecuencia_max
         filas.append(resultado)
@@ -225,4 +246,75 @@ def elegir_mejor_metodo(tabla_comparativa):
         ganador = validos.iloc[0]
         return ganador["metodo"], True
     ganador = tabla_comparativa.iloc[0]
+    return ganador["metodo"], False
+
+
+def comparar_metodos_estable(df, rol, precio_historico_train, corte=None, p_bajo=25, p_alto=75,
+                              ventana_dias=30, percentil_ancho_filtro=75,
+                              frecuencia_min=0.10, frecuencia_max=0.40):
+    """Alternativa a comparar_metodos() que NO rankea por la ventaja promedio
+    del periodo completo, sino por un criterio maximin: el desempeño en la
+    MITAD MAS DEBIL del periodo. Se agrego el 2026-09-24 porque el criterio
+    de comparar_metodos() eligio "banda" como ganador (mejor promedio) sin
+    detectar que su frecuencia de accion se desplomaba a ~0% en la mitad mas
+    barata del año -- un promedio bueno sostenido casi todo por una sola
+    mitad, no un desempeño parejo. Es un criterio de decision razonable
+    (teoria de decision minimax/maximin, Wald 1950) pero la implementacion
+    exacta (dos mitades fijas, no una ventana movil ni un bandit no
+    estacionario) es una eleccion de ingenieria propia, sin una prueba de
+    sensibilidad ni una cita externa especifica todavia -- ver la nota de
+    investigacion pendiente en el README antes de confiar en esto a ciegas.
+
+    corte: fecha que divide el periodo en dos mitades [inicio, corte) y
+        [corte, fin]. Si no se da, se usa el punto medio del rango de `df`.
+
+    Devuelve una tabla con, por metodo: ventaja/frecuencia en cada mitad, la
+    ventaja de la peor mitad ("peor_mitad", el criterio de ranking) y si el
+    metodo es "estable" (frecuencia valida Y ventaja no-negativa en las DOS
+    mitades)."""
+    if corte is None:
+        corte = df["fecha_hora"].min() + (df["fecha_hora"].max() - df["fecha_hora"].min()) / 2
+    mitad_1 = df["fecha_hora"] < corte
+    mitad_2 = ~mitad_1
+
+    def valido(freq):
+        return not np.isnan(freq) and frecuencia_min <= freq <= frecuencia_max
+
+    filas = []
+    for metodo in METODOS:
+        senal = generar_senales(df, metodo, rol, precio_historico_train,
+                                 p_bajo, p_alto, ventana_dias, percentil_ancho_filtro)
+        df_con_senal = df.assign(senal=senal)
+        h1 = evaluar_backtest(df_con_senal[mitad_1], df_con_senal.loc[mitad_1, "senal"], rol)
+        h2 = evaluar_backtest(df_con_senal[mitad_2], df_con_senal.loc[mitad_2, "senal"], rol)
+
+        ambas_conocidas = not (np.isnan(h1["ventaja_cop_kwh"]) or np.isnan(h2["ventaja_cop_kwh"]))
+        peor_mitad = min(h1["ventaja_cop_kwh"], h2["ventaja_cop_kwh"]) if ambas_conocidas else np.nan
+        estable = (
+            ambas_conocidas
+            and h1["ventaja_cop_kwh"] >= 0 and h2["ventaja_cop_kwh"] >= 0
+            and valido(h1["frecuencia_accion"]) and valido(h2["frecuencia_accion"])
+        )
+        filas.append({
+            "metodo": metodo,
+            "ventaja_H1": h1["ventaja_cop_kwh"], "frecuencia_H1": h1["frecuencia_accion"],
+            "ventaja_H2": h2["ventaja_cop_kwh"], "frecuencia_H2": h2["frecuencia_accion"],
+            "peor_mitad": peor_mitad,
+            "estable": estable,
+        })
+
+    tabla = pd.DataFrame(filas)
+    return tabla.sort_values("peor_mitad", ascending=False, na_position="last").reset_index(drop=True)
+
+
+def elegir_mejor_metodo_estable(tabla_comparativa_estable):
+    """Como elegir_mejor_metodo(), pero sobre comparar_metodos_estable():
+    elige el metodo con mejor 'peor_mitad' ENTRE los marcados como estables.
+    Si ninguno es estable, elige el de mejor 'peor_mitad' de todas formas
+    pero lo deja explicito (segundo valor = False)."""
+    estables = tabla_comparativa_estable[tabla_comparativa_estable["estable"]]
+    if len(estables) > 0:
+        ganador = estables.iloc[0]
+        return ganador["metodo"], True
+    ganador = tabla_comparativa_estable.iloc[0]
     return ganador["metodo"], False
