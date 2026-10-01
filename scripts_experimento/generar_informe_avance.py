@@ -26,6 +26,7 @@ SALIDA = RAIZ / "docs" / "Informe_Avance_ABET_Barcelo_Dede.docx"
 FIG = RAIZ / "scripts_experimento" / "informe_avance_assets"
 C = json.loads((RAIZ / "data/processed/resultados/informe_avance/claves_informe.json").read_text(encoding="utf-8"))
 COSTO = json.loads((RAIZ / "data/processed/resultados/informe_avance/costo_computacional.json").read_text(encoding="utf-8"))
+ED = json.loads((RAIZ / "data/processed/resultados/informe_avance/error_diario_2026.json").read_text(encoding="utf-8"))
 
 # ------------------------------------------------------------------------------------------------
 # bibliografia (IEEE). Se numera por orden de primera cita en el texto.
@@ -651,7 +652,14 @@ cur.p("Ninguno de los tres trabajos colombianos cuantifica la incertidumbre ni l
 # 6. DISENO
 # ================================================================================================
 cur = Cursor(encabezado("Problema", 2)._p)
-cur.p("Desde el diseño, el problema se traduce en un sistema de procesamiento de señales y decisión con tres "
+cur.p("Desde el diseño, el problema es la ausencia de un sistema de procesamiento de señales y de gestión que "
+      "integre los datos del mercado. La información existe y es pública, pero está dispersa en fuentes con "
+      "resoluciones distintas: XM publica el precio, la demanda y la generación por hora, y el volumen de los "
+      "embalses y los aportes hídricos por día, mientras que NOAA publica el ONI como un promedio trimestral que se "
+      "actualiza cada mes. Las plataformas públicas permiten consultar y descargar cada serie por separado, pero no "
+      "las sincronizan entre sí ni las convierten en un pronóstico o en una recomendación: un agente que quiera "
+      "decidir con ellas debe alinearlas a mano y estimar por su cuenta el riesgo de cada hora.")
+cur.p("El diseño resuelve esa ausencia con un sistema de procesamiento de señales y decisión de tres "
       "bloques acoplados: (1) una cadena de adquisición y acondicionamiento que convierta cinco fuentes de "
       "resolución distinta (horaria, diaria y mensual) en una señal multivariada horaria continua, sin huecos ni "
       "fugas de información; (2) un estimador que, con la información disponible en el instante de corte, produzca "
@@ -867,6 +875,16 @@ cur.figura(2, "f_diagrama_bloques.png", "Diagrama de bloques de la plataforma y 
 cur.p("**Definición de variables.** Todas las variables se construyen desplazando primero la serie al menos 24 h, "
       "de modo que en el instante de corte solo se usa información ya publicada. Cada familia se justificó con un "
       "resultado de la caracterización de OE1 (Tabla 11).")
+cur.p("De las fuentes públicas se descargaron, para enero de 2019 a agosto de 2026, 66.576 registros horarios de "
+      "cada una de las tres series horarias de XM (precio de bolsa, demanda real y generación total), 2.776 registros "
+      "diarios de cada una de las dos series hidrológicas (volumen útil de embalses y aportes hídricos) y los 90 valores "
+      "trimestrales publicados del ONI (de DJF 2019 a MJJ 2026). Cada familia de variables sale de una sola de esas "
+      "fuentes: las de precio rezagado, medias móviles y volatilidad (9 variables), de la serie horaria de precio; la "
+      "de demanda (4), de la demanda horaria; la de hidrología (12), seis de los embalses y seis de los aportes; el "
+      "ONI, de la serie de NOAA; y el indicador de pandemia y las 13 variables de calendario y festivos, de la marca "
+      "de tiempo y del calendario oficial de festivos de Colombia. La generación total se usó en la caracterización, "
+      "pero no como predictora: su valor en la hora objetivo se fija en el mismo despacho que el precio y su valor "
+      "rezagado repite la información de la demanda, con la que tiene una correlación de 0,996.")
 cur.titulo_tabla(11, "Las 40 variables predictoras, agrupadas por familia (y = precio de bolsa; t = hora objetivo).")
 cur.tabla([
     ["Familia (n.º)", "Definición", "Justificación (OE1)"],
@@ -1043,6 +1061,32 @@ cur.p("DM (t): Diebold-Mariano frente a la persistencia (positivo = menor error)
       f"MAE 41,10 ± 0,08, MAPE 10,49 % ± 0,02. Versión desplegable (pesos solo con días anteriores): MAE "
       f"{f(DES['MAE'])} y MAPE {pct(DES['MAPE'])}, frente a {f(DES['MAE_persistencia_mismas_horas'])} y "
       f"{pct(DES['MAPE_persistencia_mismas_horas'])} de la persistencia en las mismas horas.", sz=9.5)
+cur.p("**Error diario e intervalos de confianza.** El MAE de 40,97 COP/kWh es un promedio de "
+      f"{ED['n_dias']} días con comportamientos muy distintos, por lo que también se analizó el error de cada día. "
+      f"El MAE diario del ensamble tiene media {f(ED['mae_ensamble']['media'])} COP/kWh y desviación estándar "
+      f"{f(ED['mae_ensamble']['de'])}. Como los días de error alto vienen en rachas (autocorrelación de "
+      f"{f(ED['acf1_mae_diario_ensamble'])} entre días consecutivos), el intervalo de confianza del 95 % para la "
+      f"media se calculó con bootstrap por bloques de {ED['bloque_dias']} días: "
+      f"[{f(ED['mae_ensamble']['ic95_bloques'][0], 1)}; {f(ED['mae_ensamble']['ic95_bloques'][1], 1)}] "
+      f"COP/kWh, frente a [{f(ED['mae_persistencia']['ic95_bloques'][0], 1)}; "
+      f"{f(ED['mae_persistencia']['ic95_bloques'][1], 1)}] de la persistencia. En el 80 % de los días el MAE "
+      f"del ensamble estuvo entre {f(ED['mae_ensamble']['p10'], 1)} y {f(ED['mae_ensamble']['p90'], 1)} "
+      f"COP/kWh; fue menor que 50 COP/kWh en el {f(ED['pct_dias_bajo_umbral']['50']['ensamble'], 1)} % de "
+      f"los días ({f(ED['pct_dias_bajo_umbral']['50']['persistencia'], 1)} % para la persistencia) y menor "
+      f"que 100 en el {f(ED['pct_dias_bajo_umbral']['100']['ensamble'], 1)} % "
+      f"({f(ED['pct_dias_bajo_umbral']['100']['persistencia'], 1)} %). En términos relativos, el MAPE diario "
+      f"tiene media {f(ED['mape_ensamble']['media'])} % con intervalo "
+      f"[{f(ED['mape_ensamble']['ic95_bloques'][0], 1)} %; {f(ED['mape_ensamble']['ic95_bloques'][1], 1)} %], "
+      f"y en el 90 % de los días queda por debajo de {f(ED['mape_ensamble']['p90'], 1)} %. La diferencia "
+      f"diaria de MAE entre la persistencia y el ensamble tiene media "
+      f"{f(ED['diferencia_per_menos_ens']['media'], 1)} COP/kWh, con un intervalo "
+      f"[{f(ED['diferencia_per_menos_ens']['ic95_bloques'][0], 1)}; "
+      f"{f(ED['diferencia_per_menos_ens']['ic95_bloques'][1], 1)}] que no incluye el cero, y el ensamble tuvo "
+      f"menor error en el {f(ED['pct_dias_ensamble_mejor'], 1)} % de los días, un resultado coherente con la "
+      "prueba de Diebold-Mariano. Por último, el error medio con signo es de "
+      f"+{f(ED['sesgo_ensamble']['media'], 1)} COP/kWh "
+      f"[{f(ED['sesgo_ensamble']['ic95_bloques'][0], 1)}; {f(ED['sesgo_ensamble']['ic95_bloques'][1], 1)}]: "
+      "el ensamble subestima levemente el precio, en cerca del 1 % del precio medio de 2026.")
 cur.p("**Robustez entre regímenes.** La Tabla 15 muestra el MAE de los modelos individuales en los seis orígenes "
       "walk-forward (O1 a O5: 12 meses cada uno con corte a las 23:00; O6: 2026).")
 orig = ["Origen 1", "Origen 2", "Origen 3", "Origen 4", "Origen 5", "Origen 6"]

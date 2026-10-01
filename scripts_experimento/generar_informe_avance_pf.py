@@ -7,6 +7,7 @@ ese script para tener una sola fuente. Las cifras son las mismas, ya verificadas
 """
 import ast
 import copy
+import json
 import re
 from datetime import date
 from pathlib import Path
@@ -38,6 +39,13 @@ BIB.update({
     "chang2024": 'R. I. Chang, C. H. Wang, L. C. Wei y Y. F. Lu, "LSTM with short-term bias compensation to determine trading strategy under black swan events of Taiwan ETF50 stock," *Appl. Sci.*, vol. 14, art. 8576, 2024.',
     "singh2027": 'G. A. Singh, "Regime-aware deep learning for financial forecasting: An adaptive short-term bias compensation framework for the Warsaw Stock Exchange," *Expert Syst. Appl.*, vol. 332, art. 133584, 2027.',
 })
+ED = json.loads((RAIZ / "data/processed/resultados/informe_avance/error_diario_2026.json").read_text(encoding="utf-8"))
+
+
+def dec(x, d=2):
+    return f"{x:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".").replace("-", "−")
+
+
 ENCONTRADAS = ["huisman2003", "kapoor2023b", "nasiadka2022", "baranowski2019", "chang2024", "singh2027"]
 ORDEN = []
 
@@ -624,6 +632,16 @@ c.p("Se construyó un único conjunto de 40 variables, compartido por todos los 
     "precisión de forma irreal se eliminó por esta razón. Cada familia se justifica con un resultado de OE1 "
     "(Tabla 3). Los festivos se incorporaron después de probarlos: reducen el error de N-BEATSx en esos días de "
     "74,1 a 62,6 COP/kWh (p = 0,0064).")
+c.p("De las fuentes públicas se descargaron, para enero de 2019 a agosto de 2026, 66.576 registros horarios de "
+    "cada una de las tres series horarias de XM (precio de bolsa, demanda real y generación total), 2.776 registros "
+    "diarios de cada una de las dos series hidrológicas (volumen útil de embalses y aportes hídricos) y los 90 valores "
+    "trimestrales publicados del ONI (de DJF 2019 a MJJ 2026). Cada familia de variables sale de una sola de esas "
+    "fuentes: las de precio rezagado, medias móviles y volatilidad (9 variables), de la serie horaria de precio; la "
+    "de demanda (4), de la demanda horaria; la de hidrología (12), seis de los embalses y seis de los aportes; el "
+    "ONI, de la serie de NOAA; y el indicador de pandemia y las 13 variables de calendario y festivos, de la marca "
+    "de tiempo y del calendario oficial de festivos de Colombia. La generación total se usó en la caracterización, "
+    "pero no como predictora: su valor en la hora objetivo se fija en el mismo despacho que el precio y su valor "
+    "rezagado repite la información de la demanda, con la que tiene una correlación de 0,996.")
 c.titulo_tabla("variables", "Las 40 variables predictoras por familia (y = precio de bolsa; t = hora objetivo).")
 c.tabla([
     ["Familia (n.º)", "Definición", "Justificación (OE1)"],
@@ -777,6 +795,32 @@ c.p("El ensamble reduce el error absoluto medio en **27 %** frente a la persiste
     "{c:lundberg2017} y la importancia por permutación sobre XGBoost coinciden en las tres variables más "
     "importantes (precio rezagado 24 h, media de 24 h y precio rezagado 168 h; correlación de Spearman entre "
     "rankings de 0,811), las mismas que la caracterización de OE1 señalaba como dominantes.")
+c.p("**Error diario e intervalos de confianza.** El MAE de 40,97 COP/kWh es un promedio de "
+    f"{ED['n_dias']} días con comportamientos muy distintos, por lo que también se analizó el error de cada día. "
+    f"El MAE diario del ensamble tiene media {dec(ED['mae_ensamble']['media'])} COP/kWh y desviación estándar "
+    f"{dec(ED['mae_ensamble']['de'])}. Como los días de error alto vienen en rachas (autocorrelación de "
+    f"{dec(ED['acf1_mae_diario_ensamble'])} entre días consecutivos), el intervalo de confianza del 95 % para la "
+    f"media se calculó con bootstrap por bloques de {ED['bloque_dias']} días: "
+    f"[{dec(ED['mae_ensamble']['ic95_bloques'][0], 1)}; {dec(ED['mae_ensamble']['ic95_bloques'][1], 1)}] "
+    f"COP/kWh, frente a [{dec(ED['mae_persistencia']['ic95_bloques'][0], 1)}; "
+    f"{dec(ED['mae_persistencia']['ic95_bloques'][1], 1)}] de la persistencia. En el 80 % de los días el MAE "
+    f"del ensamble estuvo entre {dec(ED['mae_ensamble']['p10'], 1)} y {dec(ED['mae_ensamble']['p90'], 1)} "
+    f"COP/kWh; fue menor que 50 COP/kWh en el {dec(ED['pct_dias_bajo_umbral']['50']['ensamble'], 1)} % de "
+    f"los días ({dec(ED['pct_dias_bajo_umbral']['50']['persistencia'], 1)} % para la persistencia) y menor "
+    f"que 100 en el {dec(ED['pct_dias_bajo_umbral']['100']['ensamble'], 1)} % "
+    f"({dec(ED['pct_dias_bajo_umbral']['100']['persistencia'], 1)} %). En términos relativos, el MAPE diario "
+    f"tiene media {dec(ED['mape_ensamble']['media'])} % con intervalo "
+    f"[{dec(ED['mape_ensamble']['ic95_bloques'][0], 1)} %; {dec(ED['mape_ensamble']['ic95_bloques'][1], 1)} %], "
+    f"y en el 90 % de los días queda por debajo de {dec(ED['mape_ensamble']['p90'], 1)} %. La diferencia "
+    f"diaria de MAE entre la persistencia y el ensamble tiene media "
+    f"{dec(ED['diferencia_per_menos_ens']['media'], 1)} COP/kWh, con un intervalo "
+    f"[{dec(ED['diferencia_per_menos_ens']['ic95_bloques'][0], 1)}; "
+    f"{dec(ED['diferencia_per_menos_ens']['ic95_bloques'][1], 1)}] que no incluye el cero, y el ensamble tuvo "
+    f"menor error en el {dec(ED['pct_dias_ensamble_mejor'], 1)} % de los días, un resultado coherente con la "
+    "prueba de Diebold-Mariano. Por último, el error medio con signo es de "
+    f"+{dec(ED['sesgo_ensamble']['media'], 1)} COP/kWh "
+    f"[{dec(ED['sesgo_ensamble']['ic95_bloques'][0], 1)}; {dec(ED['sesgo_ensamble']['ic95_bloques'][1], 1)}]: "
+    "el ensamble subestima levemente el precio, en cerca del 1 % del precio medio de 2026.")
 c.dato("Responsables:", JUAN + ".")
 c.dato("Herramientas:", "Python 3, statsmodels (varianza HAC), shap, scipy.stats; notebook 10 y scripts de "
        "evaluación.")
