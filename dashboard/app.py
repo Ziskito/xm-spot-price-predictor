@@ -546,8 +546,11 @@ def vista_operador():
     tabla, metodo, es_valido = comparacion_estable(horizonte, rol)
     df = serie_con_senal(horizonte, rol, metodo)
 
-    fechas = df["fecha_hora"]
-    dia_min, dia_max = fechas.dt.date.min(), fechas.dt.date.max()
+    # Solo se ofrecen dias con las 24 horas: segun el modelo, el pronostico puede cubrir 01:00 a 00:00
+    # del dia siguiente y dejar el primer o el ultimo dia con una sola hora.
+    horas_por_dia = df["fecha_hora"].dt.date.value_counts()
+    completos = sorted(horas_por_dia[horas_por_dia >= 24].index) or sorted(horas_por_dia.index)
+    dia_min, dia_max = completos[0], completos[-1]
 
     c1, c2 = st.columns([2, 1])
     with c1:
