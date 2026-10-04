@@ -1,7 +1,7 @@
-# Tema del dashboard del motor de decision.
-# La vista "Operador" esta disenada sobre fondo claro (ver dashboard/app.py,
-# diccionario T de tokens de diseno). Fijamos el tema para que no dependa de
-# la preferencia clara/oscura del navegador de quien lo abra.
+# Tema base del dashboard del motor de decision. El dashboard tiene su propio
+# interruptor claro/oscuro (barra lateral, dashboard/app.py, diccionario TEMAS)
+# que repinta toda la interfaz con CSS; este tema claro es solo el punto de
+# partida y fija que no dependa de la preferencia del navegador.
 [theme]
 base = "light"
 primaryColor = "#15803D"
