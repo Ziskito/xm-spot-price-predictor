@@ -67,7 +67,7 @@ TEMAS = {
         "tinta": "#0F172A", "texto": "#334155", "gris": "#64748B",
         "linea": "#E2E8F0", "panel": "#FFFFFF", "fondo": "#F1F5F9", "lateral": "#FFFFFF",
         "neutro_bg": "#E8EDF3", "control": "#FFFFFF", "control_borde": "#CBD5E1",
-        "banda": "rgba(37,99,235,0.13)", "q50": "#2563EB", "acento": "#2563EB", "scroll": "#94A3B8", "scroll_hover": "#64748B", "sombra": "0 1px 2px rgba(15,23,42,.06)",
+        "banda": "rgba(37,99,235,0.13)", "q50": "#2563EB", "acento": "#2563EB", "calor_verde": "#16A34A", "calor_ambar": "#F59E0B", "calor_rojo": "#DC2626", "scroll": "#94A3B8", "scroll_hover": "#64748B", "sombra": "0 1px 2px rgba(15,23,42,.06)",
     },
     "oscuro": {
         "verde": "#34D399", "verde_bg": "rgba(52,211,153,0.16)",
@@ -76,7 +76,7 @@ TEMAS = {
         "tinta": "#E6EAF2", "texto": "#C3CBD9", "gris": "#8D99AE",
         "linea": "#24304A", "panel": "#111A2E", "fondo": "#0A1120", "lateral": "#0D1527",
         "neutro_bg": "#1C2740", "control": "#16213A", "control_borde": "#2C3A58",
-        "banda": "rgba(96,165,250,0.20)", "q50": "#60A5FA", "acento": "#3B82F6", "scroll": "#5B6B88", "scroll_hover": "#8D99AE", "sombra": "0 1px 3px rgba(0,0,0,.35)",
+        "banda": "rgba(96,165,250,0.20)", "q50": "#60A5FA", "acento": "#3B82F6", "calor_verde": "#34D399", "calor_ambar": "#FBBF24", "calor_rojo": "#F87171", "scroll": "#5B6B88", "scroll_hover": "#8D99AE", "sombra": "0 1px 3px rgba(0,0,0,.35)",
     },
 }
 
@@ -176,6 +176,9 @@ hr { border-color: $linea !important; }
 
 .leyenda { font-size: .82rem; color: $gris; margin-top: 4px; }
 .leyenda b { color: $tinta; }
+.meta { font-size: .74rem; color: $gris; margin: -2px 0 18px; line-height: 1.45; }
+.meta b { color: $texto; font-weight: 600; }
+[data-testid="stRadio"] label p { color: $texto; }
 
 [data-testid="stPlotlyChart"] { background: $panel; border: 1px solid $linea; border-radius: 14px;
                                 padding: 6px 6px 2px; box-shadow: $sombra; }
@@ -465,6 +468,60 @@ def grafico_dia(dia_df, bajo_s, alto_s, hora, tk):
     return fig
 
 
+def metadatos_html(periodo, contenido):
+    """Pie de cada imagen de decision con los metadatos que exige el Anexo 1 (unidad, periodo,
+    confianza y version del modelo)."""
+    cob = meta.get("cobertura_medida_pct", "n/d")
+    return (f'<div class="meta"><b>{contenido}</b> &middot; Unidad: COP/kWh &middot; Periodo: {periodo} '
+            f'&middot; Confianza: banda [q10, q90], cobertura medida {cob} % (objetivo '
+            f'{meta.get("cobertura_objetivo_pct", 80)} %) &middot; Modelo ({horizonte}): '
+            f'{meta.get("modelo", "n/d")}, versión {meta.get("generado", "n/d")}</div>')
+
+
+CODIGO_SENAL = {"evitar_compra": 0, "retener": 0, "esperar": 1, "comprar": 2, "vender": 2}
+
+
+def grafico_calor(df, dias, horas, dia_sel, hora_sel, modo, tk):
+    """Mapa de calor dia-hora: filas = dias, columnas = horas; color = senal del motor o precio esperado."""
+    sub = df[df["fecha_hora"].dt.date.isin(dias) & df["fecha_hora"].dt.hour.isin(horas)].copy()
+    sub["d"] = sub["fecha_hora"].dt.strftime("%d/%m")
+    sub["h"] = sub["fecha_hora"].dt.hour
+    orden = [pd.Timestamp(x).strftime("%d/%m") for x in dias]
+    piv = lambda col: sub.pivot(index="d", columns="h", values=col).reindex(index=orden, columns=horas)
+    hueco_y, hueco_x = (2 if len(dias) <= 45 else 0), (2 if len(horas) <= 30 else 0)
+    etiqueta = {k: v[0].capitalize() for k, v in SIGNIFICADO.items()}
+    sub["etq"] = sub["senal"].map(etiqueta)
+    datos = np.dstack([piv("q50").to_numpy(), piv("real").to_numpy(), piv("q10").to_numpy(),
+                       piv("q90").to_numpy(), piv("etq").to_numpy()])
+    plantilla = ("%{y} · %{x}:00 h<br>%{customdata[4]}<br>Pronóstico: %{customdata[0]:,.0f} COP/kWh"
+                 "<br>Banda: %{customdata[2]:,.0f} – %{customdata[3]:,.0f}<br>Real: %{customdata[1]:,.0f}"
+                 "<extra></extra>")
+    if modo == "Señal del motor":
+        z = piv("senal").apply(lambda c: c.map(CODIGO_SENAL)).to_numpy(dtype=float)
+        escala = [[0, tk["calor_rojo"]], [1 / 3, tk["calor_rojo"]], [1 / 3, tk["calor_ambar"]],
+                  [2 / 3, tk["calor_ambar"]], [2 / 3, tk["calor_verde"]], [1, tk["calor_verde"]]]
+        fig = go.Figure(go.Heatmap(z=z, x=horas, y=orden, zmin=0, zmax=2, colorscale=escala,
+                                   showscale=False, xgap=hueco_x, ygap=hueco_y, customdata=datos,
+                                   hovertemplate=plantilla, opacity=0.85))
+    else:
+        fig = go.Figure(go.Heatmap(z=piv("q50").to_numpy(dtype=float), x=horas, y=orden,
+                                   colorscale="YlOrRd", xgap=hueco_x, ygap=hueco_y, customdata=datos,
+                                   hovertemplate=plantilla,
+                                   colorbar=dict(title=dict(text="COP/kWh", font=dict(color=tk["gris"])),
+                                                 tickfont=dict(color=tk["gris"]), thickness=12)))
+    if dia_sel in dias and hora_sel in horas:
+        y0 = orden.index(pd.Timestamp(dia_sel).strftime("%d/%m"))
+        fig.add_shape(type="rect", x0=hora_sel - 0.5, x1=hora_sel + 0.5, y0=y0 - 0.5, y1=y0 + 0.5,
+                      line=dict(color=tk["tinta"], width=2.5))
+    alto = int(np.clip(150 + 24 * len(dias), 250, 1100))
+    fig = estilo_figura(fig, tk, alto, f"Mapa de calor día-hora · {modo.lower()}", margen_leyenda=60)
+    fig.update_layout(hovermode="closest", yaxis_title=None, xaxis_title="Hora del día")
+    fig.update_xaxes(dtick=1 if len(horas) <= 12 else 2, showgrid=False, range=[horas[0] - 0.5, horas[-1] + 0.5])
+    fig.update_yaxes(autorange="reversed", showgrid=False, type="category",
+                     nticks=min(len(dias), 40))
+    return fig
+
+
 def tabla_metodos_html(tabla, metodo_activo, metodo_sugerido):
     filas = []
     for _, r in tabla.iterrows():
@@ -638,6 +695,9 @@ def vista_operador():
     with col_dia:
         st.plotly_chart(grafico_dia(dia_df, bajo_s, alto_s, hora, tk), width="stretch", theme=None,
                         config={"displayModeBar": False})
+    st.markdown(metadatos_html(f"{dia:%d/%m/%Y}, 00:00 a 23:00 h",
+                               "Semáforo y pronóstico del día con su banda de incertidumbre"),
+                unsafe_allow_html=True)
 
     # ---- El dia hora por hora ----
     st.markdown('<div class="seccion">El día, hora por hora</div>', unsafe_allow_html=True)
@@ -653,6 +713,45 @@ def vista_operador():
                    "<b>ámbar</b> = esperar. Recuadro con borde = la hora seleccionada &mdash; "
                    "haz clic en cualquier hora para elegirla directamente.")
     st.markdown(f'<div class="leyenda">{leyenda}</div>', unsafe_allow_html=True)
+
+    # ---- Mapa de calor dia-hora: rango de dias (de 1 dia al ultimo disponible) y de horas a eleccion ----
+    st.markdown('<div class="seccion">Mapa de calor día-hora</div>', unsafe_allow_html=True)
+    clave_dias = f"rango_dias_calor_{horizonte}"  # por horizonte: cada uno tiene su propio rango de fechas
+    # Streamlit borra el estado de un control que no se dibuja (el del otro horizonte), asi que se guarda
+    # una copia aparte. El estado solo se escribe para restaurarla o para inicializar: escribirlo en cada
+    # ejecucion pisaria lo que elige el usuario.
+    def valido(v):
+        v = v if isinstance(v, (tuple, list)) else (v,)
+        return all(d is not None and completos[0] <= d <= completos[-1] for d in v)
+    if not valido(st.session_state.get(clave_dias)):
+        copia = st.session_state.get(f"_copia_{clave_dias}")
+        if copia is not None and valido(copia):
+            st.session_state[clave_dias] = copia
+        else:
+            previos = [d for d in completos if d <= dia]
+            st.session_state[clave_dias] = (previos[-14:][0], previos[-1])
+    c_dias, c_horas, c_modo = st.columns([5, 3, 2])
+    with c_dias:
+        rango_dias = st.slider("Días", min_value=completos[0], max_value=completos[-1], key=clave_dias,
+                               step=pd.Timedelta(days=1).to_pytimedelta(), format="DD/MM/YYYY",
+                               help="Del primer día disponible al más reciente. Para ver un solo día, "
+                                    "junta los dos extremos.")
+        d_ini, d_fin = rango_dias if isinstance(rango_dias, (tuple, list)) else (rango_dias, rango_dias)
+        st.session_state[f"_copia_{clave_dias}"] = (d_ini, d_fin)
+    with c_horas:
+        rango_horas = st.slider("Horas", 0, 23, (0, 23), key="rango_horas_calor",
+                                help="Para ver una sola hora, junta los dos extremos.")
+        h_ini, h_fin = rango_horas if isinstance(rango_horas, (tuple, list)) else (rango_horas, rango_horas)
+    with c_modo:
+        modo_calor = st.radio("Colorear por", ["Señal del motor", "Precio esperado"], key="modo_calor")
+    dias_calor = [d for d in completos if d_ini <= d <= d_fin]
+    horas_calor = list(range(h_ini, h_fin + 1))
+    st.plotly_chart(grafico_calor(df, dias_calor, horas_calor, dia, hora, modo_calor, tk), width="stretch",
+                    theme=None, config={"displayModeBar": False})
+    n_d, n_h = len(dias_calor), len(horas_calor)
+    st.markdown(metadatos_html(f"{d_ini:%d/%m/%Y} a {d_fin:%d/%m/%Y}, {h_ini:02d}:00 a {h_fin:02d}:00 h "
+                               f"({n_d} día{'s' if n_d > 1 else ''} × {n_h} hora{'s' if n_h > 1 else ''})",
+                               "Mapa de calor día-hora; recuadro = día y hora elegidos"), unsafe_allow_html=True)
 
     # ---- Indicadores del dia y del backtest, con mini graficas ----
     accion = "comprar" if rol == "comercializador" else "vender"
@@ -687,6 +786,9 @@ def vista_operador():
         grafico_precio(ventana, tk, "La semana alrededor del día elegido", marca_x=marca),
         width="stretch", theme=None, config={"displaylogo": False},
     )
+    st.markdown(metadatos_html(f"{ini:%d/%m/%Y} a {fin - pd.Timedelta(hours=1):%d/%m/%Y}",
+                               "Comparación real frente a pronóstico con las horas de acción"),
+                unsafe_allow_html=True)
 
     # ---- Nota sobre la regla activa ----
     if es_valido:
@@ -757,6 +859,9 @@ def vista_analista():
         grafico_precio(base, tk, f"Precio real, pronóstico y señales — método {metodo}", alto=460),
         width="stretch", theme=None, config={"displaylogo": False},
     )
+    st.markdown(metadatos_html(f"{inicio:%d/%m/%Y} a {fin:%d/%m/%Y}",
+                               f"Backtest del método {metodo} sobre real frente a pronóstico"),
+                unsafe_allow_html=True)
 
     with st.expander("Ver datos filtrados"):
         st.dataframe(base, width="stretch")

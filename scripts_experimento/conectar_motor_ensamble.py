@@ -11,9 +11,10 @@ Genera dos contratos de pronostico con el formato que espera src/motor_decision.
     tomando una ventana cada 72 h alineada con las ventanas del contrato vigente de N-BEATSx.
 
 Bandas: la FORMA (ancho hora a hora) sale de los cuantiles crudos de N-BEATSx, recentrados en la
-mediana del ensamble; luego se calibran con el mismo metodo conforme adaptativo de 30 dias de
-calibrar_bandas_adaptativo.py (a 72 h, por tramo de horizonte). Asi el ancho sigue variando por
-hora y el filtro de "banda ancha" del motor conserva su sentido.
+mediana del ensamble; luego se calibran por conformal adaptativo (metodo de calibrar_bandas_adaptativo.py)
+con un margen por hora del dia y ventana de 60 dias ("Mondrian"), para que la cobertura sea pareja en
+todas las horas. Asi el ancho sigue variando por hora y el filtro de "banda ancha" del motor conserva
+su sentido.
 
 No modifica fuentes_pronostico.json: eso lo decide quien corre el script (ver --activar).
 """
@@ -27,19 +28,19 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 RES = RAIZ / "data" / "processed" / "resultados"
 NIVEL, VENTANA_DIAS = 0.80, 30
-TRAMOS = [(1, 24), (25, 48), (49, 72)]
 
 
-def margen_conforme(scores_previos):
+def margen_conforme(scores_previos, minimo=24 * 7):
     n = len(scores_previos)
-    if n < 24 * 7:
+    if n < minimo:
         return np.nanquantile(scores_previos, 0.90) if n > 24 else 0.0
     nivel = min(np.ceil((n + 1) * NIVEL) / n, 1.0)
     return np.nanquantile(scores_previos, nivel)
 
 
-def calibrar(df, clave_grupo=None):
-    """Ensancha [q10, q90] con el cuantil conforme de los scores de los 30 dias previos (causal)."""
+def calibrar(df, clave_grupo=None, ventana_dias=None):
+    """Ensancha [q10, q90] con el cuantil conforme de los scores de los dias previos (causal)."""
+    ventana_dias = ventana_dias or VENTANA_DIAS
     df = df.sort_values("fecha_hora").reset_index(drop=True)
     df["score"] = np.maximum(df["q10_base"] - df["real"], df["real"] - df["q90_base"])
     df["dia"] = df["fecha_hora"].dt.normalize()
@@ -49,8 +50,9 @@ def calibrar(df, clave_grupo=None):
         sel = np.ones(len(df), bool) if g is None else (df[clave_grupo] == g).to_numpy()
         sub = df[sel]
         for dia in sub["dia"].unique():
-            hist = sub[(sub["dia"] < dia) & (sub["dia"] >= dia - pd.Timedelta(days=VENTANA_DIAS))]
-            margen[sel & (df["dia"] == dia).to_numpy()] = margen_conforme(hist["score"].to_numpy())
+            hist = sub[(sub["dia"] < dia) & (sub["dia"] >= dia - pd.Timedelta(days=ventana_dias))]
+            margen[sel & (df["dia"] == dia).to_numpy()] = margen_conforme(
+                hist["score"].to_numpy(), minimo=24 * 7 if clave_grupo in (None, "tramo") else 7)
     df["margen"] = margen
     df["q10"] = df["q10_base"] - margen
     df["q90"] = df["q90_base"] + margen
@@ -66,7 +68,10 @@ def contrato_24h():
     d["q50"] = d["pred_desplegable"]
     d["q10_base"] = d["q50"] + np.minimum(d["off10"], 0)
     d["q90_base"] = d["q50"] + np.maximum(d["off90"], 0)
-    d = calibrar(d)
+    # un margen por hora del dia ("Mondrian"): con un margen unico la cobertura iba de 54 % (00:00)
+    # a 94 % (01-04 h); por hora queda entre 77 % y 84 % (calibracion_por_hora_24h.py)
+    d["hora"] = d["fecha_hora"].dt.hour
+    d = calibrar(d, "hora", ventana_dias=60)
     return d[["fecha_hora", "real", "q50", "q10", "q90", "margen"]]
 
 
@@ -82,8 +87,10 @@ def contrato_72h():
     d["q50"] = d["pred"]
     d["q10_base"] = d["q50"] + np.minimum(d["off10"], 0)
     d["q90_base"] = d["q50"] + np.maximum(d["off90"], 0)
-    d["tramo"] = pd.cut(d["paso_horas"], [0, 24, 48, 72], labels=["1-24", "25-48", "49-72"]).astype(str)
-    d = calibrar(d, "tramo")
+    # un margen por hora del dia, como a 24 h: por tramo la cobertura iba de 66 % (19 h) a 87 %;
+    # por hora queda entre 75 % y 84 % con el mismo ancho medio
+    d["hora"] = d["fecha_hora"].dt.hour
+    d = calibrar(d, "hora", ventana_dias=60)
     assert d["fecha_hora"].is_unique
     return d[["fecha_hora", "cutoff", "paso_horas", "real", "q50", "q10", "q90", "margen"]]
 
@@ -111,8 +118,8 @@ if __name__ == "__main__":
         respaldo = RES / "fuentes_pronostico_nbeatsx.json"
         if not respaldo.exists():
             respaldo.write_text(json.dumps(conf, indent=2, ensure_ascii=False), encoding="utf-8")
-        modelos = {"24h": "Ensamble de 6 modelos (pesos causales) + bandas conformes adaptativas (30 dias)",
-                   "72h": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por tramo"}
+        modelos = {"24h": "Ensamble de 6 modelos (pesos causales) + bandas conformes adaptativas por hora del dia (60 dias)",
+                   "72h": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias)"}
         for hz, (nombre, df) in salidas.items():
             conf[hz] = {"archivo": nombre, "modelo": modelos[hz], "calibrado": True,
                         "cobertura_objetivo_pct": 80,

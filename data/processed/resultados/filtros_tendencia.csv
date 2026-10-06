@@ -1,0 +1,80 @@
+tipo,familia,parametro,valor,retraso_h,residuo,fuga,retraso_medio_h
+fuera de linea,Promedio móvil centrado,ventana (h),168.0,402.0,106.84988846075207,12.920367156333096,0
+fuera de linea,Promedio móvil centrado,ventana (h),240.0,864.0,111.23329432796035,10.140493506029491,0
+fuera de linea,Promedio móvil centrado,ventana (h),336.0,845.0,116.05958463207313,6.533802871638706,0
+fuera de linea,Promedio móvil centrado,ventana (h),480.0,785.0,125.00567684841617,4.662071690421625,0
+fuera de linea,Promedio móvil centrado,ventana (h),720.0,724.0,138.02876215820098,3.121476652593533,0
+fuera de linea,Promedio móvil centrado,ventana (h),960.0,814.0,148.1963795850824,2.3186512673574518,0
+fuera de linea,Promedio móvil centrado,ventana (h),1200.0,760.0,157.01983334341375,1.7650825335195433,0
+fuera de linea,Promedio móvil centrado,ventana (h),1440.0,9478.0,163.364668728066,1.604551342495229,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),241.0,378.0,103.67369744636275,20.070083498298015,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),361.0,381.0,107.76835579890398,13.757618130790945,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),481.0,488.0,109.92458651620372,10.1998128115343,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),601.0,326.0,112.52486543467188,7.899174651677176,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),721.0,348.0,117.6974765755786,6.466767367829145,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),961.0,406.0,124.96829865262339,4.541407732141475,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),1201.0,482.0,130.71914380156036,3.5153633399155626,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),1441.0,559.0,137.2443297781289,2.7715228256531246,0
+fuera de linea,Savitzky-Golay (orden 3),ventana (h),1921.0,643.0,149.43666878929756,1.9949459744727707,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),168.0,381.0,100.69591701216174,22.686999545538,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),240.0,386.0,103.60088881680615,15.045616436091798,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),336.0,384.0,106.58946010141109,10.252891256228008,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),480.0,382.0,111.10450543017456,6.457212790979773,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),720.0,471.0,118.71586321036509,3.5759402027200866,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),960.0,574.0,125.97729553903666,2.257378189236452,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),1440.0,643.0,138.6649929543774,1.0670591829286409,0
+fuera de linea,Butterworth fase cero (orden 2),periodo de corte (h),2160.0,9421.0,151.17542394116523,0.49646856217361207,0
+fuera de linea,Wavelet sym8 (aproximación),nivel,6.0,366.0,100.32094438709414,35.56549242452599,0
+fuera de linea,Wavelet sym8 (aproximación),nivel,7.0,458.0,105.97550911919855,16.293412860703995,0
+fuera de linea,Wavelet sym8 (aproximación),nivel,8.0,606.0,114.5463006988611,7.55899945663315,0
+fuera de linea,Wavelet sym8 (aproximación),nivel,9.0,743.0,132.28190401597362,2.7808030671688106,12
+fuera de linea,Wavelet sym8 (aproximación),nivel,10.0,9440.0,157.98875744647196,0.6583304835394206,48
+fuera de linea,Wavelet sym8 (aproximación),nivel,11.0,9634.0,179.3529980656016,0.25994817861699965,56
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-05,381.0,97.57015305390796,33.02513083144937,0
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-06,382.0,102.03496295660374,18.751051614598587,0
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-07,381.0,107.08710990815001,9.719035192801192,0
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-08,430.0,115.74876077443237,4.476834862350172,0
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-09,601.0,130.42743433803528,1.7692342258522533,0
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-10,9435.0,148.56237209572606,0.626293212833909,0
+fuera de linea,Kalman (suavizador RTS),q (ruido de pendiente),1e-11,9415.0,165.32678839683788,0.3093033056155934,0
+causal,Promedio móvil causal,ventana (h),24.0,396.0,101.19846366310536,49.01772429355773,12
+causal,Promedio móvil causal,ventana (h),48.0,410.0,108.41353764648782,38.11075596402902,24
+causal,Promedio móvil causal,ventana (h),96.0,434.0,118.1550569805376,23.331304579924144,48
+causal,Promedio móvil causal,ventana (h),168.0,485.0,131.41954198352067,12.996688133166543,84
+causal,Promedio móvil causal,ventana (h),240.0,983.0,143.5929445701177,10.14474943846856,120
+causal,Promedio móvil causal,ventana (h),336.0,1012.0,156.63707178734782,6.468252903383555,168
+causal,Promedio móvil causal,ventana (h),480.0,1024.0,170.03889743860287,4.656452608597646,240
+causal,Promedio móvil causal,ventana (h),720.0,1083.0,185.48379892716167,3.1356547256218548,360
+causal,Media exponencial,vida media (h),12.0,398.0,96.76936411189817,42.12409139559894,16
+causal,Media exponencial,vida media (h),24.0,427.0,106.1916357916797,29.022743988689815,32
+causal,Media exponencial,vida media (h),48.0,506.0,118.16740659475741,17.967693188793074,64
+causal,Media exponencial,vida media (h),96.0,986.0,134.8728242617849,10.214536979897607,112
+causal,Media exponencial,vida media (h),168.0,1287.0,151.28411990830745,6.190004030376374,172
+causal,Media exponencial,vida media (h),240.0,1320.0,162.7149295094666,4.43411248321264,220
+causal,Media exponencial,vida media (h),336.0,1371.0,174.26488780143208,3.2156926199171982,276
+causal,Media exponencial,vida media (h),480.0,10053.0,187.4608259605749,2.2783173989960397,352
+causal,Savitzky-Golay causal (orden 2),ventana (h),337.0,174.0,113.54159074116275,37.53023610866408,0
+causal,Savitzky-Golay causal (orden 2),ventana (h),481.0,208.0,125.26055908662255,29.871037858866526,8
+causal,Savitzky-Golay causal (orden 2),ventana (h),721.0,291.0,138.91125099721745,20.535203873594213,32
+causal,Savitzky-Golay causal (orden 2),ventana (h),961.0,361.0,152.08751662774588,15.720186581356145,68
+causal,Savitzky-Golay causal (orden 2),ventana (h),1441.0,438.0,171.1571527137913,10.759167349072568,132
+causal,Savitzky-Golay causal (orden 2),ventana (h),2161.0,512.0,178.10185584716731,6.943419851792985,176
+causal,Savitzky-Golay causal (orden 2),ventana (h),2881.0,752.0,188.89231094317583,5.256822089103256,216
+causal,Savitzky-Golay causal (orden 2),ventana (h),3601.0,793.0,200.1794913753008,4.331755623812682,260
+causal,Savitzky-Golay causal (orden 2),ventana (h),4321.0,1008.0,207.87539161660933,3.5203876195825923,292
+causal,Butterworth causal (orden 2),periodo de corte (h),48.0,395.0,111.80134225527819,54.18435741541237,12
+causal,Butterworth causal (orden 2),periodo de corte (h),96.0,404.0,113.00950631506177,41.86245207884098,24
+causal,Butterworth causal (orden 2),periodo de corte (h),168.0,418.0,118.86626388061752,29.657537184762077,40
+causal,Butterworth causal (orden 2),periodo de corte (h),240.0,440.0,125.17946782132667,21.473655647592043,56
+causal,Butterworth causal (orden 2),periodo de corte (h),336.0,451.0,133.87007793295604,15.22220650128319,80
+causal,Butterworth causal (orden 2),periodo de corte (h),480.0,464.0,146.05982927080643,10.228837500027169,116
+causal,Butterworth causal (orden 2),periodo de corte (h),720.0,584.0,162.3363827912806,6.164550995907554,176
+causal,Butterworth causal (orden 2),periodo de corte (h),960.0,731.0,174.4010215103551,4.170134928375151,232
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-05,357.0,95.66304014974907,62.63028487409496,0
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-06,363.0,102.03091535049677,48.89055979966316,4
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-07,237.0,109.42640453514029,33.106202502012565,12
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-08,299.0,121.13641015140666,20.859004882749353,40
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-09,402.0,138.00233098137534,12.505035488988682,92
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-10,572.0,155.79313002989582,7.364644429312141,164
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-11,857.0,173.90981692222337,4.504554954046686,252
+causal,Kalman (filtro causal),q (ruido de pendiente),1e-12,1249.0,196.82341476053995,3.076158815536279,392

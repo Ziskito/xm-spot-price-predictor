@@ -1,0 +1,6 @@
+# Dependencias minimas del dashboard (Streamlit Community Cloud las toma de esta carpeta antes que del
+# requirements.txt de la raiz, que trae los 136 paquetes de modelado). Probado con Python 3.12.
+streamlit==1.63.0
+pandas==2.3.3
+numpy==2.4.4
+plotly==7.0.0
