@@ -1,0 +1,23 @@
+Horas evaluadas: 4849 (15/01/2026 a 05/08/2026)
+                                          modelo     MAE    RMSE  MAPE_%    R2
+Persistencia · protocolo actual (precio de ayer)  57.817 115.347  15.523 0.843
+                   Ensamble 6 · protocolo actual  42.886  88.133  10.571 0.908
+                   Ensamble 7 · protocolo actual  32.630  75.272   8.158 0.933
+ Persistencia · realista (precio de hace 4 días) 108.585 172.136  30.268 0.651
+                              XGBoost · realista 103.432 159.145  26.229 0.702
+                            ARX+GARCH · realista 104.902 163.023  27.006 0.687
+                             N-BEATSx · realista 117.533 176.504  33.403 0.633
+                               N-HiTS · realista 106.950 164.042  29.987 0.683
+                            GARCH-ged · realista 100.832 155.173  27.890 0.716
+                                Predespacho solo  39.045  84.235  12.754 0.916
+                           Ensamble 6 · realista 101.048 154.368  25.728 0.719
+           Ensamble 7 · realista (+ predespacho)  36.923  81.222  10.318 0.922
+
+DM ens6_realista frente a ens6_actual: t = -11.43, p = 0.0000 (t > 0: ens6_realista tiene menor error)
+DM ens7_realista frente a ens7_actual: t = -4.36, p = 0.0000 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a ens6_realista: t = 12.03, p = 0.0000 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a Persistencia: t = 12.60, p = 0.0000 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a Predespacho_solo: t = 3.24, p = 0.0012 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a ens6_actual: t = 3.32, p = 0.0009 (t > 0: ens7_realista tiene menor error)
+
+Tiempo: 15.1 min

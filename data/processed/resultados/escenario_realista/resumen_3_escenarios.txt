@@ -1,0 +1,15 @@
+Horas evaluadas: 4849 (15/01/2026 a 05/08/2026)
+                                          escenario     modelo     MAE    RMSE  MAPE_%    R2  rMAE_vs_persistencia_actual
+1. protocolo actual (precio hasta la hora anterior) ensamble 6  42.886  88.133  10.571 0.908                        0.742
+1. protocolo actual (precio hasta la hora anterior) ensamble 7  32.630  75.272   8.158 0.933                        0.564
+2. realista sin relleno (precio hasta hace ~3 dias) ensamble 6 101.048 154.368  25.728 0.719                        1.748
+2. realista sin relleno (precio hasta hace ~3 dias) ensamble 7  36.923  81.222  10.318 0.922                        0.639
+           3. realista, hueco lleno con predespacho ensamble 6  50.555  95.041  13.529 0.894                        0.874
+           3. realista, hueco lleno con predespacho ensamble 7  36.852  81.191  10.002 0.922                        0.637
+
+DM ens7_relleno frente a ens7_realista: t = 0.13, p = 0.8956 (t > 0: ens7_relleno tiene menor error)
+DM ens7_relleno frente a ens6_relleno: t = 10.48, p = 0.0000 (t > 0: ens7_relleno tiene menor error)
+DM ens7_relleno frente a ens7_actual: t = -5.21, p = 0.0000 (t > 0: ens7_relleno tiene menor error)
+DM ens7_relleno frente a ens6_actual: t = 3.74, p = 0.0002 (t > 0: ens7_relleno tiene menor error)
+
+Tiempo: 11.4 min
