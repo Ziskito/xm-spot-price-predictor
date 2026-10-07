@@ -1,12 +1,12 @@
 Dias completos: 215 (02/01 a 04/08)
-MAE medio por dia: 41.8 COP/kWh
+MAE medio por dia: 31.6 COP/kWh
 Descomposicion del error cuadratico (suma de todos los dias):
-  nivel (sesgo del dia)      19.9 %
-  amplitud (sd distinta)     42.2 %
-  forma y tiempo (1 - rho)   37.9 %
-Amplitud: el pronostico se mueve 0.83 veces lo que se mueve el real (mediana por dia); amortiguado (<0.9) en 57 % de los dias, exagerado (>1.1) en 28 %
-Rango del dia: pronostico/real = 0.92 (mediana)
-Forma: correlacion horaria mediana 0.83
-Cambios de 1 h (mitad mas grande): direccion correcta 39 %, pendiente 0.21
-Cambios de 3 h (mitad mas grande): direccion correcta 88 %, pendiente 0.45
-Rampas (10 % de cambios de 3 h mas grandes): direccion 96 %, el pronostico anticipa 40 % de la magnitud (mediana)
+  nivel (sesgo del dia)      13.4 %
+  amplitud (sd distinta)     39.4 %
+  forma y tiempo (1 - rho)   47.1 %
+Amplitud: el pronostico se mueve 0.94 veces lo que se mueve el real (mediana por dia); amortiguado (<0.9) en 45 % de los dias, exagerado (>1.1) en 34 %
+Rango del dia: pronostico/real = 0.97 (mediana)
+Forma: correlacion horaria mediana 0.85
+Cambios de 1 h (mitad mas grande): direccion correcta 41 %, pendiente 0.28
+Cambios de 3 h (mitad mas grande): direccion correcta 92 %, pendiente 0.54
+Rampas (10 % de cambios de 3 h mas grandes): direccion 98 %, el pronostico anticipa 60 % de la magnitud (mediana)

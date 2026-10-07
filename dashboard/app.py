@@ -165,6 +165,17 @@ hr { border-color: $linea !important; }
 .st-key-dia_ant button:hover:enabled, .st-key-dia_sig button:hover:enabled, .st-key-dia_ult button:hover:enabled {
   border-color: $acento !important; }
 .st-key-dia_ant button:disabled, .st-key-dia_sig button:disabled, .st-key-dia_ult button:disabled { opacity: .45; }
+/* calendario del selector de fecha: Streamlit lo dibuja con el fondo del tema base (claro), lo que en
+   modo oscuro dejaba los numeros claros sobre blanco */
+[data-testid="stDateInputCalendar"] { background: $control !important; border: 1px solid $control_borde;
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+[data-testid="stDateInputCalendar"] * { color: $tinta; }
+[data-testid="stDateInputCalendar"] svg { fill: $tinta; }
+[data-testid="stDateInputCalendar"] td[aria-disabled="true"], [data-testid="stDateInputCalendar"] td[aria-disabled="true"] * {
+  color: $gris !important; opacity: .55; }
+[data-testid="stDateInputCalendar"] td[aria-selected="true"] *, [data-testid="stDateInputCalendar"] [aria-selected="true"] {
+  color: $acento_texto !important; }
+[data-testid="stDateInputCalendar"] select, [data-testid="stDateInputCalendar"] button { background: transparent; }
 [data-testid="stExpander"] details { background: $panel; border: 1px solid $linea; border-radius: 10px; }
 [data-testid="stExpander"] summary p { color: $tinta !important; }
 [data-testid="stTooltipIcon"] svg { stroke: $gris; }
