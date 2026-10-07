@@ -1,0 +1,9 @@
+evento,detector,eventos,detectados_%,falsas_alarmas,acierto_de_alertas_%,AUC,BSS_vs_climatologia,precision_promedio
+desplome,mediana · anterior (6 modelos),198,12.121212121212121,44.0,35.294117647058826,,,
+desplome,mediana · nuevo (6 + predespacho),198,41.41414141414141,78.0,51.24999999999999,,,
+pico,mediana · anterior (6 modelos),566,61.48409893992933,148.0,70.16129032258065,,,
+pico,mediana · nuevo (6 + predespacho),566,73.4982332155477,130.0,76.19047619047619,,,
+desplome,clasificador · anterior,198,,,,0.8890418424112768,0.1869370855102343,0.2671974253482623
+pico,clasificador · anterior,566,,,,0.9523222617901682,0.4098157479865958,0.716170434732631
+desplome,clasificador · nuevo,198,,,,0.93936152540244,0.3099363607783666,0.4289093867387698
+pico,clasificador · nuevo,566,,,,0.9717878802718508,0.5299004199883871,0.8030054396672686

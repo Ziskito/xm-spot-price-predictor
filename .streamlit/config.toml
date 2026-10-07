@@ -4,11 +4,11 @@
 # partida y fija que no dependa de la preferencia del navegador.
 [theme]
 base = "light"
-primaryColor = "#15803D"
+primaryColor = "#D97706"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F1F5F9"
-textColor = "#0F172A"
-font = "sans serif"
+secondaryBackgroundColor = "#F4F6FA"
+textColor = "#0B1F3A"
+font = "IBM Plex Sans:https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap, sans-serif"
 
 [browser]
 gatherUsageStats = false

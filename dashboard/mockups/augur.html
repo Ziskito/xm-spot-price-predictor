@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Augur · diseños</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Cinzel:wght@600;700&family=Marcellus&family=Space+Grotesk:wght@600;700&family=Sora:wght@700;800&family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Lexend:wght@600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* Paleta B "Energia" del dashboard */
+:root {
+  --fondo: #F4F6FA; --panel: #FFFFFF; --linea: #DDE3EC; --tinta: #0B1F3A; --texto: #2B3D57; --gris: #5B6B82;
+  --acento: #D97706; --chip: #E9EDF3;
+}
+:root[data-theme="dark"] {
+  --fondo: #071426; --panel: #0D1F38; --linea: #1D3355; --tinta: #EAF0F8; --texto: #BCC8DA; --gris: #8193AD;
+  --acento: #FBBF24; --chip: #17304F;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #071426; --panel: #0D1F38; --linea: #1D3355; --tinta: #EAF0F8; --texto: #BCC8DA; --gris: #8193AD;
+    --acento: #FBBF24; --chip: #17304F;
+  }
+}
+.sup-claro { --ink: #0B1F3A; --acc: #D97706; --ok2: #047857; --warn: #C2410C; --mute: #94A3B8; --bg: #FFFFFF; --sub: #5B6B82; background: #FFFFFF; }
+.sup-oscuro { --ink: #EAF0F8; --acc: #FBBF24; --ok2: #34D399; --warn: #FB923C; --mute: #64748B; --bg: #0D1F38; --sub: #8193AD; background: #0D1F38; }
+.sup-marino { --ink: #EAF0F8; --acc: #FBBF24; --ok2: #34D399; --warn: #FB923C; --mute: #64748B; --bg: #0B1F3A; background: #0B1F3A; }
+.sup-ambar { --ink: #0B1F3A; --acc: #FFFFFF; --ok2: #0B1F3A; --warn: #FFFFFF; --mute: #FCD9A8; --bg: #D97706; background: #D97706; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; }
+.envoltura { max-width: 1240px; margin: 0 auto; padding: 28px 16px 60px; }
+header.cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+h1 { color: var(--tinta); font-size: 1.7rem; margin: 0 0 4px; }
+.sub { color: var(--gris); max-width: 80ch; line-height: 1.5; margin: 0; }
+.sub i { color: var(--texto); }
+.boton { background: var(--panel); color: var(--tinta); border: 1px solid var(--linea); border-radius: 10px;
+         padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.panel { background: var(--panel); border: 1px solid var(--linea); border-radius: 12px; }
+.resumen { margin: 22px 0; padding: 14px 16px; }
+.resumen h2 { margin: 0 0 10px; font-size: 1rem; color: var(--tinta); }
+.tira { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+.mini { border-radius: 10px; overflow: hidden; border: 1px solid var(--linea); cursor: pointer; background: none; padding: 0; font: inherit; }
+.mini .par { display: grid; grid-template-columns: 1fr 1fr; }
+.mini .par > div { display: flex; align-items: center; justify-content: center; padding: 10px 4px; }
+.mini svg { width: 34px; height: 34px; }
+.mini .pie { font-size: .72rem; padding: 4px 6px; color: var(--texto); background: var(--chip); text-align: center;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini.fav { outline: 2px solid var(--acento); }
+.diseno { margin-top: 18px; overflow: hidden; scroll-margin-top: 12px; }
+.diseno.fav { outline: 2px solid var(--acento); }
+.dis-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--linea); flex-wrap: wrap; }
+.dis-cab h3 { margin: 0; color: var(--tinta); font-size: 1.05rem; }
+.dis-cab .num { font-family: 'IBM Plex Mono', monospace; color: var(--gris); font-size: .8rem; margin-right: 8px; }
+.estrella { background: none; border: 1px solid var(--linea); border-radius: 8px; color: var(--gris); cursor: pointer; font: inherit; font-size: .82rem; padding: 4px 10px; }
+.diseno.fav .estrella { background: var(--acento); color: #0B1F3A; border-color: var(--acento); font-weight: 700; }
+.lockups { display: grid; grid-template-columns: 1fr 1fr; }
+.lockups > div { padding: 30px 18px; display: flex; align-items: center; justify-content: center; min-height: 150px; overflow: hidden; }
+.horiz { display: flex; align-items: center; gap: 14px; }
+.horiz svg { width: 64px; height: 64px; flex: none; }
+.horiz .nom { color: var(--ink); line-height: 1; white-space: nowrap; }
+.horiz .bajada { display: block; color: var(--sub); font-family: 'IBM Plex Sans', sans-serif; font-size: .66rem; letter-spacing: .14em;
+                 text-transform: uppercase; margin-top: 8px; font-weight: 600; white-space: nowrap; }
+.detalle { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0; border-top: 1px solid var(--linea); }
+.texto { padding: 14px 16px; }
+.lema { color: var(--tinta); font-weight: 600; margin: 0 0 6px; }
+.lema small { color: var(--gris); font-weight: 400; }
+.texto p { margin: 0 0 8px; font-size: .88rem; line-height: 1.5; }
+.texto .nota { font-size: .8rem; color: var(--gris); }
+.usos { padding: 14px 16px; border-left: 1px solid var(--linea); display: flex; flex-direction: column; gap: 12px; }
+.fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.vert { border-radius: 10px; padding: 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 120px; }
+.vert svg { width: 40px; height: 40px; }
+.vert .nom { color: var(--ink); line-height: 1; white-space: nowrap; }
+.tam { display: flex; align-items: flex-end; gap: 10px; padding: 8px 12px; border-radius: 10px; }
+.app { width: 52px; height: 52px; border-radius: 13px; border: 1px solid #26406A; display: flex; align-items: center; justify-content: center; }
+.app svg { width: 34px; height: 34px; }
+.navegador { border-radius: 10px; overflow: hidden; border: 1px solid #DDE3EC; flex: 1; min-width: 220px; }
+.pestanas { background: #E2E8F0; padding: 6px 8px 0; display: flex; }
+.pestana { background: #FFFFFF; border-radius: 8px 8px 0 0; padding: 6px 10px; display: flex; align-items: center; gap: 6px;
+           font-size: .74rem; color: #0B1F3A; max-width: 200px; }
+.pestana svg { width: 16px; height: 16px; flex: none; }
+.pestana span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-lat { display: flex; min-height: 64px; }
+.app-lat .lat { width: 58%; padding: 10px; display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--linea, #DDE3EC); }
+.app-lat .lat svg { width: 26px; height: 26px; flex: none; }
+.app-lat .lat .t1 { color: var(--ink); font-size: 1rem; line-height: 1; white-space: nowrap; }
+.app-lat .lat .t2 { color: var(--sub); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; margin-top: 3px; }
+.app-lat .cont { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 5px; justify-content: center; }
+.barra { height: 6px; border-radius: 3px; background: var(--mute); opacity: .35; }
+footer { margin-top: 26px; font-size: .8rem; color: var(--gris); line-height: 1.5; }
+@media (max-width: 860px) {
+  .tira { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .detalle { grid-template-columns: 1fr; }
+  .usos { border-left: none; border-top: 1px solid var(--linea); }
+}
+@media (max-width: 520px) {
+  .lockups { grid-template-columns: 1fr; }
+  .horiz svg { width: 48px; height: 48px; }
+  .tira { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <header class="cab">
+    <div>
+      <h1>Augur · 10 diseños</h1>
+      <p class="sub">El augur era el sacerdote romano que leía las señales (el vuelo de las aves, el cielo dividido en cuadrantes) para decidir si convenía actuar. Su insignia era el <i>lituus</i>, un báculo con la punta en espiral. Los diez diseños usan la paleta B del dashboard. Lemas en latín: <i>Carpe horam</i> ("aprovecha la hora"), <i>Signa lego</i> ("leo las señales") y <i>Ex signis consilium</i> ("de las señales, el consejo").</p>
+    </div>
+    <button class="boton" id="tema">Cambiar tema de la página</button>
+  </header>
+
+  <section class="panel resumen">
+    <h2>Los diez íconos de un vistazo (clic para ir al diseño)</h2>
+    <div class="tira" id="tira"></div>
+  </section>
+
+  <div id="disenos"></div>
+
+  <footer>
+    Ojo con el registro: existe "Augur", un mercado de predicciones en cripto (token REP). Es otro sector, pero conviene revisar la SIC y los dominios antes de adoptar el nombre. La grafía AVGVR (con V) es la de las inscripciones romanas; "Augur" es la forma moderna.
+    Las elecciones con ★ se guardan solo en este navegador.
+  </footer>
+</div>
+
+<script>
+const S = (c) => `<svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
+const LITUUS = `M18 44 V22 C18 11 25 5 32 6 C39 7 42 14 38 19 C35 23 29 21 30 16 C31 13 34 13 35 15`;
+const ave = (x, y, k, col, w) => `<path d="M${x - 6 * k} ${y} C${x - 4 * k} ${y - 4 * k} ${x - 1.5 * k} ${y - 4 * k} ${x} ${y + 1 * k} C${x + 1.5 * k} ${y - 4 * k} ${x + 4 * k} ${y - 4 * k} ${x + 6 * k} ${y}" stroke="${col}" stroke-width="${w}"/>`;
+const laurel = (() => {
+  // dos ramas (curvas de Bezier) con pares de hojas orientadas segun la tangente de la rama
+  let s = '';
+  for (const lado of [-1, 1]) {
+    const P = [[24 + lado * 4, 44], [24 + lado * 15, 40], [24 + lado * 20, 28], [24 + lado * 16, 12]];
+    const B = (t, k) => (1 - t) ** 3 * P[0][k] + 3 * (1 - t) ** 2 * t * P[1][k] + 3 * (1 - t) * t ** 2 * P[2][k] + t ** 3 * P[3][k];
+    const dB = (t, k) => 3 * (1 - t) ** 2 * (P[1][k] - P[0][k]) + 6 * (1 - t) * t * (P[2][k] - P[1][k]) + 3 * t ** 2 * (P[3][k] - P[2][k]);
+    s += `<path d="M${P[0]} C${P[1]} ${P[2]} ${P[3]}" stroke="var(--ink)" stroke-width="2.2"/>`;
+    const hoja = (x, y, phi) => {
+      const r = 3.6, cx = x + r * Math.cos(phi), cy = y + r * Math.sin(phi), th = phi * 180 / Math.PI - 90;
+      return `<ellipse cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="1.7" ry="3.6" transform="rotate(${th.toFixed(1)} ${cx.toFixed(2)} ${cy.toFixed(2)})" fill="var(--ink)"/>`;
+    };
+    for (const t of [0.22, 0.42, 0.62, 0.8]) {
+      const x = B(t, 0), y = B(t, 1), tan = Math.atan2(dB(t, 1), dB(t, 0));
+      s += hoja(x, y, tan - 0.75) + hoja(x, y, tan + 0.75);
+    }
+    s += hoja(P[3][0], P[3][1], Math.atan2(dB(1, 1), dB(1, 0)));
+  }
+  return s;
+})();
+
+const D = [
+ {t:'El lituus clásico', nom:'AVGVR', f:"'Cinzel'", w:700, sz:2.3, lema:'Carpe horam', trad:'aprovecha la hora',
+  idea:'El báculo del augur tal cual, con la señal en ámbar en el centro de la espiral. Va escrito con la grafía de las inscripciones romanas.',
+  nota:'Es la versión que elegiste en la página anterior, refinada. Tiene mucha identidad romana. Sin la historia, el lituus puede leerse como un signo de interrogación.',
+  svg:S(`<path d="${LITUUS}" stroke="var(--ink)" stroke-width="4"/><circle cx="32.5" cy="15.5" r="2.7" fill="var(--acc)"/><path d="M12 44 H24" stroke="var(--ink)" stroke-width="3.5"/>`)},
+ {t:'El lituus que se vuelve señal', nom:'augur', f:"'Space Grotesk'", w:700, sz:2.5, lema:'Signa lego', trad:'leo las señales',
+  idea:'El báculo nace como objeto romano y se convierte en una onda: lo antiguo que termina en electrónica. Es el puente más directo con el enfoque de señales de la presentación final.',
+  nota:'Es el diseño que mejor une Roma con la ingeniería. En minúscula y sin serifa se ve como un producto tecnológico.',
+  svg:S(`<path d="M11 44 V24 C11 15 16 11 21 14" stroke="var(--ink)" stroke-width="4.2"/><path d="M21 14 C26 17 26 29 31 28 C36 27 37 13 44 12" stroke="var(--acc)" stroke-width="4.2"/>`)},
+ {t:'El templum', nom:'Augur', f:"'Sora'", w:800, sz:2.3, lema:'Divide el día, decide cada hora', trad:'',
+  idea:'Antes de leer las señales, el augur trazaba el templum, el cielo dividido en cuadrantes. El cuadrante ámbar es la ventana de decisión, con marcas de reloj alrededor.',
+  nota:'Es el ícono más limpio a cualquier tamaño y funciona perfecto en 16 px. Sin la historia, parece una mira.',
+  svg:S(`<circle cx="24" cy="24" r="17" stroke="var(--ink)" stroke-width="3.5"/><path d="M24 24 V7 A17 17 0 0 1 41 24Z" fill="var(--acc)"/><path d="M24 7 V41 M7 24 H41" stroke="var(--ink)" stroke-width="3"/><path d="M24 1.5v3M46.5 24h-3M24 46.5v-3M1.5 24h3" stroke="var(--ink)" stroke-width="2.5"/>`)},
+ {t:'El vuelo sobre el precio', nom:'Augur', f:"'Marcellus'", w:400, sz:2.5, lema:'Lee el vuelo del precio', trad:'',
+  idea:'Un ave en vuelo, el oráculo romano, sobre una línea de precio ámbar que sube. Lo que el augur leía en el cielo, el motor lo lee en la curva.',
+  nota:'Es cálido y elegante. Las aves son un recurso común en logos, así que se distingue menos.',
+  svg:S(`<path d="M4 19 C10 11 18 12 24 23 C30 12 38 11 44 19" stroke="var(--ink)" stroke-width="4"/><path d="M6 40 L16 35 L24 38 L33 31 L42 28" stroke="var(--acc)" stroke-width="3.5"/>`)},
+ {t:'La A augural', nom:'AVGVR', f:"'Cinzel'", w:700, sz:2.3, lema:'Ex signis consilium', trad:'de las señales, el consejo',
+  idea:'Un monograma: la A de Augur, cuya barra horizontal es un trazo de precio en ámbar. Recuerda a las letras grabadas en piedra.',
+  nota:'Es un monograma fuerte y muy de marca. El trazo de precio dentro de la A se pierde a 16 px.',
+  svg:S(`<path d="M9 44 L24 5 L39 44" stroke="var(--ink)" stroke-width="5"/><path d="M13.5 31 L19 26.5 L24 30.5 L34.5 24" stroke="var(--acc)" stroke-width="3.6"/><path d="M5 44 H14 M34 44 H43" stroke="var(--ink)" stroke-width="3"/>`)},
+ {t:'El denario', nom:'AVGVR', f:"'Cinzel'", w:600, sz:2.2, lema:'Carpe horam', trad:'aprovecha la hora',
+  idea:'Una moneda romana con el borde punteado y el lituus acuñado al centro. Muchos denarios llevaban justamente el lituus como símbolo del augurado. Une el mercado (la moneda) con Roma.',
+  nota:'Tiene muchísima personalidad y es históricamente fiel. Los puntos del borde se funden a menos de 24 px.',
+  svg:S(`<circle cx="24" cy="24" r="21.5" stroke="var(--ink)" stroke-width="2.6"/><circle cx="24" cy="24" r="17.5" stroke="var(--ink)" stroke-width="2.2" stroke-dasharray="0 4.58"/><path d="M21 36 V24.5 C21 17.5 25 13.5 29.5 14.5 C33.5 15.5 34.5 20 32 22.5 C30 24.3 27 23.3 27.6 20.6" stroke="var(--ink)" stroke-width="3"/><circle cx="29.7" cy="19.6" r="1.9" fill="var(--acc)"/>`)},
+ {t:'El laurel', nom:'Augur', f:"'Fraunces'", w:800, sz:2.4, lema:'La decisión correcta, a la hora correcta', trad:'',
+  idea:'Una corona de laurel, el símbolo romano de la victoria, alrededor de un rayo ámbar. Comunica acertar y ganar en el mercado de energía.',
+  nota:'Es un símbolo de prestigio y se reconoce al instante como romano. Las coronas de laurel son comunes en marcas de lujo y en premios.',
+  svg:S(laurel + `<path d="M27 12 L20.5 25 H27.5 L22 36" stroke="var(--acc)" stroke-width="3.6"/>`)},
+ {t:'Bandada en tendencia', nom:'augur', f:"'Lexend'", w:700, sz:2.4, lema:'Señales en el cielo del mercado', trad:'',
+  idea:'Tres aves que suben en diagonal y crecen, de gris a azul marino y luego a ámbar: el augurio favorable dibujado como una tendencia.',
+  nota:'Es dinámico y optimista, y se lee como un gráfico. A 16 px las tres aves se vuelven tres rayitas.',
+  svg:S(ave(10, 37, .8, 'var(--mute)', 2.8) + ave(23, 26, 1.05, 'var(--ink)', 3.4) + ave(36, 13, 1.3, 'var(--acc)', 3.8))},
+ {t:'El lituus semáforo', nom:'Augur', f:"'IBM Plex Sans'", w:700, sz:2.5, lema:'Verde, gris o naranja. El augur decide.', trad:'',
+  idea:'El báculo con las tres señales reales del motor al lado: actuar a favor, esperar y evitar. Es el más literal sobre lo que hace el producto.',
+  nota:'Explica el producto sin palabras y usa la misma tipografía del dashboard. Con cuatro colores en el ícono, es el más cargado.',
+  svg:S(`<path d="M14 44 V22 C14 11 21 5 28 6 C35 7 38 14 34 19 C31 23 25 21 26 16 C27 13 30 13 31 15" stroke="var(--ink)" stroke-width="4"/><circle cx="36" cy="29" r="3.6" fill="var(--ok2)"/><circle cx="36" cy="36.5" r="3.6" fill="var(--mute)"/><circle cx="36" cy="44" r="3.6" fill="var(--warn)"/>`)},
+ {t:'La a con espiral', nom:'augur', f:"'Outfit'", w:800, sz:2.6, lema:'Carpe horam', trad:'aprovecha la hora',
+  idea:'Una "a" minúscula geométrica cuyo asta termina curvada como el lituus, con la señal ámbar dentro del ojo de la letra. Es la versión de startup.',
+  nota:'Es el más moderno y el más fácil de convertir en ícono de app. Es también el que menos se ve romano.',
+  svg:S(`<circle cx="21" cy="29" r="11" stroke="var(--ink)" stroke-width="5"/><path d="M32 41 V17 C32 10 27 6 21 8" stroke="var(--ink)" stroke-width="5"/><circle cx="21" cy="29" r="3.6" fill="var(--acc)"/>`)},
+];
+
+const leer = () => { try { return JSON.parse(localStorage.getItem('favs_augur') || '[]'); } catch (e) { return []; } };
+const guardar = (v) => { try { localStorage.setItem('favs_augur', JSON.stringify(v)); } catch (e) {} };
+let favs = leer();
+const nombre = (d, px) => `<span class="nom" style="font-family:${d.f},serif;font-weight:${d.w};font-size:${px}rem">${d.nom}</span>`;
+
+function pintar() {
+  document.getElementById('tira').innerHTML = D.map((d, i) => `
+    <button class="mini${favs.includes(i) ? ' fav' : ''}" data-ir="${i}" title="${d.t}">
+      <div class="par"><div class="sup-claro">${d.svg}</div><div class="sup-oscuro">${d.svg}</div></div>
+      <div class="pie">${String(i + 1).padStart(2, '0')} · ${d.t}</div></button>`).join('');
+  document.getElementById('disenos').innerHTML = D.map((d, i) => `
+    <article class="panel diseno${favs.includes(i) ? ' fav' : ''}" id="d${i}">
+      <div class="dis-cab"><h3><span class="num">${String(i + 1).padStart(2, '0')}</span>${d.t}</h3>
+        <button class="estrella" data-fav="${i}">${favs.includes(i) ? '★ Favorito' : '☆ Marcar'}</button></div>
+      <div class="lockups">
+        ${['sup-claro', 'sup-oscuro'].map(c => `<div class="${c}"><div class="horiz">${d.svg}<div>${nombre(d, d.sz)}<span class="bajada">Motor de decisión · energía</span></div></div></div>`).join('')}
+      </div>
+      <div class="detalle">
+        <div class="texto">
+          <p class="lema">“${d.lema}”${d.trad ? ` <small>(${d.trad})</small>` : ''}</p>
+          <p>${d.idea}</p>
+          <p class="nota">${d.nota}</p>
+        </div>
+        <div class="usos">
+          <div class="fila">
+            <div class="vert sup-claro" style="border:1px solid #DDE3EC">${d.svg}${nombre(d, 1.05)}</div>
+            <div class="vert sup-oscuro">${d.svg}${nombre(d, 1.05)}</div>
+            <div class="tam sup-claro" style="border:1px solid #DDE3EC">
+              ${[48, 32, 24, 16].map(px => `<span style="display:inline-flex;width:${px}px;height:${px}px">${d.svg.replace('<svg ', `<svg width="${px}" height="${px}" `)}</span>`).join('')}
+            </div>
+            <div class="app sup-marino">${d.svg}</div>
+            <div class="app sup-ambar">${d.svg}</div>
+          </div>
+          <div class="fila">
+            <div class="navegador">
+              <div class="pestanas"><div class="pestana sup-claro">${d.svg}<span>${d.nom} · Motor de decisión</span></div></div>
+              <div class="app-lat sup-oscuro">
+                <div class="lat">${d.svg}<div><div class="t1" style="font-family:${d.f},serif;font-weight:${d.w}">${d.nom}</div><div class="t2">Motor de decisión</div></div></div>
+                <div class="cont"><div class="barra" style="width:80%"></div><div class="barra" style="width:55%"></div><div class="barra" style="width:68%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>`).join('');
+}
+document.addEventListener('click', (e) => {
+  const ir = e.target.closest('[data-ir]');
+  if (ir) { document.getElementById('d' + ir.dataset.ir).scrollIntoView({behavior: 'smooth'}); return; }
+  const f = e.target.closest('[data-fav]');
+  if (f) {
+    const i = +f.dataset.fav;
+    favs = favs.includes(i) ? favs.filter(x => x !== i) : [...favs, i];
+    guardar(favs); pintar();
+  }
+});
+document.getElementById('tema').addEventListener('click', () => {
+  const r = document.documentElement;
+  const oscuro = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = oscuro ? 'light' : 'dark';
+});
+pintar();
+</script>
+</body>
+</html>

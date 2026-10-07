@@ -40,11 +40,13 @@ if __name__ == "__main__":
     for origen, df in pred.groupby("origen"):
         df = df.dropna(subset=["q10", "q90"]).sort_values("fecha_hora").reset_index(drop=True)
         hist = precios.loc[precios["fecha_hora"] < df["fecha_hora"].min(), "precio_bolsa"].to_numpy()
+        # precio real anterior al origen: calienta la ventana de 30 dias de "rodante"/"hibrido"
+        previo = precios.set_index("fecha_hora")["precio_bolsa"].sort_index()
         corte = df["fecha_hora"].min() + (df["fecha_hora"].max() - df["fecha_hora"].min()) / 2
         m1 = (df["fecha_hora"] < corte).to_numpy()
-        gen = Senales(df, hist)
+        gen = Senales(df, hist, previo=hist)
         for rol in ("generador", "comercializador"):
-            t = comparar_metodos_estable(df, rol, hist, corte=corte)
+            t = comparar_metodos_estable(df, rol, hist, corte=corte, precio_previo=previo)
             elegido, estable = elegir_mejor_metodo_estable(t)
             politicas = {f"base {m}": DEFECTO[m] for m in DEFECTO} | HIPOTESIS
             for nombre, cfg in politicas.items():

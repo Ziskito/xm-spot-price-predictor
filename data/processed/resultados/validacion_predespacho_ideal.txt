@@ -1,0 +1,28 @@
+1. Cobertura: 3192 de 3201 dias (02/01/2018 a 07/10/2026); faltan 9: 30/12/2021, 13/01/2022, 20/05/2022, 22/10/2022, 26/10/2022, 20/11/2022, 25/01/2026, 26/01/2026, 27/01/2026. XM los lista en la biblioteca, pero su descarga devuelve un zip vacio (archivo daniado en el servidor).
+2. Horas por dia: 3192 dias con 24 h; distintos de 24: {}
+   Duplicados de fecha_hora: 0; vacios: costo_marginal 0, mpo 25296, delta 25320
+3. Consistencia costo marginal = MPO + delta: diferencia maxima 450.0870 COP/kWh; filas con diferencia > 0,01: 458
+   Valores <= 0: 0; minimo 57.3, maximo 7233.2 COP/kWh
+4. Frente al precio de bolsa real, por año (si cambiaran las unidades, el cociente saltaria):
+   2019:  8760 h | mediana predespacho   230.0 | mediana real   220.8 | cociente mediano 0.997 | correlacion 0.958 | MAE   15.4
+   2020:  8784 h | mediana predespacho   215.0 | mediana real   217.1 | cociente mediano 0.967 | correlacion 0.963 | MAE   17.8
+   2021:  8736 h | mediana predespacho   104.0 | mediana real   106.8 | cociente mediano 0.945 | correlacion 0.976 | MAE   11.7
+   2022:  8640 h | mediana predespacho   193.0 | mediana real   200.1 | cociente mediano 0.953 | correlacion 0.961 | MAE   16.0
+   2023:  8760 h | mediana predespacho   494.0 | mediana real   499.4 | cociente mediano 0.994 | correlacion 0.973 | MAE   31.8
+   2024:  8784 h | mediana predespacho   575.0 | mediana real   590.0 | cociente mediano 0.987 | correlacion 0.883 | MAE   56.2
+   2025:  8760 h | mediana predespacho   165.0 | mediana real   163.9 | cociente mediano 0.940 | correlacion 0.919 | MAE   29.2
+   2026:  5136 h | mediana predespacho   285.7 | mediana real   284.4 | cociente mediano 0.969 | correlacion 0.962 | MAE   36.2
+   Archivos modificados despues del corte (se excluyen aunque se hayan creado a tiempo): 19/12/2021, 20/12/2021, 21/12/2021, 24/04/2022, 20/02/2023, 26/03/2024, 15/02/2025, 19/04/2025, 20/04/2025, 16/03/2026
+5. Publicacion: mediana 0 days 10:28:57.500000 despues de la medianoche del dia anterior; 99.66 % de las horas publicadas antes de las 23:00 del dia anterior. Dias publicados tarde (se marcan a_tiempo = False y no se usan): 11
+   19/12/2021: publicado 2021-12-18T10:17
+   20/12/2021: publicado 2021-12-19T09:32
+   21/12/2021: publicado 2021-12-20T09:52
+   24/04/2022: publicado 2022-04-25T13:56
+   20/02/2023: publicado 2023-02-19T23:29
+   26/03/2024: publicado 2024-04-01T17:13
+   29/03/2024: publicado 2024-03-29T12:10
+   15/02/2025: publicado 2025-02-15T19:18
+   19/04/2025: publicado 2025-04-20T12:02
+   20/04/2025: publicado 2025-04-20T12:02
+   16/03/2026: publicado 2026-03-15T09:18
+6. Relectura desde XM de 15 dias al azar (04/06/2018, 18/07/2018, 27/08/2018, 25/10/2018, 20/12/2018, 22/01/2019, 11/09/2019, 30/05/2020, 20/08/2021, 09/02/2022, 10/06/2022, 17/09/2023, 11/01/2024, 22/07/2024, 27/04/2025): 0 horas distintas de lo guardado

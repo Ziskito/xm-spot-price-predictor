@@ -6,7 +6,9 @@ Genera dos contratos de pronostico con el formato que espera src/motor_decision.
 (fecha_hora, real, q10, q50, q90 -- una fila por hora):
 
   * 24 h: mediana = ensamble DESPLEGABLE (pesos solo con dias anteriores; la cifra honesta de
-    operacion, MAE 42,89, desde el 15-ene-2026).
+    operacion, MAE 42,89, desde el 15-ene-2026). Desde el 6-oct se usa la version extendida a todo
+    enero (ensamble_24h_enero.py): del 1 al 14 de enero los pesos salen del ultimo año historico
+    (origen 5); desde el 15-ene es identica a la desplegable.
   * 72 h: mediana = producto de 72 h del ensamble (puente 24h->72h + combinador por tramo),
     tomando una ventana cada 72 h alineada con las ventanas del contrato vigente de N-BEATSx.
 
@@ -60,7 +62,14 @@ def calibrar(df, clave_grupo=None, ventana_dias=None):
 
 
 def contrato_24h():
-    ens = pd.read_csv(RES / "informe_avance" / "ensamble_24h_desplegable.csv", parse_dates=["fecha_hora"])
+    # 7 votantes: los 6 de siempre + el predespacho ideal de XM (ensamble_con_predespacho_24h.py, 7-oct-2026);
+    # si no existe, el de 6 con enero completo (ensamble_24h_enero.py) o la version del informe
+    ruta = RES / "ensamble_24h_operativo_predespacho_2026.csv"
+    if not ruta.exists():
+        ruta = RES / "ensamble_24h_operativo_2026.csv"
+    if not ruta.exists():
+        ruta = RES / "informe_avance" / "ensamble_24h_desplegable.csv"
+    ens = pd.read_csv(ruta, parse_dates=["fecha_hora"])
     nb = pd.read_csv(RES / "pronostico_con_bandas_2026_adaptativo.csv", parse_dates=["fecha_hora"])
     nb["off10"] = (nb["q10"] + nb["margen"]) - nb["q50"]
     nb["off90"] = (nb["q90"] - nb["margen"]) - nb["q50"]
@@ -118,7 +127,7 @@ if __name__ == "__main__":
         respaldo = RES / "fuentes_pronostico_nbeatsx.json"
         if not respaldo.exists():
             respaldo.write_text(json.dumps(conf, indent=2, ensure_ascii=False), encoding="utf-8")
-        modelos = {"24h": "Ensamble de 6 modelos (pesos causales) + bandas conformes adaptativas por hora del dia (60 dias)",
+        modelos = {"24h": "Ensamble de 7 modelos (6 + predespacho ideal de XM; pesos causales, 1-14 ene con pesos del ultimo año historico) + bandas conformes adaptativas por hora del dia (60 dias)",
                    "72h": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias)"}
         for hz, (nombre, df) in salidas.items():
             conf[hz] = {"archivo": nombre, "modelo": modelos[hz], "calibrado": True,

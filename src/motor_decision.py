@@ -107,26 +107,94 @@ def umbrales_fijos(precio_historico, p_bajo=25, p_alto=75):
     }
 
 
-def umbrales_rodantes(serie, ventana_dias=30, p_bajo=25, p_alto=75):
+def umbrales_rodantes(serie, ventana_dias=30, p_bajo=25, p_alto=75, previo=None):
     """Percentiles con ventana movil CAUSAL: para la hora t solo usa las
     `ventana_dias*24` horas anteriores a t (shift(1) antes de la ventana, para
-    no incluir el propio valor de t -- evita fuga de informacion futura)."""
+    no incluir el propio valor de t -- evita fuga de informacion futura).
+
+    previo: valores anteriores al inicio de `serie` (orden cronologico), por
+        ejemplo el precio real de los 30 dias previos. Sirven de calentamiento:
+        sin ellos, las primeras `ventana_dias` del periodo no tienen umbral y
+        todas sus horas caen en "esperar" (agregado 2026-10-06)."""
     horas = ventana_dias * 24
-    base = serie.shift(1)
-    bajo = base.rolling(horas, min_periods=horas).quantile(p_bajo / 100)
-    alto = base.rolling(horas, min_periods=horas).quantile(p_alto / 100)
-    return bajo, alto
+    n_previo = 0 if previo is None else len(previo)
+    base = serie if n_previo == 0 else pd.concat(
+        [pd.Series(np.asarray(previo, dtype=float)), serie.reset_index(drop=True)], ignore_index=True)
+    base = base.shift(1)
+    bajo = base.rolling(horas, min_periods=horas).quantile(p_bajo / 100).iloc[n_previo:]
+    alto = base.rolling(horas, min_periods=horas).quantile(p_alto / 100).iloc[n_previo:]
+    return bajo.set_axis(serie.index), alto.set_axis(serie.index)
+
+
+def precio_previo_ventana(df, precio_previo, ventana_dias=30):
+    """Ultimas `ventana_dias*24` horas de `precio_previo` (Serie indexada por fecha_hora)
+    anteriores a la primera hora de `df`; None si no se da."""
+    if precio_previo is None:
+        return None
+    previo = precio_previo[precio_previo.index < df["fecha_hora"].min()].sort_index()
+    return previo.iloc[-ventana_dias * 24:].to_numpy()
+
+
+def ancho_relativo(df):
+    """Ancho de la banda [q10, q90] como fraccion del precio esperado."""
+    return (df["q90"] - df["q10"]) / df["q50"].abs().clip(lower=1.0)
+
+
+def banda_ancha(df, percentil=75, minimo_horas=24 * 7):
+    """Horas de "poca confianza" para los metodos "banda"/"hibrido": ancho relativo por encima del
+    percentil `percentil` de las horas ANTERIORES (ventana expansiva, causal).
+
+    Historia (2026-10-06): antes se usaba el percentil del ancho absoluto de TODO el periodo, que
+    incluye anchos futuros (fuga de informacion). La version causal con ancho absoluto no sirve: el
+    ancho en COP/kWh crece con el nivel de precio, y con El Niño (may-ago 2026) bloqueaba el 49 % de
+    las horas en vez del ~25 % buscado, y el generador a 24 h se quedaba sin metodo estable. Medido
+    como fraccion del precio, el ancho no tiene esa tendencia: bloquea el 24 % y los metodos elegidos
+    son los mismos. Durante la primera semana no hay umbral y el filtro no actua."""
+    rel = ancho_relativo(df)
+    return rel > rel.shift(1).expanding(min_periods=minimo_horas).quantile(percentil / 100)
+
+
+def horas_sin_umbral(df, metodo, ventana_dias=30, precio_previo=None):
+    """Mascara de las horas en que el metodo todavia no tiene umbral de precio
+    (ventana rodante sin datos suficientes); en esas horas la senal sale "esperar"
+    por falta de datos, no por decision del motor."""
+    if metodo not in ("rodante", "hibrido"):
+        return pd.Series(False, index=df.index)
+    bajo, _ = umbrales_rodantes(df["q50"], ventana_dias,
+                                previo=precio_previo_ventana(df, precio_previo, ventana_dias))
+    return bajo.isna()
+
+
+def filtro_intradia(df, senal, rol):
+    """Ubica cada senal en su dia (agregado 2026-10-07). Los metodos de umbral deciden sobre todo EN QUE
+    TEMPORADA conviene la bolsa (venden mas en los meses caros); dentro de cada dia casi no eligen la hora
+    (ventaja intradia de ~24 COP/kWh para el generador a 24 h). El filtro conserva la senal favorable
+    ("vender"/"comprar") solo en la mitad del dia que el pronostico pone mas cara (generador) o mas barata
+    (comercializador), y la desfavorable ("retener"/"evitar_compra") solo en la mitad opuesta. Con el corte
+    natural (mitad del dia, sin ajustar) mejora la peor mitad en los cuatro casos de 2026 (p. ej. generador
+    72 h: 105 -> 133 COP/kWh; ver README, bitacora del 7-oct)."""
+    dia = df["fecha_hora"].dt.normalize()
+    rango = df["q50"].groupby(dia).rank(pct=True)
+    cara = (rango > 0.5).to_numpy()
+    favorable, desfavorable = ("vender", "retener") if rol == "generador" else ("comprar", "evitar_compra")
+    bien = cara if rol == "generador" else ~cara                 # mitad del dia favorable para actuar
+    s = senal.copy()
+    s[(s == favorable).to_numpy() & ~bien] = "esperar"
+    s[(s == desfavorable).to_numpy() & bien] = "esperar"
+    return s
 
 
 def generar_senales(df, metodo, rol, precio_historico_train=None,
-                     p_bajo=25, p_alto=75, ventana_dias=30, percentil_ancho_filtro=75):
+                     p_bajo=25, p_alto=75, ventana_dias=30, percentil_ancho_filtro=75,
+                     precio_previo=None, intradia=False):
     """
     df: DataFrame con columnas fecha_hora, real, q10, q50, q90 (una fila por hora).
     metodo: "fijo" | "rodante" | "banda" | "hibrido".
         - "fijo": percentiles del historico de entrenamiento (2019-2025).
         - "rodante": percentiles con ventana movil causal de `ventana_dias`.
         - "banda": fijo + "esperar" forzado cuando el ancho de la banda
-          [q10,q90] esta en el percentil alto (poca confianza).
+          [q10,q90], relativo al precio esperado, esta en el percentil alto
+          de las horas anteriores (poca confianza; ver banda_ancha()).
         - "hibrido": igual que "banda" pero con el umbral RODANTE en vez del
           fijo -- umbral que se adapta al regimen reciente Y filtro de
           confianza por ancho de banda, combinados. Agregado 2026-09-24 tras
@@ -139,6 +207,11 @@ def generar_senales(df, metodo, rol, precio_historico_train=None,
     precio_historico_train: requerido para metodo "fijo"/"banda" -- serie de
         precio_bolsa historico (ej. 2019-2025) sobre la que se calculan los
         percentiles fijos.
+    precio_previo: opcional, Serie de precio real indexada por fecha_hora con las horas
+        anteriores al inicio de `df`; calienta la ventana de "rodante"/"hibrido" para que
+        tengan umbral desde la primera hora.
+    intradia: si True, aplica filtro_intradia() (la senal solo se mantiene en la mitad del dia
+        que le corresponde segun el pronostico).
 
     Devuelve una Serie de texto con la senal, alineada al indice de df.
     """
@@ -150,7 +223,8 @@ def generar_senales(df, metodo, rol, precio_historico_train=None,
     precio = df["q50"]
 
     if metodo in ("rodante", "hibrido"):
-        bajo, alto = umbrales_rodantes(precio, ventana_dias, p_bajo, p_alto)
+        bajo, alto = umbrales_rodantes(precio, ventana_dias, p_bajo, p_alto,
+                                       previo=precio_previo_ventana(df, precio_previo, ventana_dias))
     else:  # "fijo" y "banda" comparten el mismo umbral fijo sobre el historico
         if precio_historico_train is None:
             raise ValueError(f"metodo='{metodo}' requiere precio_historico_train")
@@ -170,10 +244,10 @@ def generar_senales(df, metodo, rol, precio_historico_train=None,
     senal = pd.Series(senal, index=df.index)
 
     if metodo in ("banda", "hibrido"):
-        ancho = df["q90"] - df["q10"]
-        umbral_ancho = np.nanpercentile(ancho, percentil_ancho_filtro)
-        senal = senal.mask(ancho > umbral_ancho, "esperar")
+        senal = senal.mask(banda_ancha(df, percentil_ancho_filtro), "esperar")
 
+    if intradia:
+        senal = filtro_intradia(df, senal, rol)
     return senal
 
 
@@ -207,7 +281,8 @@ def evaluar_backtest(df, senal, rol):
 
 def comparar_metodos(df, rol, precio_historico_train, p_bajo=25, p_alto=75,
                       ventana_dias=30, percentil_ancho_filtro=75,
-                      frecuencia_min=0.10, frecuencia_max=0.40, mascara_evaluacion=None):
+                      frecuencia_min=0.10, frecuencia_max=0.40, mascara_evaluacion=None,
+                      precio_previo=None, intradia=False):
     """Corre los 4 metodos para un rol dado y devuelve una tabla comparativa,
     marcando como 'valido' solo los metodos cuya frecuencia de accion cae en
     un rango razonable (por defecto 10%-40% de las horas) -- una regla que
@@ -224,7 +299,8 @@ def comparar_metodos(df, rol, precio_historico_train, p_bajo=25, p_alto=75,
     filas = []
     for metodo in METODOS:
         senal = generar_senales(df, metodo, rol, precio_historico_train,
-                                 p_bajo, p_alto, ventana_dias, percentil_ancho_filtro)
+                                 p_bajo, p_alto, ventana_dias, percentil_ancho_filtro,
+                                 precio_previo=precio_previo, intradia=intradia)
         if mascara_evaluacion is None:
             resultado = evaluar_backtest(df, senal, rol)
         else:
@@ -251,7 +327,7 @@ def elegir_mejor_metodo(tabla_comparativa):
 
 def comparar_metodos_estable(df, rol, precio_historico_train, corte=None, p_bajo=25, p_alto=75,
                               ventana_dias=30, percentil_ancho_filtro=75,
-                              frecuencia_min=0.10, frecuencia_max=0.40):
+                              frecuencia_min=0.10, frecuencia_max=0.40, precio_previo=None, intradia=False):
     """Alternativa a comparar_metodos() que NO rankea por la ventaja promedio
     del periodo completo, sino por un criterio maximin: el desempeño en la
     MITAD MAS DEBIL del periodo. Se agrego el 2026-09-24 porque el criterio
@@ -283,7 +359,8 @@ def comparar_metodos_estable(df, rol, precio_historico_train, corte=None, p_bajo
     filas = []
     for metodo in METODOS:
         senal = generar_senales(df, metodo, rol, precio_historico_train,
-                                 p_bajo, p_alto, ventana_dias, percentil_ancho_filtro)
+                                 p_bajo, p_alto, ventana_dias, percentil_ancho_filtro,
+                                 precio_previo=precio_previo, intradia=intradia)
         df_con_senal = df.assign(senal=senal)
         h1 = evaluar_backtest(df_con_senal[mitad_1], df_con_senal.loc[mitad_1, "senal"], rol)
         h2 = evaluar_backtest(df_con_senal[mitad_2], df_con_senal.loc[mitad_2, "senal"], rol)

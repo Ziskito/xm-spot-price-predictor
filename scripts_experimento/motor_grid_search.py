@@ -39,10 +39,14 @@ DEFECTO = {"fijo": ("fijo", 25, 75, 30, None, 0.0), "rodante": ("rodante", 25, 7
 
 
 class Senales:
-    def __init__(self, df, hist):
+    """Mismas reglas que src/motor_decision.py (actualizado 2026-10-06): la ventana rodante se calienta
+    con `previo` (precio real anterior al inicio de df) y el filtro de banda ancha usa el ancho RELATIVO
+    al precio frente a las horas anteriores (causal), no el percentil del periodo completo."""
+    def __init__(self, df, hist, previo=None):
         self.df, self.hist = df, hist
         self.q = df["q50"]
-        self.ancho = (df["q90"] - df["q10"]).to_numpy()
+        self.previo = None if previo is None else np.asarray(previo, dtype=float)
+        self.rel = ((df["q90"] - df["q10"]) / df["q50"].abs().clip(lower=1.0)).reset_index(drop=True)
         self._rod = {}
 
     def umbrales(self, ref, pb, pa, ventana):
@@ -52,7 +56,10 @@ class Senales:
         for p in (pb, pa):
             if (ventana, p) not in self._rod:
                 h = ventana * 24
-                self._rod[(ventana, p)] = self.q.shift(1).rolling(h, min_periods=h).quantile(p / 100).to_numpy()
+                previo = np.array([]) if self.previo is None else self.previo[-h:]
+                base = pd.Series(np.concatenate([previo, self.q.to_numpy(dtype=float)]))
+                self._rod[(ventana, p)] = (base.shift(1).rolling(h, min_periods=h).quantile(p / 100)
+                                           .to_numpy()[len(previo):])
         return self._rod[(ventana, pb)], self._rod[(ventana, pa)]
 
     def generar(self, rol, ref, pb, pa, ventana, filtro, h):
@@ -77,7 +84,8 @@ class Senales:
                 s[i] = estado
         s = pd.Series(s, index=self.df.index)
         if filtro is not None:
-            s = s.mask(self.ancho > np.nanpercentile(self.ancho, filtro), "esperar")
+            ancha = self.rel > self.rel.shift(1).expanding(min_periods=24 * 7).quantile(filtro / 100)
+            s = s.mask(ancha.to_numpy(), "esperar")
         return s
 
 
@@ -98,6 +106,10 @@ def nombre(cfg):
 
 if __name__ == "__main__":
     hist = pd.read_csv(RAIZ / "data/processed/dataset_maestro_2019_2025.csv", usecols=["precio_bolsa"])["precio_bolsa"].values
+    # precio real con fecha: calienta la ventana rodante con las horas anteriores al inicio del pronostico
+    previo = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])
+                        for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]
+                       ).drop_duplicates("fecha_hora").set_index("fecha_hora")["precio_bolsa"].sort_index()
     configs = [("fijo", pb, pa, 30, f, h) for (pb, pa), f, h in itertools.product(PERCENTILES, FILTROS, HISTERESIS)]
     configs += [("rodante", pb, pa, v, f, h) for (pb, pa), v, f, h in itertools.product(PERCENTILES, VENTANAS, FILTROS, HISTERESIS)]
     print(f"{len(configs)} configuraciones por caso")
@@ -107,10 +119,10 @@ if __name__ == "__main__":
         df = df.sort_values("fecha_hora").reset_index(drop=True)
         corte = df["fecha_hora"].min() + (df["fecha_hora"].max() - df["fecha_hora"].min()) / 2
         m1 = (df["fecha_hora"] < corte).to_numpy()
-        gen = Senales(df, hist)
+        gen = Senales(df, hist, previo=previo[previo.index < df["fecha_hora"].min()].to_numpy())
         for met, cfg in DEFECTO.items():  # el generador reproduce exactamente al motor
             for rol in ACCION:
-                assert (gen.generar(rol, *cfg) == generar_senales(df, met, rol, hist)).all(), (hz, met, rol)
+                assert (gen.generar(rol, *cfg) == generar_senales(df, met, rol, hist, precio_previo=previo)).all(), (hz, met, rol)
         for rol in ACCION:
             res = []
             for cfg in configs:
@@ -121,7 +133,7 @@ if __name__ == "__main__":
                             "ventaja_H2": v2, "frec_H2": f2})
             t = pd.DataFrame(res)
             filas.append(t)
-            met_hoy, _ = elegir_mejor_metodo_estable(comparar_metodos_estable(df, rol, hist, corte=corte))
+            met_hoy, _ = elegir_mejor_metodo_estable(comparar_metodos_estable(df, rol, hist, corte=corte, precio_previo=previo))
             hoy = t[t["config"] == nombre(DEFECTO[met_hoy])].iloc[0]
             v1ok, v2ok = t["frec_H1"].apply(valido), t["frec_H2"].apply(valido)
             sel1 = t[v1ok].sort_values("ventaja_H1", ascending=False).iloc[0]

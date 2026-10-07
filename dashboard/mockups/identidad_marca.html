@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identidad de marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&family=Space+Grotesk:wght@500;700&family=Sora:wght@600;800&family=Manrope:wght@700;800&family=Outfit:wght@600;800&family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Lexend:wght@600;700&family=DM+Sans:wght@700&family=Archivo:wght@700;800&family=Syne:wght@700;800&family=Unbounded:wght@600;700&family=Josefin+Sans:wght@600;700&family=Rubik:wght@600;700&family=Cinzel:wght@600;700&family=Marcellus&display=swap" rel="stylesheet">
+<style>
+/* Paleta B "Energia" del dashboard (dashboard/app.py, TEMAS) */
+:root {
+  --fondo: #F4F6FA; --panel: #FFFFFF; --linea: #DDE3EC; --tinta: #0B1F3A; --texto: #2B3D57; --gris: #5B6B82;
+  --acento: #D97706; --ok: #047857; --alerta: #C2410C; --neutro: #94A3B8; --chip: #E9EDF3;
+}
+:root[data-theme="dark"] {
+  --fondo: #071426; --panel: #0D1F38; --linea: #1D3355; --tinta: #EAF0F8; --texto: #BCC8DA; --gris: #8193AD;
+  --acento: #FBBF24; --ok: #34D399; --alerta: #FB923C; --neutro: #64748B; --chip: #17304F;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #071426; --panel: #0D1F38; --linea: #1D3355; --tinta: #EAF0F8; --texto: #BCC8DA; --gris: #8193AD;
+    --acento: #FBBF24; --ok: #34D399; --alerta: #FB923C; --neutro: #64748B; --chip: #17304F;
+  }
+}
+/* superficies fijas para ver cada logo en ambos fondos sin importar el tema de la pagina */
+.sup-claro { --ink: #0B1F3A; --acc: #D97706; --ok2: #047857; --warn: #C2410C; --mute: #94A3B8; --bg: #FFFFFF; --sub: #5B6B82; background: #FFFFFF; }
+.sup-oscuro { --ink: #EAF0F8; --acc: #FBBF24; --ok2: #34D399; --warn: #FB923C; --mute: #64748B; --bg: #0D1F38; --sub: #8193AD; background: #0D1F38; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; }
+.envoltura { max-width: 1280px; margin: 0 auto; padding: 28px 16px 60px; }
+header.cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+h1 { color: var(--tinta); font-size: 1.7rem; margin: 0 0 4px; }
+.sub { color: var(--gris); max-width: 78ch; line-height: 1.5; margin: 0; }
+.boton { background: var(--panel); color: var(--tinta); border: 1px solid var(--linea); border-radius: 10px;
+         padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.boton:hover { border-color: var(--acento); }
+.reco { margin: 22px 0 18px; background: var(--panel); border: 1px solid var(--linea); border-top: 5px solid var(--acento);
+        border-radius: 12px; padding: 16px 18px; }
+.reco h2 { margin: 0 0 6px; font-size: 1.05rem; color: var(--tinta); }
+.reco ol { margin: 6px 0 0; padding-left: 20px; line-height: 1.6; }
+.reco b { color: var(--tinta); }
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 18px; align-items: center; }
+.filtro { background: var(--chip); color: var(--texto); border: 1px solid transparent; border-radius: 999px;
+          padding: 5px 12px; font: inherit; font-size: .85rem; cursor: pointer; }
+.filtro.activo { background: var(--acento); color: #0B1F3A; font-weight: 700; }
+.favs { margin-left: auto; font-size: .85rem; color: var(--gris); }
+.favs b { color: var(--tinta); }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+.tarjeta { background: var(--panel); border: 1px solid var(--linea); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.tarjeta.fav { outline: 2px solid var(--acento); }
+.cara { display: grid; grid-template-columns: 1fr 1fr; }
+.cara > div { padding: 22px 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 120px; }
+.marca { display: flex; align-items: center; gap: 10px; }
+.marca svg { width: 46px; height: 46px; flex: none; }
+.marca .nombre { color: var(--ink); font-size: calc(1.6rem * var(--k, 1)); line-height: 1; letter-spacing: -.01em; white-space: nowrap; }
+.marca .apellido { display: block; color: var(--sub); font-family: 'IBM Plex Sans', sans-serif; font-size: .6rem;
+                   letter-spacing: .1em; text-transform: uppercase; margin-top: 6px; font-weight: 600; white-space: nowrap; }
+.cuerpo { padding: 14px 16px 16px; border-top: 1px solid var(--linea); display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.fila-tit { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.num { font-family: 'IBM Plex Mono', monospace; font-size: .75rem; color: var(--gris); }
+.cat { font-size: .72rem; background: var(--chip); border-radius: 999px; padding: 2px 9px; color: var(--texto); }
+.lema { color: var(--tinta); font-weight: 600; font-size: .98rem; }
+.idea { font-size: .86rem; line-height: 1.5; margin: 0; }
+.nota { font-size: .78rem; color: var(--gris); margin: 0; }
+.usos { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+.pestana { display: flex; align-items: center; gap: 6px; background: var(--chip); border-radius: 8px 8px 0 0;
+           padding: 6px 10px; font-size: .75rem; color: var(--tinta); max-width: 170px; }
+.pestana svg { width: 16px; height: 16px; flex: none; }
+.pestana span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lateral { flex: 1; min-width: 170px; border-radius: 8px; padding: 9px 11px; display: flex; align-items: center; gap: 8px; }
+.lateral svg { width: 24px; height: 24px; flex: none; }
+.lateral .t1 { color: var(--ink); font-weight: 700; font-size: .92rem; line-height: 1.1; }
+.lateral .t2 { color: var(--sub); font-size: .66rem; }
+.iconos { display: flex; gap: 8px; align-items: center; }
+.app-icono { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.app-icono svg { width: 26px; height: 26px; }
+.estrella { background: none; border: 1px solid var(--linea); border-radius: 8px; color: var(--gris); cursor: pointer;
+            font: inherit; font-size: .8rem; padding: 4px 10px; }
+.tarjeta.fav .estrella { background: var(--acento); color: #0B1F3A; border-color: var(--acento); font-weight: 700; }
+footer { margin-top: 26px; font-size: .8rem; color: var(--gris); line-height: 1.5; }
+@media (max-width: 480px) {
+  .rejilla { grid-template-columns: 1fr; }
+  .cara { grid-template-columns: 1fr; }
+  .marca .nombre { font-size: 1.35rem; }
+}
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <header class="cab">
+    <div>
+      <h1>Identidad de marca · 24 propuestas + Roma</h1>
+      <p class="sub">Nombre, lema y logo para el motor de decisión. Todo está en la paleta B del dashboard: azul marino, ámbar de acento, verde para actuar a favor, naranja para evitar y gris para esperar. Cada tarjeta muestra el logo sobre fondo claro y oscuro, cómo quedaría en la barra lateral del dashboard, el ícono de la pestaña del navegador y el ícono de app.</p>
+    </div>
+    <button class="boton" id="tema">Cambiar tema de la página</button>
+  </header>
+
+  <section class="reco">
+    <h2>Mis tres favoritas</h2>
+    <ol>
+      <li><b>Tino</b> (01): es corto y muy colombiano ("tener tino" es acertar). Se recuerda fácil y dice exactamente lo que hace el motor: atinarle a la hora.</li>
+      <li><b>Rampa</b> (09): conecta con el objetivo del proyecto, que se mide en los puntos de cambio intradía. El logo dibuja el escalón con sus dos puntos de cambio.</li>
+      <li><b>Fase</b> (07): encaja con el enfoque de señales y electrónica de la presentación final y suena técnica sin ser fría.</li>
+    </ol>
+  </section>
+
+  <section class="reco">
+    <h2>Roma: Ianus, Augur y Vigil</h2>
+    <p class="sub" style="color:var(--texto)">Hay tres variantes de logo por nombre. La <b>A</b> es la más romana: usa tipografía Cinzel, de inscripciones, con V en lugar de U (IANVS, AVGVR). La <b>B</b> es clásica pero suave (Marcellus). La <b>C</b> es la versión de producto moderno. Los lemas latinos son <i>Respice, prospice</i> ("mira atrás, mira adelante"), <i>Carpe horam</i> ("aprovecha la hora") y <i>Semper vigilans</i> ("siempre vigilante"). Mi favorita es <b>Augur A</b> con <i>Carpe horam</i>; si se busca un ícono de app limpio, <b>Ianus C</b>.</p>
+  </section>
+
+  <div class="filtros" id="filtros"></div>
+  <div class="rejilla" id="rejilla"></div>
+
+  <footer>
+    Ningún nombre se verificó en registro de marcas (SIC) ni en dominios. Antes de adoptar uno conviene buscarlo, sobre todo los de palabra común (Faro, Pulso, Brújula, Prisma, Rumbo, Cresta). Se evitaron a propósito nombres de empresas reales del sector, como XM, Vatia o Celsia.
+    Las elecciones con ★ se guardan solo en este navegador.
+  </footer>
+</div>
+
+<script>
+// Cada simbolo usa variables CSS (--ink, --acc, --ok2, --warn, --mute, --bg) para verse bien en claro y en oscuro.
+const S = (cuerpo) => `<svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${cuerpo}</svg>`;
+const tic24 = (() => {
+  // 24 segmentos de reloj: algunos verdes, algunos naranjas, uno ambar (la hora elegida)
+  const colores = {2:'var(--ok2)',3:'var(--ok2)',4:'var(--ok2)',13:'var(--warn)',14:'var(--warn)',19:'var(--acc)'};
+  let s = '';
+  for (let h = 0; h < 24; h++) {
+    const a = (h / 24) * 2 * Math.PI - Math.PI / 2, c = Math.cos(a), n = Math.sin(a);
+    const col = colores[h] || 'var(--mute)', w = h === 19 ? 5 : 3.2;
+    s += `<line x1="${(24 + 13 * c).toFixed(2)}" y1="${(24 + 13 * n).toFixed(2)}" x2="${(24 + 21 * c).toFixed(2)}" y2="${(24 + 21 * n).toFixed(2)}" stroke="${col}" stroke-width="${w}"/>`;
+  }
+  return s + '<circle cx="24" cy="24" r="4" fill="var(--ink)"/>';
+})();
+
+const MARCAS = [
+ // ---- Roma: Ianus, Augur y Vigil, tres variantes de logo cada una ----
+ {id:'R1', n:'Ianus', d:'IANVS', v:'A · dos caras', cat:'Roma', f:"'Cinzel'", w:700, lema:'Respice, prospice. Mira atrás, mira adelante.',
+  idea:'Jano es el dios romano de las puertas y las transiciones, con dos caras: una mira al pasado y otra al futuro. Aquí la cara del pasado (los datos) va en azul marino y la del futuro (el pronóstico) en ámbar. Va escrito como en las inscripciones romanas, con V en lugar de U.',
+  nota:'Fuerte: es el símbolo más potente para un pronóstico. Débil: el perfil doble pierde detalle a 16 px. Revisar Janus Henderson (gestora de inversiones).',
+  svg:S(`<path d="M24 4 C16 4 12 9 12 16 L8 22 L12 24 L11 27 L13 29 L12 32 C13 36 17 38 20 38 L20 44 H24Z" fill="var(--ink)"/><path d="M24 4 C32 4 36 9 36 16 L40 22 L36 24 L37 27 L35 29 L36 32 C35 36 31 38 28 38 L28 44 H24Z" fill="var(--acc)"/>`)},
+ {id:'R2', n:'Ianus', d:'IANUS', v:'B · la puerta', cat:'Roma', f:"'Marcellus'", w:400, lema:'La puerta entre el dato y la decisión.',
+  idea:'De Ianus viene ianua, puerta (y enero, el mes que abre el año). Es un arco romano con la clave en ámbar y, adentro, el precio que cruza hacia el otro lado.',
+  nota:'Fuerte: el arco es elegante y se lee bien en pequeño. Débil: sin la historia, se ve como un logo de arquitectura.',
+  svg:S(`<path d="M8 44 V22 A16 16 0 0 1 40 22 V44" stroke="var(--ink)" stroke-width="4"/><path d="M21 4.5 H27 L26 10 H22Z" fill="var(--acc)"/><path d="M14 38 C20 38 21 28 27 27 S33 22 34 20" stroke="var(--acc)" stroke-width="3.2"/><path d="M4 44 H44" stroke="var(--ink)" stroke-width="3.5"/>`)},
+ {id:'R3', n:'Ianus', d:'IANUS', v:'C · monograma', cat:'Roma', f:"'Space Grotesk'", w:700, lema:'Dos miradas, una decisión.',
+  idea:'Un monograma moderno: la I central con un chevrón hacia el pasado (azul marino) y otro hacia el futuro (ámbar). Es la versión de producto, sin tipografía clásica.',
+  nota:'Fuerte: funciona perfecto como ícono de app y de pestaña. Débil: pierde el sabor romano.',
+  svg:S(`<path d="M24 6 V42" stroke="var(--ink)" stroke-width="5"/><path d="M15 13 L6 24 L15 35" stroke="var(--ink)" stroke-width="4.5"/><path d="M33 13 L42 24 L33 35" stroke="var(--acc)" stroke-width="4.5"/>`)},
+ {id:'R4', n:'Augur', d:'AVGVR', v:'A · el lituus', cat:'Roma', f:"'Cinzel'", w:700, lema:'Carpe horam.',
+  idea:'El augur era el sacerdote romano que leía las señales para decir si convenía actuar. Su insignia era el lituus, un báculo con la punta en espiral. En el centro de la espiral va la señal, en ámbar.',
+  nota:'Fuerte: es la historia más cercana a lo que hace el motor, que lee señales y decide. Débil: el lituus no es conocido fuera de la historia antigua. Revisar Augur (mercado de predicciones cripto).',
+  svg:S(`<path d="M17 44 V22 C17 11 24 5 31 6 C38 7 41 14 37 19 C34 23 28 21 29 16 C30 13 33 13 34 15" stroke="var(--ink)" stroke-width="4"/><circle cx="31.5" cy="15.5" r="2.6" fill="var(--acc)"/><path d="M11 44 H23" stroke="var(--ink)" stroke-width="3.5"/>`)},
+ {id:'R5', n:'Augur', v:'B · el vuelo', cat:'Roma', f:"'Marcellus'", w:400, lema:'Lee las señales antes de actuar.',
+  idea:'Los augures observaban el vuelo de las aves para tomar decisiones. Hay dos aves sobre la línea del horizonte: la grande en azul marino y la que va adelante en ámbar, como la señal que se anticipa.',
+  nota:'Fuerte: es cálido y fácil de leer. Débil: las aves son un recurso común en logos.',
+  svg:S(`<path d="M5 25 C11 18 17 19 22 26 C26 19 32 17 39 23" stroke="var(--ink)" stroke-width="4"/><path d="M27 12 C29.5 9 32 9 34 12.5 C36 9 39 9 42 11.5" stroke="var(--acc)" stroke-width="3.2"/><path d="M4 40 H44" stroke="var(--mute)" stroke-width="3" stroke-dasharray="4 4"/>`)},
+ {id:'R6', n:'Augur', v:'C · el templum', cat:'Roma', f:"'Sora'", w:800, lema:'Divide el día, decide cada hora.',
+  idea:'Antes de leer las señales, el augur dividía el cielo en cuadrantes (el templum). Aquí, el cuadrante en ámbar es la ventana de decisión. También se lee como una mira o un gráfico de cuadrantes.',
+  nota:'Fuerte: es muy simple y escala bien a cualquier tamaño. Débil: sin la historia, parece un gráfico de torta.',
+  svg:S(`<circle cx="24" cy="24" r="18" stroke="var(--ink)" stroke-width="3.5"/><path d="M24 24 V6 A18 18 0 0 1 42 24Z" fill="var(--acc)"/><path d="M24 6 V42 M6 24 H42" stroke="var(--ink)" stroke-width="3"/>`)},
+ {id:'R7', n:'Vigil', d:'VIGIL', v:'A · la antorcha', cat:'Roma', f:"'Cinzel'", w:700, lema:'Semper vigilans.',
+  idea:'Los vigiles eran la guardia nocturna y el cuerpo de bomberos de Roma: patrullaban con antorchas toda la noche. La llama en ámbar es la energía que el motor vigila las 24 horas.',
+  nota:'Fuerte: une la vigilancia con el fuego (la energía) y "Semper vigilans" es un lema clásico. Débil: la antorcha recuerda a los Juegos Olímpicos.',
+  svg:S(`<path d="M24 4 C31 12 33 17 29.5 22 H18.5 C15 17 17 12 24 4Z" fill="var(--acc)"/><path d="M24 12 C27 16 27.5 19 26 21.5 H22 C20.5 19 21 16 24 12Z" fill="var(--bg)" opacity=".75"/><path d="M16 23 H32 L30 27 H18Z" fill="var(--ink)"/><path d="M20.5 27 L22.5 44 H25.5 L27.5 27Z" fill="var(--ink)"/>`)},
+ {id:'R8', n:'Vigil', v:'B · la noche', cat:'Roma', f:"'Marcellus'", w:400, lema:'Vigila la bolsa mientras duermes.',
+  idea:'Una luna creciente con una estrella ámbar: la guardia nocturna. El precio de bolsa se fija para las 24 horas, también para las de madrugada.',
+  nota:'Fuerte: es sereno y comunica confianza. Débil: puede parecer una app para dormir.',
+  svg:S(`<path d="M27 5 A19 19 0 1 0 43 31 A15 15 0 1 1 27 5Z" fill="var(--ink)"/><path d="M36 9 L37.6 13.4 L42 15 L37.6 16.6 L36 21 L34.4 16.6 L30 15 L34.4 13.4Z" fill="var(--acc)"/>`)},
+ {id:'R9', n:'Vigil', v:'C · el escudo', cat:'Roma', f:"'Archivo'", w:800, lema:'Tu guardia frente a la volatilidad.',
+  idea:'Un escudo de legionario con la V de Vigil en ámbar. Comunica protección: el comercializador se cubre de los precios altos y el generador no vende barato.',
+  nota:'Fuerte: protección es un beneficio claro para el usuario. Débil: suena a ciberseguridad o a aseguradora.',
+  svg:S(`<path d="M24 4 L40 10 V24 C40 34 32 41 24 44 C16 41 8 34 8 24 V10Z" fill="var(--ink)"/><path d="M16 16 L24 32 L32 16" stroke="var(--acc)" stroke-width="4.5"/>`)},
+ {n:'Tino', cat:'Momento y decisión', f:"'Sora'", w:800, lema:'Tino para cada hora.',
+  idea:'"Tener tino" es atinarle. La mira con el centro ámbar representa la hora exacta en la que conviene actuar.',
+  nota:'Fuerte: corto, propio del español de Colombia, fácil de recordar. Débil: no dice "energía" por sí solo.',
+  svg:S(`<circle cx="24" cy="24" r="15" stroke="var(--ink)" stroke-width="3.5"/><path d="M24 3v8M24 37v8M3 24h8M37 24h8" stroke="var(--ink)" stroke-width="3.5"/><circle cx="24" cy="24" r="5.5" fill="var(--acc)"/>`)},
+ {n:'Kairós', cat:'Momento y decisión', f:"'Fraunces'", w:800, lema:'El momento justo para tu energía.',
+  idea:'En griego, kairós es el momento oportuno, frente a cronos, el tiempo que corre. El reloj tiene un rayo por manecilla.',
+  nota:'Fuerte: concepto elegante y defendible ante un jurado. Débil: la tilde complica dominios y nombres de archivo.',
+  svg:S(`<circle cx="24" cy="24" r="19" stroke="var(--ink)" stroke-width="3.5"/><path d="M24 7v3M41 24h-3M24 41v-3M7 24h3" stroke="var(--ink)" stroke-width="3"/><path d="M26 12 L19 26 H27 L22 36" stroke="var(--acc)" stroke-width="3.8"/>`)},
+ {n:'Umbral', cat:'Momento y decisión', f:"'Space Grotesk'", w:700, lema:'Sabe cuándo cruzar.',
+  idea:'El motor actúa cuando el pronóstico cruza un umbral. El logo es una curva de precio que cruza la línea punteada en el punto verde.',
+  nota:'Fuerte: describe el mecanismo real del motor. Débil: suena algo abstracto para un operador.',
+  svg:S(`<path d="M3 24h42" stroke="var(--acc)" stroke-width="3" stroke-dasharray="4 4"/><path d="M5 40 C15 40 18 31 24 24 S33 8 43 8" stroke="var(--ink)" stroke-width="4"/><circle cx="24" cy="24" r="5" fill="var(--ok2)" stroke="var(--bg)" stroke-width="2"/>`)},
+ {n:'Hora Justa', cat:'Momento y decisión', f:"'Manrope'", w:800, lema:'Las 24 horas del día, cada una con su decisión.',
+  idea:'Un reloj de 24 segmentos coloreado como la franja horaria del dashboard. El segmento ámbar es la hora elegida.',
+  nota:'Fuerte: se entiende sin explicación y el logo es la propia franja del producto. Débil: es de dos palabras.',
+  svg:S(tic24)},
+ {n:'Despacho', cat:'Momento y decisión', f:"'Archivo'", w:800, lema:'Despacha a la hora correcta.',
+  idea:'Toma el término del sector eléctrico, el despacho de generación. Los dos chevrones indican avanzar: uno en azul marino y el de adelante en ámbar.',
+  nota:'Fuerte: es vocabulario del gremio. Débil: puede confundirse con el despacho oficial de XM.',
+  svg:S(`<path d="M8 10 L21 24 L8 38" stroke="var(--ink)" stroke-width="5.5"/><path d="M25 10 L38 24 L25 38" stroke="var(--acc)" stroke-width="5.5"/>`)},
+ {n:'Kilo', cat:'Marca pura', f:"'Unbounded'", w:700, lema:'Cada kilovatio, a su hora.',
+  idea:'Es un monograma: una K cuya diagonal es un rayo. Funciona sola como ícono de app.',
+  nota:'Fuerte: ícono muy reconocible, en tono de marca de producto. Débil: "kilo" es muy genérico como palabra.',
+  svg:S(`<path d="M13 6 V42" stroke="var(--ink)" stroke-width="6"/><path d="M36 6 L21 24 H32 L19 42" stroke="var(--acc)" stroke-width="5"/>`)},
+ {n:'Fase', cat:'Señales y electrónica', f:"'IBM Plex Mono'", w:700, lema:'Pon tu energía en fase con el mercado.',
+  idea:'Dos senoidales desfasadas: el precio en azul marino y la decisión en ámbar, que se le adelanta. Encaja con el enfoque de señales de la presentación final.',
+  nota:'Fuerte: suena técnico y conecta con la electrónica. Débil: el chiste de "estar en fase" es para ingenieros.',
+  svg:S(`<path d="M3 24 c5 -16 11 -16 16 0 s11 16 16 0 s7 -12 10 -9" stroke="var(--ink)" stroke-width="3.8"/><path d="M3 31 c3 -9 7 -14 11 -10 c5 5 7 16 13 16 c6 0 10 -14 18 -16" stroke="var(--acc)" stroke-width="3.2"/>`)},
+ {n:'Pulso', cat:'Señales y electrónica', f:"'Outfit'", w:800, lema:'El pulso de la bolsa, hora a hora.',
+  idea:'Un trazo de electrocardiograma que se convierte en el pico del precio, con el pico marcado en ámbar.',
+  nota:'Fuerte: se entiende al instante. Débil: muy usado en salud y en finanzas, así que hay que revisar el registro de marca.',
+  svg:S(`<path d="M2 27 H13 L17 18 L23 38 L30 8 L34 27 H46" stroke="var(--ink)" stroke-width="3.8"/><circle cx="30" cy="8" r="4.5" fill="var(--acc)"/>`)},
+ {n:'Rampa', cat:'Señales y electrónica', f:"'Syne'", w:800, lema:'Anticipa los cambios del precio.',
+  idea:'Un escalón con sus dos puntos de cambio. El éxito del proyecto se mide en las rampas intradía, no en el error promedio.',
+  nota:'Fuerte: es la idea central del proyecto vuelta marca. Débil: fuera de contexto suena a construcción.',
+  svg:S(`<path d="M4 37 H15 L33 11 H44" stroke="var(--ink)" stroke-width="4.5"/><circle cx="15" cy="37" r="5" fill="var(--acc)"/><circle cx="33" cy="11" r="5" fill="var(--acc)"/>`)},
+ {n:'Señal', cat:'Señales y electrónica', f:"'Lexend'", w:700, lema:'Verde, gris o naranja. Sin rodeos.',
+  idea:'Un semáforo horizontal con los tres estados del motor: actuar a favor, esperar y evitar.',
+  nota:'Fuerte: es literal y por eso no se puede malinterpretar. Débil: es un nombre muy común y difícil de registrar.',
+  svg:S(`<rect x="3" y="14" width="42" height="20" rx="10" fill="var(--ink)"/><circle cx="14" cy="24" r="5" fill="var(--ok2)"/><circle cx="24" cy="24" r="5" fill="var(--mute)"/><circle cx="34" cy="24" r="5" fill="var(--warn)"/>`)},
+ {n:'Prisma', cat:'Señales y electrónica', f:"'Josefin Sans'", w:700, lema:'Un pronóstico, tres decisiones claras.',
+  idea:'La luz (el pronóstico) entra al prisma (el motor) y sale descompuesta en las tres señales.',
+  nota:'Fuerte: es una metáfora visual muy limpia. Débil: Prisma es un nombre muy usado en software.',
+  svg:S(`<path d="M24 7 L40 38 H8 Z" stroke="var(--ink)" stroke-width="3.5"/><path d="M2 26 L15 24" stroke="var(--ink)" stroke-width="3"/><path d="M34 22 L46 14" stroke="var(--ok2)" stroke-width="3.2"/><path d="M35 25 L46 25" stroke="var(--mute)" stroke-width="3.2"/><path d="M34 28 L46 36" stroke="var(--warn)" stroke-width="3.2"/>`)},
+ {n:'Sincro', cat:'Señales y electrónica', f:"'Rubik'", w:700, lema:'Sincroniza tu operación con el precio.',
+  idea:'Dos flechas en ciclo, una del pronóstico y otra de la operación, alrededor de un rayo.',
+  nota:'Fuerte: sugiere automatización. Débil: el ícono de "sincronizar" ya es universal y se distingue poco.',
+  svg:S(`<path d="M38 17 A16 16 0 0 0 9 19" stroke="var(--ink)" stroke-width="4"/><path d="M33 10 L39 17 L31 20" stroke="var(--ink)" stroke-width="4"/><path d="M10 31 A16 16 0 0 0 39 29" stroke="var(--acc)" stroke-width="4"/><path d="M15 38 L9 31 L17 28" stroke="var(--acc)" stroke-width="4"/><path d="M26 16 L21 25 H27 L22 33" stroke="var(--ink)" stroke-width="2.8"/>`)},
+ {n:'Caudal', cat:'Agua y territorio', f:"'Fraunces'", w:600, lema:'Del embalse al precio, hora a hora.',
+  idea:'En Colombia el precio de bolsa depende del agua. Es una gota con una onda ámbar dentro, la energía que nace del río.',
+  nota:'Fuerte: identidad muy local, explica el porqué del precio. Débil: puede leerse como una marca de acueducto.',
+  svg:S(`<path d="M24 4 C24 4 10 20 10 30 a14 14 0 0 0 28 0 C38 20 24 4 24 4Z" fill="var(--ink)"/><path d="M15 31 q4.5 -5 9 0 t9 0" stroke="var(--acc)" stroke-width="3.5"/>`)},
+ {n:'Cauce', cat:'Agua y territorio', f:"'DM Sans'", w:700, lema:'Lleva tu energía por buen cauce.',
+  idea:'Un río ámbar entre dos orillas. El motor encauza la decisión entre la banda baja y la alta del pronóstico.',
+  nota:'Fuerte: el lema tiene doble sentido. Débil: el símbolo es menos inmediato.',
+  svg:S(`<path d="M12 4 C12 16 32 18 32 28 S12 36 12 44" stroke="var(--ink)" stroke-width="2.6" opacity=".55"/><path d="M36 4 C36 14 44 20 44 28" stroke="var(--ink)" stroke-width="2.6" opacity=".55"/><path d="M24 4 C24 16 40 18 40 28 S22 37 22 44" stroke="var(--acc)" stroke-width="5"/>`)},
+ {n:'Cresta', cat:'Agua y territorio', f:"'Archivo'", w:800, lema:'Vende en la cresta, compra en el valle.',
+  idea:'Una cordillera que también es un perfil de precio, con la cresta marcada en ámbar. Une la geografía andina y la serie de tiempo.',
+  nota:'Fuerte: el lema explica la estrategia. Débil: solo cuenta la mitad de la historia (el comercializador busca valles).',
+  svg:S(`<path d="M2 39 L14 22 L21 30 L32 11 L46 39" stroke="var(--ink)" stroke-width="4"/><circle cx="32" cy="11" r="5" fill="var(--acc)"/><path d="M6 44 H42" stroke="var(--mute)" stroke-width="3"/>`)},
+ {n:'Cuantil', cat:'Estadística', f:"'Space Grotesk'", w:700, lema:'Decide con la banda, no con la corazonada.',
+  idea:'La banda q10-q90 en ámbar translúcido con la mediana encima: el producto real del modelo.',
+  nota:'Fuerte: es honesto con el método y muy defendible en lo académico. Débil: es jerga y a un operador le dice poco.',
+  svg:S(`<path d="M3 29 C13 17 21 21 29 15 S40 9 45 7 L45 23 C39 25 35 29 29 31 S13 40 3 40Z" fill="var(--acc)" opacity=".35"/><path d="M3 35 C13 27 21 30 29 23 S40 16 45 15" stroke="var(--ink)" stroke-width="3.8"/>`)},
+ {n:'Mediana', cat:'Estadística', f:"'Manrope'", w:800, lema:'Ni optimista ni pesimista: centrado.',
+  idea:'Un diagrama de caja con la mediana en ámbar. Comunica sobriedad y equilibrio.',
+  nota:'Fuerte: el ícono es sobrio y elegante. Débil: el nombre es frío.',
+  svg:S(`<path d="M24 3v9M24 36v9M17 3h14M17 45h14" stroke="var(--ink)" stroke-width="3"/><rect x="11" y="12" width="26" height="24" rx="3" stroke="var(--ink)" stroke-width="3.5"/><path d="M11 21h26" stroke="var(--acc)" stroke-width="4.5"/>`)},
+ {n:'Nítido', cat:'Estadística', f:"'Sora'", w:800, lema:'El precio de mañana, más nítido.',
+  idea:'Una lupa que enfoca un trazo de precio: el pronóstico como un enfoque más claro del futuro.',
+  nota:'Fuerte: es positivo y fácil de entender. Débil: la tilde y la lupa son recursos muy vistos.',
+  svg:S(`<circle cx="20" cy="20" r="15" stroke="var(--ink)" stroke-width="3.8"/><path d="M31 31 L44 44" stroke="var(--ink)" stroke-width="5"/><path d="M10 24 L16 18 L21 22 L29 13" stroke="var(--acc)" stroke-width="3.5"/>`)},
+ {n:'Faro', cat:'Orientación y vigilancia', f:"'Outfit'", w:800, lema:'Luz sobre el precio de bolsa.',
+  idea:'Un faro con haces ámbar que guía la decisión en un mercado volátil.',
+  nota:'Fuerte: metáfora cálida y universal. Débil: es muy común, así que hay que revisar el registro.',
+  svg:S(`<path d="M24 14 L4 7 V21Z" fill="var(--acc)" opacity=".45"/><path d="M24 14 L44 7 V21Z" fill="var(--acc)" opacity=".45"/><path d="M19 44 L21.5 20 H26.5 L29 44Z" fill="var(--ink)"/><rect x="19.5" y="9" width="9" height="9" rx="2" fill="var(--acc)"/><path d="M13 44 H35" stroke="var(--ink)" stroke-width="3.5"/>`)},
+ {n:'Vigía', cat:'Orientación y vigilancia', f:"'Lexend'", w:700, lema:'Vigila la bolsa por ti, las 24 horas.',
+  idea:'Un ojo con la pupila ámbar, siempre atento al mercado.',
+  nota:'Fuerte: comunica tranquilidad y monitoreo constante. Débil: un ojo puede sentirse como vigilancia o control.',
+  svg:S(`<path d="M3 24 C11 11 37 11 45 24 C37 37 11 37 3 24Z" stroke="var(--ink)" stroke-width="3.5"/><circle cx="24" cy="24" r="7.5" fill="var(--acc)"/><circle cx="24" cy="24" r="2.8" fill="var(--ink)"/>`)},
+ {n:'Atalaya', cat:'Orientación y vigilancia', f:"'Josefin Sans'", w:700, lema:'Ve venir el precio antes que nadie.',
+  idea:'Una torre de vigía con ventana ámbar y ondas de señal: anticiparse desde lo alto.',
+  nota:'Fuerte: el lema va justo al valor del pronóstico. Débil: el nombre es largo y algo antiguo.',
+  svg:S(`<path d="M16 44 V18 H19 V13 H22 V18 H26 V13 H29 V18 H32 V44Z" fill="var(--ink)"/><rect x="21" y="25" width="6" height="8" rx="1.5" fill="var(--acc)"/><path d="M36 9 a8 8 0 0 1 5 7M38 4 a14 14 0 0 1 8 12" stroke="var(--acc)" stroke-width="2.8"/>`)},
+ {n:'Brújula', cat:'Orientación y vigilancia', f:"'Rubik'", w:700, lema:'Rumbo claro en un mercado volátil.',
+  idea:'Una aguja de brújula: la mitad ámbar señala hacia dónde actuar.',
+  nota:'Fuerte: se entiende de inmediato. Débil: es un ícono muy usado en apps de navegación.',
+  svg:S(`<circle cx="24" cy="24" r="19" stroke="var(--ink)" stroke-width="3.2"/><path d="M24 8 L30 24 H18Z" fill="var(--acc)"/><path d="M24 40 L30 24 H18Z" fill="var(--ink)"/><circle cx="24" cy="24" r="2.5" fill="var(--bg)"/>`)},
+ {n:'Rumbo', cat:'Orientación y vigilancia', f:"'Unbounded'", w:600, lema:'Tu energía, con rumbo.',
+  idea:'Un trazo que sube con puntos horarios y termina en una flecha ámbar: avanzar con dirección.',
+  nota:'Fuerte: es corto y positivo. Débil: genérico, se parece a marcas de logística.',
+  svg:S(`<path d="M5 41 C17 41 19 22 35 13" stroke="var(--ink)" stroke-width="4"/><path d="M29 9 L40 10 L36 21" stroke="var(--acc)" stroke-width="4.2"/><circle cx="11" cy="40" r="2.6" fill="var(--ink)"/><circle cx="19" cy="34" r="2.6" fill="var(--ink)"/>`)},
+ {n:'Ámbar', cat:'Marca pura', f:"'Syne'", w:800, lema:'Energía con criterio.',
+  idea:'Toma el color de acento de la marca como nombre. La gema facetada es el valor que se extrae del pronóstico.',
+  nota:'Fuerte: la identidad visual y el nombre son lo mismo. Débil: en el semáforo, "ámbar" sugiere precaución.',
+  svg:S(`<path d="M24 4 L41 14 V34 L24 44 L7 34 V14Z" fill="var(--acc)"/><path d="M24 4 V24 M7 14 L24 24 L41 14 M24 24 V44" stroke="#FFFFFF" stroke-width="2" opacity=".5"/><path d="M26 15 L21 25 H27 L22 33" stroke="var(--ink)" stroke-width="2.8"/>`)},
+];
+
+const CATS = ['Todas', ...new Set(MARCAS.map(m => m.cat))];
+const NROMA = MARCAS.filter(m => m.cat === 'Roma').length;
+const clave = (m) => m.id ? `${m.n} ${m.v[0]}` : m.n;
+let filtro = 'Roma';
+const leer = () => { try { return JSON.parse(localStorage.getItem('favs_marca') || '[]'); } catch (e) { return []; } };
+const guardar = (v) => { try { localStorage.setItem('favs_marca', JSON.stringify(v)); } catch (e) {} };
+let favs = leer();
+
+// los nombres largos y las fuentes anchas (Syne, Unbounded, Archivo) se reducen para caber en media tarjeta
+const ANCHAS = {"'Cinzel'": .85, "'Syne'": .8, "'Unbounded'": .78, "'Archivo'": .9, "'Sora'": .95};
+const escala = (m) => Math.min(1, 7 / (m.d || m.n).length) * (ANCHAS[m.f] || 1);
+function marcaHTML(m) {
+  return `<div class="marca">${m.svg}<div><span class="nombre" style="font-family:${m.f},sans-serif;font-weight:${m.w};--k:${escala(m)}">${m.d || m.n}</span><span class="apellido">Motor de decisión</span></div></div>`;
+}
+function tarjeta(m, i) {
+  const fav = favs.includes(clave(m));
+  return `<article class="tarjeta${fav ? ' fav' : ''}" data-n="${clave(m)}">
+    <div class="cara"><div class="sup-claro">${marcaHTML(m)}</div><div class="sup-oscuro">${marcaHTML(m)}</div></div>
+    <div class="cuerpo">
+      <div class="fila-tit"><span class="num">${m.id || String(i - NROMA + 1).padStart(2, '0')}</span><span class="cat">${m.v || m.cat}</span>
+        <button class="estrella">${fav ? '★ Favorita' : '☆ Marcar'}</button></div>
+      <div class="lema">“${m.lema}”</div>
+      <p class="idea">${m.idea}</p>
+      <p class="nota">${m.nota}</p>
+      <div class="usos">
+        <div class="pestana sup-claro">${m.svg}<span>${m.n} · Motor de decisión</span></div>
+        <div class="iconos">
+          <div class="app-icono" style="background:#0B1F3A;--ink:#EAF0F8;--acc:#FBBF24;--ok2:#34D399;--warn:#FB923C;--mute:#64748B;--bg:#0B1F3A">${m.svg}</div>
+          <div class="app-icono" style="background:#D97706;--ink:#0B1F3A;--acc:#FFFFFF;--ok2:#0B1F3A;--warn:#FFFFFF;--mute:#FCD9A8;--bg:#D97706">${m.svg}</div>
+        </div>
+      </div>
+      <div class="usos">
+        <div class="lateral sup-claro" style="border:1px solid #DDE3EC">${m.svg}<div><div class="t1" style="font-family:${m.f},sans-serif">${m.d || m.n}</div><div class="t2">Barra lateral · claro</div></div></div>
+        <div class="lateral sup-oscuro">${m.svg}<div><div class="t1" style="font-family:${m.f},sans-serif">${m.d || m.n}</div><div class="t2">Barra lateral · oscuro</div></div></div>
+      </div>
+    </div></article>`;
+}
+function pintar() {
+  document.getElementById('filtros').innerHTML = CATS.map(c =>
+    `<button class="filtro${c === filtro ? ' activo' : ''}" data-c="${c}">${c}</button>`).join('') +
+    `<span class="favs">Favoritas: <b>${favs.length ? favs.join(', ') : 'ninguna todavía'}</b></span>`;
+  document.getElementById('rejilla').innerHTML = MARCAS.map((m, i) => (filtro === 'Todas' || m.cat === filtro) ? tarjeta(m, i) : '').join('');
+}
+document.addEventListener('click', (e) => {
+  const f = e.target.closest('.filtro');
+  if (f) { filtro = f.dataset.c; pintar(); return; }
+  const s = e.target.closest('.estrella');
+  if (s) {
+    const n = s.closest('.tarjeta').dataset.n;
+    favs = favs.includes(n) ? favs.filter(x => x !== n) : [...favs, n];
+    guardar(favs); pintar();
+  }
+});
+document.getElementById('tema').addEventListener('click', () => {
+  const r = document.documentElement;
+  const oscuro = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = oscuro ? 'light' : 'dark';
+});
+pintar();
+</script>
+</body>
+</html>
