@@ -606,6 +606,12 @@ def metadatos_html(periodo, contenido):
 CODIGO_SENAL = {"evitar_compra": 0, "retener": 0, "esperar": 1, "comprar": 2, "vender": 2}
 
 
+# escala de color del mapa de calor del Precio de Bolsa Nacional en Sinergox (XM): azul en el minimo del periodo,
+# crema en el valor medio y naranja-rojo en el maximo
+ESCALA_XM = [[0.0, "#2A7FC0"], [0.22, "#8BBCD6"], [0.45, "#E4ECDF"], [0.5, "#F4EED6"], [0.62, "#F6CFA4"],
+             [0.8, "#EF8A45"], [1.0, "#E3511B"]]
+
+
 def grafico_calor(df, dias, horas, dia_sel, hora_sel, modo, tk):
     """Mapa de calor dia-hora: filas = dias, columnas = horas; color = senal del motor o precio esperado."""
     sub = df[df["fecha_hora"].dt.date.isin(dias) & df["fecha_hora"].dt.hour.isin(horas)].copy()
@@ -631,7 +637,7 @@ def grafico_calor(df, dias, horas, dia_sel, hora_sel, modo, tk):
                                    hovertemplate=plantilla, opacity=0.85))
     else:
         fig = go.Figure(go.Heatmap(z=piv("q50").to_numpy(dtype=float), x=horas, y=orden,
-                                   colorscale="YlOrRd", xgap=hueco_x, ygap=hueco_y, customdata=datos,
+                                   colorscale=ESCALA_XM, xgap=hueco_x, ygap=hueco_y, customdata=datos,
                                    hovertemplate=plantilla,
                                    colorbar=dict(title=dict(text="COP/kWh", font=dict(color=tk["gris"])),
                                                  tickfont=dict(color=tk["gris"]), thickness=12)))
