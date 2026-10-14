@@ -229,16 +229,16 @@ h2 { font-size: 12pt; font-weight: bold; color: #0B1F3A; margin: 13pt 0 5pt; bre
 h3 { font-size: 11.5pt; font-weight: bold; font-style: italic; color: #0B1F3A; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
 p { margin: 0 0 6pt; }
 table { border-collapse: collapse; width: 100%; margin: 4pt 0 4pt; font-size: 10.5pt; page-break-inside: avoid; text-align: left; }
-th, td { border: 0.75pt solid #8A96A8; padding: 3pt 5pt; vertical-align: top; background: transparent; }
-th { background: #0B1F3A; color: #fff; font-weight: bold; border-color: #0B1F3A; }
+th, td { border: 0.75pt solid #94A3B8; padding: 3pt 5pt; vertical-align: top; background: transparent; }
+th { background: #D97706; color: #fff; font-weight: bold; border-color: #D97706; }
 .tit-tabla { font-size: 10.5pt; margin: 8pt 0 2pt; text-align: center; color: #0B1F3A; break-after: avoid; page-break-after: avoid; }
 .figura { text-align: center; margin: 8pt 0 10pt; page-break-inside: avoid; }
-.figura img { border: 0.75pt solid #8A96A8; }
+.figura img { border: 0.75pt solid #94A3B8; }
 .pie { font-size: 10.5pt; margin-top: 3pt; text-align: center; }
 .pie b, .tit-tabla b { color: #0B1F3A; }
-table.aviso { margin: 8pt 0; border: 1.2pt solid #0B1F3A; }
+table.aviso { margin: 8pt 0; border: 1.2pt solid #94A3B8; }
 table.aviso td { border: none; padding: 5pt 7pt; }
-table.aviso td.tipo { width: 28mm; font-weight: bold; text-transform: uppercase; text-align: center; vertical-align: middle; color: #fff; background: #0B1F3A; }
+table.aviso td.tipo { width: 28mm; font-weight: bold; text-transform: uppercase; text-align: center; vertical-align: middle; color: #fff; background: #5B6B82; }
 table.aviso.precaucion { border-color: #D97706; } table.aviso.precaucion td.tipo { background: #D97706; }
 table.aviso.advertencia { border-color: #B45309; } table.aviso.advertencia td.tipo { background: #B45309; }
 ul { margin: 2pt 0 6pt; padding-left: 7mm; } li { margin-bottom: 2pt; }
@@ -255,7 +255,7 @@ code { font-family: 'Courier New', monospace; font-size: 10pt; }
 .portada .barra { width: 36mm; height: 3pt; background: #D97706; margin: 0 0 5mm; }
 .portada .desc { font-size: 13pt; margin-bottom: 0; color: #2B3D57; }
 .portada table td { font-size: 11pt; }
-.portada table td:first-child { width: 45mm; font-weight: bold; color: #0B1F3A; background: rgba(11,31,58,.06); }
+.portada table td:first-child { width: 45mm; font-weight: bold; color: #0B1F3A; background: rgba(217,119,6,.12); }
 .portada .nota-pie { margin-top: 10mm; font-size: 10pt; border-top: 1pt solid #D97706; padding-top: 5pt; color: #2B3D57; }
 .indice table, .indice td { border: none; font-size: 11.5pt; padding: 1.5pt 0; }
 .indice td.n { width: 12mm; } .indice td.p { width: 12mm; text-align: right; }
@@ -264,6 +264,10 @@ code { font-family: 'Courier New', monospace; font-size: 10pt; }
 .falta { border: 0.75pt dashed #000; padding: 14pt; text-align: center; }
 .lado { display: flex; gap: 7mm; align-items: flex-start; page-break-inside: avoid; margin: 4pt 0 8pt; }
 .lado-fig .figura { margin-top: 0; } .lado-txt .tit-tabla { margin-top: 0; text-align: left; }
+table.compacta { width: auto; font-size: 8.8pt; margin: 2pt 0 4pt; }
+table.compacta th, table.compacta td { padding: 1.5pt 5pt; white-space: nowrap; }
+.nota-lado { font-size: 9.5pt; text-align: left; }
+.dos { display: flex; gap: 12mm; } .dos > div { flex: 1; }
 .indice { column-count: 2; column-gap: 14mm; }
 .portada { display: flex; gap: 16mm; align-items: center; height: 170mm; }
 .portada .izq { width: 55%; } .portada .der { width: 45%; }
@@ -343,23 +347,26 @@ motor sobre datos históricos.</p>
 <h2>2.1 Acceso web</h2>
 <p>El tablero está publicado en Streamlit Community Cloud y no requiere autenticación. La primera carga del día puede demorar hasta un
 minuto mientras se activa el servidor.</p>
+<div class="dos"><div>
 <h2>2.2 Ejecución local</h2>
 <p>Requiere Python 3.12. Desde la raíz del repositorio <code>github.com/Ziskito/xm-spot-price-predictor</code>:</p>
 <p><code>pip install -r dashboard/requirements.txt</code><br><code>streamlit run dashboard/app.py</code></p>
 <p>El tablero queda disponible en <code>http://localhost:8501</code>.</p>
+</div><div>
 <h2>2.3 Parámetros de la dirección</h2>
-<div class="tit-tabla"><b>Tabla 3.</b> Parámetros de la dirección web</div>
-<table><tr><th style="width:56mm">Parámetro</th><th>Efecto</th></tr>
-<tr><td><code>vista=operador | analista</code></td><td>Vista inicial.</td></tr>
-<tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial.</td></tr>
-<tr><td><code>?vista=analista&amp;tema=oscuro</code></td><td>Ejemplo: vista Analista con tema oscuro.</td></tr></table>
+<div class="tit-tabla" style="text-align:left"><b>Tabla 3.</b> Parámetros de la dirección web</div>
+<table class="compacta"><tr><th>Parámetro</th><th>Efecto</th></tr>
+<tr><td><code>vista=operador | analista</code></td><td>Vista inicial</td></tr>
+<tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial</td></tr>
+<tr><td><code>?vista=analista&amp;tema=oscuro</code></td><td>Ejemplo combinado</td></tr></table>
+</div></div>
 
 <h1 class="salto">3. Descripción de la interfaz</h1>
 <h2>3.1 Vista Operador</h2>
 {lado(fig("op_arriba_globos", 1, "Vista Operador (rol generador, horizonte 24 h)"), '''<div class="tit-tabla"><b>Tabla 4.</b> Elementos de la vista Operador</div>
-<table><tr><th style="width:9mm">N.º</th><th>Elemento</th><th style="width:30mm">Sección</th></tr>
-<tr><td>1</td><td>Modo oscuro</td><td>Tema de la interfaz</td></tr>
-<tr><td>2</td><td>Vista</td><td>Operador o Analista</td></tr>
+<table class="compacta"><tr><th>N.º</th><th>Elemento</th><th>Sección</th></tr>
+<tr><td>1</td><td>Modo oscuro</td><td>—</td></tr>
+<tr><td>2</td><td>Vista</td><td>—</td></tr>
 <tr><td>3</td><td>Rol</td><td>4.1</td></tr>
 <tr><td>4</td><td>Horizonte de pronóstico</td><td>4.1</td></tr>
 <tr><td>5</td><td>Modelo activo</td><td>4.1</td></tr>
@@ -371,10 +378,10 @@ minuto mientras se activa el servidor.</p>
 <tr><td>11</td><td>Confianza</td><td>4.3</td></tr>
 <tr><td>12</td><td>Riesgo de salto</td><td>4.3</td></tr>
 <tr><td>13</td><td>Pronóstico del día</td><td>4.4</td></tr></table>
-<p>Debajo se ubican la franja horaria (4.5), el mapa de calor (4.6), los indicadores (4.7) y la semana de referencia (4.8).</p>''', 62)}
+<p class="nota-lado">Debajo se ubican la franja horaria (4.5), el mapa de calor (4.6), los indicadores (4.7) y la semana de referencia (4.8).</p>''', 69)}
 <h2 style="page-break-before:always">3.2 Vista Analista</h2>
 {lado(fig("an_todo_globos", 2, "Vista Analista"), '''<div class="tit-tabla"><b>Tabla 5.</b> Elementos de la vista Analista</div>
-<table><tr><th style="width:9mm">N.º</th><th>Elemento</th><th style="width:22mm">Sección</th></tr>
+<table class="compacta"><tr><th>N.º</th><th>Elemento</th><th>Sección</th></tr>
 <tr><td>1</td><td>Tarjetas de resultado</td><td>5.5</td></tr>
 <tr><td>2</td><td>Comparación de métodos</td><td>5.5</td></tr>
 <tr><td>3</td><td>Gráfica de backtest</td><td>5.5</td></tr>
@@ -382,7 +389,7 @@ minuto mientras se activa el servidor.</p>
 <tr><td>5</td><td>Percentiles del umbral</td><td>5.1</td></tr>
 <tr><td>6</td><td>Rango de fechas</td><td>5.2</td></tr>
 <tr><td>7</td><td>Filtro intradía</td><td>5.3</td></tr>
-<tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 56)}
+<tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 72)}
 
 <h1 class="salto">4. Funciones de la vista Operador</h1>
 <h2>4.1 Rol y horizonte</h2>
