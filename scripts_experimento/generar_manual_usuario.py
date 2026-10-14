@@ -195,6 +195,7 @@ def aviso(tipo, texto):
 
 # identidad de marca de augur (dashboard/app.py, TEMAS["claro"]): tinta, acento ambar, gris del logo, IBM Plex Sans en la marca
 TINTA, ACENTO, TENUE, GRIS = "#0B1F3A", "#D97706", "#94A3B8", "#5B6B82"
+PAPEL = "#F3EBDB"          # color papel crema (pergamino)
 
 
 def logo(tam=48, tinta=TINTA, acento=ACENTO, tenue=TENUE):
@@ -212,7 +213,8 @@ def marca(tam, tam_nombre, sub=""):
 
 
 CSS = """
-@page { size: letter; margin: 24mm 20mm 22mm 25mm; }
+@page { size: letter; margin: 22mm 20mm 20mm 25mm; }
+html { background: #F3EBDB; }  /* mismo tono que PAPEL */
 body { font-family: 'Times New Roman', Times, serif; font-size: 11.5pt; line-height: 1.35; color: #111; margin: 0; text-align: justify; }
 h1 { font-size: 14pt; font-weight: bold; text-transform: uppercase; color: #0B1F3A; margin: 0 0 10pt; padding-bottom: 3pt;
      border-bottom: 1.5pt solid #D97706; page-break-before: always; break-after: avoid; }
@@ -220,7 +222,7 @@ h2 { font-size: 12pt; font-weight: bold; color: #0B1F3A; margin: 13pt 0 5pt; bre
 h3 { font-size: 11.5pt; font-weight: bold; font-style: italic; color: #0B1F3A; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
 p { margin: 0 0 6pt; }
 table { border-collapse: collapse; width: 100%; margin: 4pt 0 4pt; font-size: 10.5pt; page-break-inside: avoid; text-align: left; }
-th, td { border: 0.75pt solid #8A96A8; padding: 3pt 5pt; vertical-align: top; }
+th, td { border: 0.75pt solid #8A96A8; padding: 3pt 5pt; vertical-align: top; background: transparent; }
 th { background: #0B1F3A; color: #fff; font-weight: bold; border-color: #0B1F3A; }
 .tit-tabla { font-size: 10.5pt; margin: 8pt 0 2pt; text-align: center; color: #0B1F3A; break-after: avoid; page-break-after: avoid; }
 .figura { text-align: center; margin: 8pt 0 10pt; page-break-inside: avoid; }
@@ -241,12 +243,12 @@ code { font-family: 'Courier New', monospace; font-size: 10pt; }
 .portada { text-align: left; }
 .portada .cab { border-top: 3pt solid #0B1F3A; border-bottom: 1pt solid #D97706; padding: 6pt 0; font-size: 11pt; letter-spacing: 1pt;
                 text-transform: uppercase; color: #0B1F3A; }
-.portada .marca { margin-top: 38mm; }
+.portada .marca { margin-top: 52mm; }
 .portada .tipo { font-size: 30pt; font-weight: bold; color: #0B1F3A; margin: 14mm 0 3mm; letter-spacing: 1pt; }
 .portada .barra { width: 36mm; height: 3pt; background: #D97706; margin: 0 0 5mm; }
 .portada .desc { font-size: 13pt; margin-bottom: 24mm; color: #2B3D57; }
 .portada table td { font-size: 11pt; }
-.portada table td:first-child { width: 45mm; font-weight: bold; color: #0B1F3A; background: #EEF1F6; }
+.portada table td:first-child { width: 45mm; font-weight: bold; color: #0B1F3A; background: rgba(11,31,58,.06); }
 .portada .nota-pie { margin-top: 22mm; font-size: 10pt; border-top: 1pt solid #D97706; padding-top: 5pt; color: #2B3D57; }
 .indice table, .indice td { border: none; font-size: 11.5pt; padding: 1.5pt 0; }
 .indice td.n { width: 12mm; } .indice td.p { width: 12mm; text-align: right; }
@@ -288,7 +290,6 @@ def html(c, paginas):
 <style>{CSS}</style></head><body>
 
 <div class="portada">
-  <div class="cab">Proyecto de grado · Ingeniería Electrónica</div>
   {marca(96, 44, "Motor de decisión · precio de bolsa de energía")}
   <div class="tipo">MANUAL DE USUARIO</div>
   <div class="barra"></div>
@@ -477,14 +478,9 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 </body></html>"""
 
 
-PIE = ('<div style="width:100%;font-family:Times New Roman,serif;font-size:8.5pt;color:#2B3D57;margin:0 20mm 0 25mm;'
-       'border-top:1pt solid #D97706;padding-top:3pt;display:flex;justify-content:space-between">'
-       f'<span>{DOC} · Rev. {REV} · Manual de usuario de augur</span>'
-       '<span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span></div>')
-CABEZA = ('<div style="width:100%;margin:0 20mm 0 25mm;border-bottom:0.75pt solid #0B1F3A;padding-bottom:3pt;display:flex;'
-          'align-items:center;justify-content:space-between;font-family:Times New Roman,serif;font-size:8.5pt;color:#2B3D57">'
-          f'<span style="display:flex;align-items:center;gap:5px">{logo(16)}<b style="font-family:Arial,sans-serif;font-size:10pt;color:#0B1F3A">augur</b></span>'
-          '<span>Manual de usuario · Proyecto de grado · Ingeniería Electrónica</span></div>')
+PIE = ('<div style="width:100%;text-align:center;font-family:Times New Roman,serif;font-size:9pt;color:#5B4A2F">'
+       '<span class="pageNumber"></span></div>')
+CABEZA = '<div></div>'
 
 
 def imprimir(html_ruta, pdf_ruta):
@@ -518,9 +514,29 @@ def imprimir(html_ruta, pdf_ruta):
             r = cmd("Page.printToPDF", displayHeaderFooter=True, headerTemplate=CABEZA, footerTemplate=PIE,
                     printBackground=True, preferCSSPageSize=True)
             pdf_ruta.write_bytes(base64.b64decode(r["data"]))
+            # hoja completa color papel (Chrome no pinta los margenes de pagina): se pone debajo de cada pagina
+            hoja = MAN / "_papel.html"
+            hoja.write_text('<!doctype html><style>@page{size:letter;margin:0}html,body{margin:0;height:100%;background:'
+                            + PAPEL + '}</style><body></body>', encoding="utf-8")
+            cmd("Page.navigate", url=hoja.as_uri())
+            time.sleep(1.5)
+            r = cmd("Page.printToPDF", printBackground=True, preferCSSPageSize=True)
+            (MAN / "_papel.pdf").write_bytes(base64.b64decode(r["data"]))
     finally:
         proc.terminate()
         time.sleep(2)
+    papel(pdf_ruta)
+
+
+def papel(pdf_ruta):
+    from pypdf import PdfReader, PdfWriter
+    fondo = PdfReader(str(MAN / "_papel.pdf")).pages[0]
+    lector, escritor = PdfReader(str(pdf_ruta)), PdfWriter()
+    for pag in lector.pages:
+        pag.merge_page(fondo, over=False)          # el papel queda debajo del contenido
+        escritor.add_page(pag)
+    with open(pdf_ruta, "wb") as fh:
+        escritor.write(fh)
 
 
 def paginas_de(pdf_ruta):
