@@ -188,6 +188,12 @@ def fig(nombre, num, pie, ancho="100%"):
             f'<div class="pie"><b>Figura {num}.</b> {pie}</div></div>')
 
 
+def lado(figura, contenido, ancho_fig=58):
+    """Figura a la izquierda y su tabla o explicacion a la derecha (formato horizontal)."""
+    return (f'<div class="lado"><div class="lado-fig" style="width:{ancho_fig}%">{figura}</div>'
+            f'<div class="lado-txt" style="width:{100 - ancho_fig}%">{contenido}</div></div>')
+
+
 def aviso(tipo, texto):
     clase = {"Precaución": "precaucion", "Advertencia": "advertencia"}.get(tipo, "nota")
     return f'<table class="aviso {clase}"><tr><td class="tipo">{tipo}</td><td>{texto}</td></tr></table>'
@@ -213,11 +219,12 @@ def marca(tam, tam_nombre, sub=""):
 
 
 CSS = """
-@page { size: letter; margin: 22mm 20mm 20mm 25mm; }
+@page { size: letter landscape; margin: 16mm 18mm 16mm 18mm; }
 html { background: #F3EBDB; }  /* mismo tono que PAPEL */
 body { font-family: 'Times New Roman', Times, serif; font-size: 11.5pt; line-height: 1.35; color: #111; margin: 0; text-align: justify; }
 h1 { font-size: 14pt; font-weight: bold; text-transform: uppercase; color: #0B1F3A; margin: 0 0 10pt; padding-bottom: 3pt;
-     border-bottom: 1.5pt solid #D97706; page-break-before: always; break-after: avoid; }
+     border-bottom: 1.5pt solid #D97706; break-after: avoid; margin-top: 14pt; }
+h1.salto { page-break-before: always; margin-top: 0; }
 h2 { font-size: 12pt; font-weight: bold; color: #0B1F3A; margin: 13pt 0 5pt; break-after: avoid; page-break-after: avoid; }
 h3 { font-size: 11.5pt; font-weight: bold; font-style: italic; color: #0B1F3A; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
 p { margin: 0 0 6pt; }
@@ -243,18 +250,23 @@ code { font-family: 'Courier New', monospace; font-size: 10pt; }
 .portada { text-align: left; }
 .portada .cab { border-top: 3pt solid #0B1F3A; border-bottom: 1pt solid #D97706; padding: 6pt 0; font-size: 11pt; letter-spacing: 1pt;
                 text-transform: uppercase; color: #0B1F3A; }
-.portada .marca { margin-top: 52mm; }
+.portada .marca { margin-top: 0; }
 .portada .tipo { font-size: 30pt; font-weight: bold; color: #0B1F3A; margin: 14mm 0 3mm; letter-spacing: 1pt; }
 .portada .barra { width: 36mm; height: 3pt; background: #D97706; margin: 0 0 5mm; }
-.portada .desc { font-size: 13pt; margin-bottom: 24mm; color: #2B3D57; }
+.portada .desc { font-size: 13pt; margin-bottom: 0; color: #2B3D57; }
 .portada table td { font-size: 11pt; }
 .portada table td:first-child { width: 45mm; font-weight: bold; color: #0B1F3A; background: rgba(11,31,58,.06); }
-.portada .nota-pie { margin-top: 22mm; font-size: 10pt; border-top: 1pt solid #D97706; padding-top: 5pt; color: #2B3D57; }
+.portada .nota-pie { margin-top: 10mm; font-size: 10pt; border-top: 1pt solid #D97706; padding-top: 5pt; color: #2B3D57; }
 .indice table, .indice td { border: none; font-size: 11.5pt; padding: 1.5pt 0; }
 .indice td.n { width: 12mm; } .indice td.p { width: 12mm; text-align: right; }
 .indice tr.sub td { font-size: 11pt; } .indice tr.sub td.t { padding-left: 8mm; }
 .indice tr.cap td { font-weight: bold; color: #0B1F3A; padding-top: 5pt; }
 .falta { border: 0.75pt dashed #000; padding: 14pt; text-align: center; }
+.lado { display: flex; gap: 7mm; align-items: flex-start; page-break-inside: avoid; margin: 4pt 0 8pt; }
+.lado-fig .figura { margin-top: 0; } .lado-txt .tit-tabla { margin-top: 0; text-align: left; }
+.indice { column-count: 2; column-gap: 14mm; }
+.portada { display: flex; gap: 16mm; align-items: center; height: 170mm; }
+.portada .izq { width: 55%; } .portada .der { width: 45%; }
 """
 
 INDICE = [
@@ -280,7 +292,7 @@ def indice_html(paginas):
         pag = paginas.get(tit, "")
         clase = "cap" if nivel == 1 else "sub"
         filas.append(f'<tr class="{clase}"><td class="n">{num}</td><td class="t">{tit}</td><td class="p">{pag}</td></tr>')
-    return '<table>' + "".join(filas) + "</table>"
+    return '<table style="page-break-inside:auto">' + "".join(filas) + "</table>"
 
 
 def html(c, paginas):
@@ -290,10 +302,13 @@ def html(c, paginas):
 <style>{CSS}</style></head><body>
 
 <div class="portada">
+ <div class="izq">
   {marca(96, 44, "Motor de decisión · precio de bolsa de energía")}
   <div class="tipo">MANUAL DE USUARIO</div>
   <div class="barra"></div>
   <div class="desc">Tablero de pronóstico del precio de bolsa y motor de decisión horaria</div>
+ </div>
+ <div class="der">
   <table>
     <tr><td>Documento</td><td>{DOC}</td></tr>
     <tr><td>Revisión</td><td>{REV}</td></tr>
@@ -303,16 +318,17 @@ def html(c, paginas):
     <tr><td>Clasificación</td><td>Uso académico</td></tr>
   </table>
   <div class="nota-pie">Prototipo académico. Las recomendaciones del sistema no constituyen asesoría financiera.</div>
+ </div>
 </div>
 
-<h1>Control de revisiones</h1>
+<h1 class="salto">Control de revisiones</h1>
 <div class="tit-tabla"><b>Tabla 1.</b> Historial de revisiones</div>
 <table><tr><th style="width:14mm">Rev.</th><th style="width:28mm">Fecha</th><th>Descripción</th><th style="width:44mm">Elaboró</th></tr>
 <tr><td>1.0</td><td>14/10/2026</td><td>Emisión inicial. Pronóstico de 24 h del escenario realista y detector de eventos realista.</td><td>J. Barceló, R. Dede</td></tr></table>
 <h2 style="margin-top:18pt">Contenido</h2>
 <div class="indice">{indice_html(paginas)}</div>
 
-<h1>1. Introducción</h1>
+<h1 class="salto">1. Introducción</h1>
 <p>augur es un tablero web que presenta el pronóstico horario del precio de bolsa de energía en Colombia, con su banda de
 incertidumbre del 80 %, y una recomendación de acción por hora generada por el motor de decisión. Este manual describe
 las funciones del tablero y su uso.</p>
@@ -335,16 +351,15 @@ minuto mientras se activa el servidor.</p>
 <div class="tit-tabla"><b>Tabla 3.</b> Parámetros de la dirección web</div>
 <table><tr><th style="width:56mm">Parámetro</th><th>Efecto</th></tr>
 <tr><td><code>vista=operador | analista</code></td><td>Vista inicial.</td></tr>
-<tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial.</td></tr></table>
-<p>Ejemplo: <code>?vista=analista&amp;tema=oscuro</code>.</p>
+<tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial.</td></tr>
+<tr><td><code>?vista=analista&amp;tema=oscuro</code></td><td>Ejemplo: vista Analista con tema oscuro.</td></tr></table>
 
-<h1>3. Descripción de la interfaz</h1>
+<h1 class="salto">3. Descripción de la interfaz</h1>
 <h2>3.1 Vista Operador</h2>
-{fig("op_arriba_globos", 1, "Vista Operador (rol generador, horizonte 24 h)")}
-<div class="tit-tabla"><b>Tabla 4.</b> Elementos de la vista Operador</div>
-<table><tr><th style="width:10mm">N.º</th><th style="width:50mm">Elemento</th><th>Sección</th></tr>
-<tr><td>1</td><td>Modo oscuro</td><td>Cambia el tema de la interfaz.</td></tr>
-<tr><td>2</td><td>Vista</td><td>Operador o Analista.</td></tr>
+{lado(fig("op_arriba_globos", 1, "Vista Operador (rol generador, horizonte 24 h)"), '''<div class="tit-tabla"><b>Tabla 4.</b> Elementos de la vista Operador</div>
+<table><tr><th style="width:9mm">N.º</th><th>Elemento</th><th style="width:30mm">Sección</th></tr>
+<tr><td>1</td><td>Modo oscuro</td><td>Tema de la interfaz</td></tr>
+<tr><td>2</td><td>Vista</td><td>Operador o Analista</td></tr>
 <tr><td>3</td><td>Rol</td><td>4.1</td></tr>
 <tr><td>4</td><td>Horizonte de pronóstico</td><td>4.1</td></tr>
 <tr><td>5</td><td>Modelo activo</td><td>4.1</td></tr>
@@ -356,11 +371,10 @@ minuto mientras se activa el servidor.</p>
 <tr><td>11</td><td>Confianza</td><td>4.3</td></tr>
 <tr><td>12</td><td>Riesgo de salto</td><td>4.3</td></tr>
 <tr><td>13</td><td>Pronóstico del día</td><td>4.4</td></tr></table>
-<p>Debajo se ubican la franja horaria (4.5), el mapa de calor (4.6), los indicadores (4.7) y la semana de referencia (4.8).</p>
-<h2>3.2 Vista Analista</h2>
-{fig("an_todo_globos", 2, "Vista Analista")}
-<div class="tit-tabla"><b>Tabla 5.</b> Elementos de la vista Analista</div>
-<table><tr><th style="width:10mm">N.º</th><th style="width:50mm">Elemento</th><th>Sección</th></tr>
+<p>Debajo se ubican la franja horaria (4.5), el mapa de calor (4.6), los indicadores (4.7) y la semana de referencia (4.8).</p>''', 62)}
+<h2 style="page-break-before:always">3.2 Vista Analista</h2>
+{lado(fig("an_todo_globos", 2, "Vista Analista"), '''<div class="tit-tabla"><b>Tabla 5.</b> Elementos de la vista Analista</div>
+<table><tr><th style="width:9mm">N.º</th><th>Elemento</th><th style="width:22mm">Sección</th></tr>
 <tr><td>1</td><td>Tarjetas de resultado</td><td>5.5</td></tr>
 <tr><td>2</td><td>Comparación de métodos</td><td>5.5</td></tr>
 <tr><td>3</td><td>Gráfica de backtest</td><td>5.5</td></tr>
@@ -368,9 +382,9 @@ minuto mientras se activa el servidor.</p>
 <tr><td>5</td><td>Percentiles del umbral</td><td>5.1</td></tr>
 <tr><td>6</td><td>Rango de fechas</td><td>5.2</td></tr>
 <tr><td>7</td><td>Filtro intradía</td><td>5.3</td></tr>
-<tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>
+<tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 56)}
 
-<h1>4. Funciones de la vista Operador</h1>
+<h1 class="salto">4. Funciones de la vista Operador</h1>
 <h2>4.1 Rol y horizonte</h2>
 <p><b>Rol</b> (3) define cómo se traduce el pronóstico en acciones (Tabla 2). <b>Horizonte de pronóstico</b> (4) selecciona el
 pronóstico de 24 h, emitido a las 00:00 para la 01:00 a 00:00 siguientes, o el de 72 h. El recuadro <b>Modelo activo</b> (5) identifica el
@@ -380,39 +394,36 @@ modelo en uso y la cobertura medida de su banda. Las probabilidades de picos y d
 recorren los días sin abrir el calendario. <b>Hora del día</b> (8) fija la hora de la recomendación; también se selecciona con un clic en la
 franja horaria (4.5). El día seleccionado se conserva al cambiar de vista.</p>
 <h2>4.3 Recomendación horaria</h2>
-<p>La tarjeta (9) muestra la acción para el día, la hora y el rol seleccionados. La escala de precio (10) ubica el precio esperado frente a los
-umbrales barato y caro del método activo. <b>Confianza</b> (11) clasifica el ancho relativo de la banda frente a las horas anteriores en
-alta, media o baja. <b>Riesgo de salto</b> (12) presenta la probabilidad de desplome (▼) y de pico (▲) de la hora; se resalta desde 30 % y se
-listan las horas del día que superan ese umbral.</p>
-{aviso("Nota", "El método de umbral de la vista Operador es el más estable del backtest para el rol y el horizonte elegidos (criterio maximin entre mitades del periodo). Si ningún método cumple la condición de estabilidad, la tarjeta muestra el aviso ⚠.")}
+{lado(fig("op_tarjeta", 3, "Tarjeta de recomendación"), '''<p>La tarjeta (9) muestra la acción para el día, la hora y el rol seleccionados. La escala de precio (10) ubica el precio esperado frente
+a los umbrales barato y caro del método activo. <b>Confianza</b> (11) clasifica el ancho relativo de la banda frente a las horas
+anteriores en alta, media o baja. <b>Riesgo de salto</b> (12) presenta la probabilidad de desplome (▼) y de pico (▲) de la hora; se
+resalta desde 30 % y se listan las horas del día que superan ese umbral.</p>'''
++ aviso("Nota", "El método de umbral de la vista Operador es el más estable del backtest para el rol y el horizonte elegidos (criterio maximin entre mitades del periodo). Si ningún método cumple la condición de estabilidad, la tarjeta muestra el aviso ⚠."), 48)}
 <h2>4.4 Pronóstico del día</h2>
-<p>La gráfica (13) presenta la mediana del pronóstico, la banda del 80 %, los umbrales barato y caro y la hora seleccionada. En días con
-precio publicado incluye el precio real. Los marcadores ▼ y ▲ señalan las horas con riesgo de salto.</p>
+{lado(fig("op_grafico_dia", 4, "Pronóstico del día"), '''<p>La gráfica (13) presenta la mediana del pronóstico, la banda del 80 %, los umbrales barato y caro y la hora seleccionada (línea
+vertical). En días con precio publicado incluye el precio real. Los marcadores ▼ y ▲ señalan las horas con riesgo de salto.</p>''', 40)}
 <h2>4.5 Franja horaria</h2>
-{fig("op_franja", 3, "Franja horaria")}
+{fig("op_franja", 5, "Franja horaria")}
 <p>Resume la señal de las 24 horas del día: verde, acción favorable; naranja, acción desfavorable; gris, esperar. Un clic en una hora la
 selecciona como hora de la recomendación.</p>
 <h2>4.6 Mapa de calor día-hora</h2>
-{fig("op_calor", 4, "Mapa de calor día-hora")}
-<p>Muestra la señal o el precio esperado de varios días a la vez. <b>Días</b> y <b>Horas</b> acotan el periodo y las horas mostradas
+{lado(fig("op_calor", 6, "Mapa de calor día-hora"), '''<p>Muestra la señal o el precio esperado de varios días a la vez. <b>Días</b> y <b>Horas</b> acotan el periodo y las horas mostradas
 (extremos juntos para un solo día u hora); <b>Colorear por</b> alterna entre <b>Señal del motor</b> y <b>Precio esperado</b>. El
-recuadro marca el día y la hora seleccionados.</p>
+recuadro marca el día y la hora seleccionados.</p>''', 60)}
 <h2>4.7 Indicadores</h2>
-{fig("op_indicadores", 5, "Indicadores")}
-<div class="tit-tabla"><b>Tabla 6.</b> Indicadores de la vista Operador</div>
-<table><tr><th style="width:50mm">Indicador</th><th>Contenido</th></tr>
+{lado(fig("op_indicadores", 7, "Indicadores"), '''<div class="tit-tabla"><b>Tabla 6.</b> Indicadores de la vista Operador</div>
+<table><tr><th style="width:38mm">Indicador</th><th>Contenido</th></tr>
 <tr><td>Horas para actuar hoy</td><td>Horas del día con acción favorable; barras de los últimos 14 días.</td></tr>
 <tr><td>Ventaja histórica de la regla</td><td>Diferencia entre el precio medio de las horas de acción y el promedio del periodo en el backtest de 2026 (COP/kWh); serie mensual.</td></tr>
-<tr><td>Con qué frecuencia actúa</td><td>Porcentaje de horas con acción favorable; serie mensual. Rango útil: 10 % a 40 %.</td></tr></table>
+<tr><td>Con qué frecuencia actúa</td><td>Porcentaje de horas con acción favorable; serie mensual. Rango útil: 10 % a 40 %.</td></tr></table>''', 55)}
 <h2>4.8 Semana de referencia</h2>
-{fig("op_semana", 6, "Semana de referencia")}
-<p>Compara el precio real con el pronóstico desde tres días antes hasta cuatro días después del día seleccionado, con las horas de
-acción marcadas. Permite ampliar, desplazar y consultar valores sobre la gráfica.</p>
+{lado(fig("op_semana", 8, "Semana de referencia"), '''<p>Compara el precio real con el pronóstico desde tres días antes hasta cuatro días después del día seleccionado, con las horas de
+acción marcadas. Permite ampliar, desplazar y consultar valores sobre la gráfica.</p>''', 62)}
 
-<h1>5. Funciones de la vista Analista</h1>
+<h1 class="salto">5. Funciones de la vista Analista</h1>
 <p>Los controles de esta vista se ubican en la barra lateral y solo afectan a la vista Analista; la recomendación de la vista Operador
 no cambia.</p>
-<h2>5.1 Parámetros del umbral</h2>
+{lado(fig("an_controles_globos", 9, "Controles de la vista Analista"), '''<h2 style="margin-top:0">5.1 Parámetros del umbral</h2>
 <p><b>Percentiles del umbral</b> (5) define los percentiles bajo y alto que separan los precios baratos y caros (25 y 75 por defecto).</p>
 <h2>5.2 Rango de evaluación</h2>
 <p><b>Rango de fechas</b> (6) delimita el periodo sobre el que se calculan los resultados y se sugiere el método.</p>
@@ -421,12 +432,12 @@ no cambia.</p>
 barata (comercializador). Activo por defecto.</p>
 <h2>5.4 Método de umbral</h2>
 <div class="tit-tabla"><b>Tabla 7.</b> Métodos de umbral</div>
-<table><tr><th style="width:26mm">Método</th><th>Umbrales</th></tr>
+<table><tr><th style="width:22mm">Método</th><th>Umbrales</th></tr>
 <tr><td>fijo</td><td>Percentiles del precio histórico 2019-2025.</td></tr>
 <tr><td>rodante</td><td>Percentiles del pronóstico de los 30 días anteriores.</td></tr>
 <tr><td>banda</td><td>Fijo; espera cuando la banda es más ancha que el percentil 75 de las horas anteriores.</td></tr>
 <tr><td>híbrido</td><td>Rodante, con el filtro de banda ancha.</td></tr></table>
-<p>El selector (8) inicia en el método sugerido para el rango elegido.</p>
+<p>El selector (8) inicia en el método sugerido para el rango elegido.</p>''', 30)}
 <h2>5.5 Resultados y comparación de métodos</h2>
 <p>Las tarjetas (1) muestran la ventaja económica, la frecuencia de acción y las horas de acción del método seleccionado. La tabla (2)
 compara los cuatro métodos e indica si su frecuencia está en el rango de 10 % a 40 %. La gráfica (3) muestra el precio real, el
@@ -456,7 +467,7 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Sin marcadores ▼ / ▲.</td><td>Horizonte de 72 h.</td><td>Seleccionar 24 h.</td></tr>
 <tr><td>Aviso ⚠ en la recomendación.</td><td>Ningún método estable para el rol y horizonte.</td><td>Revisar la comparación de métodos (5.5).</td></tr></table>
 
-<h1>Anexo A. Modelo y datos</h1>
+<h1 class="salto">Anexo A. Modelo y datos</h1>
 <div class="tit-tabla"><b>Tabla A.1.</b> Pronóstico vigente</div>
 <table><tr><th style="width:56mm">Característica</th><th>Valor</th></tr>
 <tr><td>Modelo (24 h)</td><td>{c['modelo24']}</td></tr>
@@ -516,7 +527,7 @@ def imprimir(html_ruta, pdf_ruta):
             pdf_ruta.write_bytes(base64.b64decode(r["data"]))
             # hoja completa color papel (Chrome no pinta los margenes de pagina): se pone debajo de cada pagina
             hoja = MAN / "_papel.html"
-            hoja.write_text('<!doctype html><style>@page{size:letter;margin:0}html,body{margin:0;height:100%;background:'
+            hoja.write_text('<!doctype html><style>@page{size:letter landscape;margin:0}html,body{margin:0;height:100%;background:'
                             + PAPEL + '}</style><body></body>', encoding="utf-8")
             cmd("Page.navigate", url=hoja.as_uri())
             time.sleep(1.5)
@@ -563,6 +574,8 @@ if __name__ == "__main__":
         capturar()
     recortar()
     anotar()
+    from PIL import Image
+    Image.open(IMG / "an_todo_globos.png").crop((0, 1390, 545, 1880)).save(IMG / "an_controles_globos.png")
     c = cifras()
     ruta = MAN / "manual.html"
     ruta.write_text(html(c, {}), encoding="utf-8")
