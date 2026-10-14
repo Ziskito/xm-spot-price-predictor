@@ -1003,7 +1003,10 @@ def vista_operador():
         grafico_precio(ventana, tk, "La semana alrededor del día elegido", marca_x=marca),
         width="stretch", theme=None, config={"displaylogo": False},
     )
-    st.markdown(metadatos_html(f"{ini:%d/%m/%Y} a {fin - pd.Timedelta(hours=1):%d/%m/%Y}",
+    # periodo realmente graficado (al final de la serie la semana puede quedar recortada)
+    v_ini = ventana["fecha_hora"].min() if len(ventana) else ini
+    v_fin = ventana["fecha_hora"].max() if len(ventana) else fin - pd.Timedelta(hours=1)
+    st.markdown(metadatos_html(f"{v_ini:%d/%m/%Y} a {v_fin:%d/%m/%Y}",
                                "Comparación real frente a pronóstico con las horas de acción"),
                 unsafe_allow_html=True)
 
