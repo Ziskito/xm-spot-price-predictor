@@ -318,6 +318,7 @@ def html(c, paginas):
     <tr><td>Revisión</td><td>{REV}</td></tr>
     <tr><td>Fecha de emisión</td><td>{FECHA}</td></tr>
     <tr><td>Versión del pronóstico</td><td>{c['generado']}</td></tr>
+    <tr><td>Dirección web</td><td>augurpredictor.streamlit.app</td></tr>
     <tr><td>Elaborado por</td><td>Juan Barceló Barraza y Rafael Dede</td></tr>
     <tr><td>Clasificación</td><td>Uso académico</td></tr>
   </table>
@@ -345,8 +346,8 @@ motor sobre datos históricos.</p>
 
 <h1>2. Acceso</h1>
 <h2>2.1 Acceso web</h2>
-<p>El tablero está publicado en Streamlit Community Cloud y no requiere autenticación. La primera carga del día puede demorar hasta un
-minuto mientras se activa el servidor.</p>
+<p>El tablero está publicado en Streamlit Community Cloud en <code>https://augurpredictor.streamlit.app</code> y no requiere
+autenticación. La primera carga del día puede demorar hasta un minuto mientras se activa el servidor.</p>
 <div class="dos"><div>
 <h2>2.2 Ejecución local</h2>
 <p>Requiere Python 3.12. Desde la raíz del repositorio <code>github.com/Ziskito/xm-spot-price-predictor</code>:</p>
