@@ -100,7 +100,10 @@ if __name__ == "__main__":
     comun = vigente.index.intersection(d.index)
     dif = np.abs(vigente.loc[comun, "pred_desplegable"] - d.loc[comun, "pred_desplegable"]).max()
     print(f"Desde el 15-ene: {len(comun)} horas, diferencia maxima con la version desplegable = {dif:.2e}")
-    assert dif < 1e-6, "el combinador cambio fuera de la quincena de enero"
+    # tras un reentrenamiento de los votantes (p. ej. reentrenar_todo_oct2026.py, 14-oct-2026) la diferencia es
+    # esperada: la foto del informe queda como referencia y solo se informa
+    if "--tras-reentreno" not in sys.argv:
+        assert dif < 1e-6, "el combinador cambio fuera de la quincena de enero"
 
     ene = d[d.index < vigente.index.min()]
     y = ene["real"]

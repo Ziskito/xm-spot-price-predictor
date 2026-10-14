@@ -1,23 +1,23 @@
 Horas evaluadas: 4849 (15/01/2026 a 05/08/2026)
                                           modelo     MAE    RMSE  MAPE_%    R2
-Persistencia · protocolo actual (precio de ayer)  57.817 115.347  15.523 0.843
-                   Ensamble 6 · protocolo actual  42.886  88.133  10.571 0.908
-                   Ensamble 7 · protocolo actual  32.630  75.272   8.158 0.933
- Persistencia · realista (precio de hace 4 días) 108.585 172.136  30.268 0.651
-                              XGBoost · realista 103.432 159.145  26.229 0.702
-                            ARX+GARCH · realista 104.902 163.023  27.006 0.687
-                             N-BEATSx · realista 117.533 176.504  33.403 0.633
-                               N-HiTS · realista 106.950 164.042  29.987 0.683
-                            GARCH-ged · realista 100.832 155.173  27.890 0.716
-                                Predespacho solo  39.045  84.235  12.754 0.916
-                           Ensamble 6 · realista 101.048 154.368  25.728 0.719
-           Ensamble 7 · realista (+ predespacho)  36.923  81.222  10.318 0.922
+Persistencia · protocolo actual (precio de ayer)  57.970 115.924  15.654 0.842
+                   Ensamble 6 · protocolo actual  43.058  88.968  10.703 0.907
+                   Ensamble 7 · protocolo actual  32.581  76.253   8.324 0.931
+ Persistencia · realista (precio de hace 4 días) 108.797 172.524  30.394 0.649
+                              XGBoost · realista 103.816 159.787  26.417 0.699
+                            ARX+GARCH · realista 104.990 163.311  27.121 0.686
+                             N-BEATSx · realista 110.564 165.269  31.380 0.678
+                               N-HiTS · realista 113.110 168.205  32.428 0.666
+                            GARCH-ged · realista 100.415 154.899  27.723 0.717
+                                Predespacho solo  39.155  85.110  12.859 0.915
+                           Ensamble 6 · realista 100.702 154.097  25.482 0.720
+           Ensamble 7 · realista (+ predespacho)  36.683  81.884  10.303 0.921
 
-DM ens6_realista frente a ens6_actual: t = -11.43, p = 0.0000 (t > 0: ens6_realista tiene menor error)
-DM ens7_realista frente a ens7_actual: t = -4.36, p = 0.0000 (t > 0: ens7_realista tiene menor error)
-DM ens7_realista frente a ens6_realista: t = 12.03, p = 0.0000 (t > 0: ens7_realista tiene menor error)
-DM ens7_realista frente a Persistencia: t = 12.60, p = 0.0000 (t > 0: ens7_realista tiene menor error)
-DM ens7_realista frente a Predespacho_solo: t = 3.24, p = 0.0012 (t > 0: ens7_realista tiene menor error)
-DM ens7_realista frente a ens6_actual: t = 3.32, p = 0.0009 (t > 0: ens7_realista tiene menor error)
+DM ens6_realista frente a ens6_actual: t = -11.45, p = 0.0000 (t > 0: ens6_realista tiene menor error)
+DM ens7_realista frente a ens7_actual: t = -4.66, p = 0.0000 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a ens6_realista: t = 12.12, p = 0.0000 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a Persistencia: t = 12.66, p = 0.0000 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a Predespacho_solo: t = 3.86, p = 0.0001 (t > 0: ens7_realista tiene menor error)
+DM ens7_realista frente a ens6_actual: t = 3.61, p = 0.0003 (t > 0: ens7_realista tiene menor error)
 
-Tiempo: 15.1 min
+Tiempo: 20.1 min

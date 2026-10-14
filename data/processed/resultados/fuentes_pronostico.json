@@ -1,21 +1,22 @@
 {
   "24h": {
-    "archivo": "pronostico_ensamble_bandas_24h_2026.csv",
-    "modelo": "Ensamble de 7 modelos (6 + predespacho ideal de XM; pesos causales, 1-14 ene con pesos del ultimo año historico) + bandas conformes adaptativas por hora del dia (60 dias)",
+    "archivo": "pronostico_realista_bandas_24h_2026.csv",
+    "modelo": "Escenario realista: predespacho ideal de XM + promedio de 3 CatBoost reentrenados cada mes (combinador causal, objetivo MAE) + bandas conformes por hora en escala log (60 dias)",
+    "eventos": "probabilidades_eventos_24h_realista_2026.csv",
     "calibrado": true,
     "cobertura_objetivo_pct": 80,
-    "cobertura_medida_pct": 80.2,
-    "generado": "2026-10-07",
-    "notebook_origen": "scripts_experimento/conectar_motor_ensamble.py",
-    "notas": "Forma de banda de N-BEATSx recentrada en el ensamble y calibrada por conformal adaptativo. Contrato anterior en fuentes_pronostico_nbeatsx.json."
+    "cobertura_medida_pct": 80.6,
+    "generado": "2026-10-14",
+    "notebook_origen": "scripts_experimento/pronostico_realista_24h.py",
+    "notas": "Solo usa lo que XM y NOAA ya publicaron a las 00:00 del dia (precio con ~3 dias de rezago). Configuracion anterior (ensamble de 7, escenario optimista) en fuentes_pronostico_optimista.json."
   },
   "72h": {
     "archivo": "pronostico_ensamble_bandas_72h_2026.csv",
-    "modelo": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias)",
+    "modelo": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias); escenario optimista: supone el precio conocido hasta el corte",
     "calibrado": true,
     "cobertura_objetivo_pct": 80,
     "cobertura_medida_pct": 80.2,
-    "generado": "2026-10-07",
+    "generado": "2026-10-14",
     "notebook_origen": "scripts_experimento/conectar_motor_ensamble.py",
     "notas": "Forma de banda de N-BEATSx recentrada en el ensamble y calibrada por conformal adaptativo. Contrato anterior en fuentes_pronostico_nbeatsx.json."
   }

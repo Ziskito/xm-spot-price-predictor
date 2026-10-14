@@ -33,6 +33,17 @@ def imar():
     return t.set_index("fecha_hora")["costo_marginal"]
 
 
+def imar_con_respaldo(cm, hasta, dias=3):
+    """Predespacho con respaldo para los dias sin archivo valido (9 vacios en XM y los publicados tarde):
+    el de la misma hora del dia anterior (hasta `dias` atras), tambien publicado a tiempo. Agregado 7-oct-2026
+    para el escenario realista, donde el respaldo con el ensamble de 6 queda sin precio reciente."""
+    idx = pd.date_range(cm.index.min(), hasta, freq="h")
+    r = cm.reindex(idx)
+    for k in range(1, dias + 1):
+        r = r.fillna(cm.reindex(idx - pd.Timedelta(days=k)).set_axis(idx))
+    return r
+
+
 def alinear_2026(idx, cm):
     """Valor del predespacho disponible al corte (00:00 del dia de la ventana) para cada hora."""
     ventana = (idx - pd.Timedelta(hours=1)).normalize()

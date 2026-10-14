@@ -1,0 +1,13 @@
+pronostico,rol,modo,metodo,estable,peor_mitad,ventaja_año
+C pre+Cat,generador,intradia propio,rodante,True,115.77550344295426,242.93975280576842
+C pre+Cat,generador,intradia con predespacho,rodante,True,119.31011004950491,242.2761102576054
+C pre+Cat,comercializador,intradia propio,rodante,True,83.00391084459751,194.7190853613933
+C pre+Cat,comercializador,intradia con predespacho,rodante,True,82.51383181228259,192.61544245764543
+E predespacho solo,generador,intradia propio,rodante,True,130.3017988171259,248.64192446378956
+E predespacho solo,generador,intradia con predespacho,rodante,True,130.3017988171259,248.64192446378956
+E predespacho solo,comercializador,intradia propio,hibrido,True,82.47852534308082,201.31916978762672
+E predespacho solo,comercializador,intradia con predespacho,hibrido,True,82.47852534308082,201.31916978762672
+B ens7 realista,generador,intradia propio,rodante,True,121.06056948366333,248.2236140315041
+B ens7 realista,generador,intradia con predespacho,rodante,True,125.3192117863351,248.67566922305605
+B ens7 realista,comercializador,intradia propio,rodante,True,80.56894989743714,191.75273731130758
+B ens7 realista,comercializador,intradia con predespacho,rodante,True,80.35231050575972,189.73837616624763

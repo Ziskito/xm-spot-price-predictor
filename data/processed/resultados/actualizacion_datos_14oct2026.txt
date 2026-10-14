@@ -1,0 +1,14 @@
+ONI (NOAA - archivo anterior), trimestres distintos:
+  2021: JFM -0.9 -> -0.8, JJA -0.3 -> -0.4
+  2023: DJF -0.5 -> -0.6, JAS 1.3 -> 1.2
+  2026: AMJ 0.9 -> 1.0, JJA 1.4 -> 1.8, JAS 1.4 -> 2.2, ASO 1.4 -> 2.2, SON 1.4 -> 2.2, OND 1.4 -> 2.2, NDJ 1.4 -> 2.2
+1-5 de agosto de 2026 (120 h), revision de XM frente al archivo anterior:
+  precio_bolsa       horas que cambian 120, diferencia relativa mediana 0.092 %, maxima 86.50 %
+  demanda            horas que cambian  64, diferencia relativa mediana 0.000 %, maxima 0.00 %
+  generacion         horas que cambian  96, diferencia relativa mediana 0.004 %, maxima 0.06 %
+  volumen_embalses   horas que cambian 118, diferencia relativa mediana 0.004 %, maxima 0.01 %
+  aportes_hidricos   horas que cambian 120, diferencia relativa mediana 0.358 %, maxima 1.13 %
+  precio medio 1-5 ago: 954.00 -> 946.55
+Columna oni de los maestros: cambian 8106 horas de 66576 (2026: 2326); oni del 5-ago 23:00 1.4 -> 1.864
+dataset_features_2019_2025.csv: columnas que cambian ['oni']; maxima diferencia fuera del 1-5 ago sin contar oni 1.91e-06
+dataset_features_2026.csv: columnas que cambian ['precio_bolsa', 'demanda', 'generacion', 'volumen_embalses', 'aportes_hidricos', 'oni', 'precio_lag24h', 'precio_media_24h', 'precio_media_7d', 'precio_media_30d', 'volumen_embalses_delta_1d', 'volumen_embalses_delta_7d', 'volumen_embalses_media_7d', 'volumen_embalses_media_30d', 'aportes_hidricos_delta_1d', 'aportes_hidricos_delta_7d', 'aportes_hidricos_media_7d', 'aportes_hidricos_media_30d', 'aportes_hidricos_vs_media30d', 'precio_std_24h', 'precio_std_7d', 'precio_rango_24h', 'ratio_volatilidad', 'demanda_lag24h', 'demanda_lag48h', 'demanda_lag72h', 'demanda_media_24h']; maxima diferencia fuera del 1-5 ago sin contar oni 1.91e-06

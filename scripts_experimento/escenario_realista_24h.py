@@ -248,11 +248,12 @@ if __name__ == "__main__":
     pred["N-BEATSx"], pred["N-HiTS"] = neuronales(df); print(f"  N-BEATSx y N-HiTS ({(time.time() - t0) / 60:.1f} min)", flush=True)
 
     from ensamble_24h_enero import origen5
-    from ensamble_con_predespacho_24h import alinear_2026, imar
+    from ensamble_con_predespacho_24h import alinear_2026, imar, imar_con_respaldo
     cm = imar()
     pan = pred.dropna(subset=VOT6 + ["real"]).copy()
     pan["dia"], pan["g4"] = (pan.index - pd.Timedelta(hours=1)).normalize(), pan.index.hour // 6
-    pan["Predespacho"] = alinear_2026(pan.index, cm)
+    # dias sin predespacho valido: el del dia anterior a la misma hora (respaldo publico)
+    pan["Predespacho"] = alinear_2026(pan.index, imar_con_respaldo(cm, pan.index.max()))
     previa = origen5()
     previa["Predespacho"] = cm.reindex(previa.index).to_numpy()
     previa = previa.dropna(subset=["Predespacho"])

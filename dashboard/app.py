@@ -22,6 +22,7 @@ es decir segun data/processed/resultados/fuentes_pronostico.json -- si ese
 archivo cambia (ej. 72h pasa a otro modelo), este dashboard lo refleja sin
 tocar una sola linea aqui. Ver docs/motor_decision_guia.md.
 """
+import json
 import sys
 from pathlib import Path
 from string import Template
@@ -340,9 +341,16 @@ UMBRAL_ALERTA = 0.30   # probabilidad desde la que se marca una hora con riesgo 
 
 @st.cache_data
 def cargar_probabilidades_eventos():
-    """P(desplome) y P(pico) por hora del pronostico de 24 h (scripts_experimento/eventos_escenarios_24h.py):
-    desplome = precio <= 0,7 x mediana del dia; pico = precio >= 1,3 x mediana. None si no existe el archivo."""
-    ruta = RAIZ / "data" / "processed" / "resultados" / "probabilidades_eventos_24h_2026.csv"
+    """P(desplome) y P(pico) por hora del pronostico de 24 h: desplome = precio <= 0,7 x mediana del dia;
+    pico = precio >= 1,3 x mediana. El archivo lo indica la clave "eventos" del horizonte de 24 h en
+    fuentes_pronostico.json (desde el 14-oct-2026, el detector realista de realista_eventos.py); sin esa clave,
+    el de eventos_escenarios_24h.py. None si no existe el archivo."""
+    res = RAIZ / "data" / "processed" / "resultados"
+    try:
+        nombre = json.loads((res / "fuentes_pronostico.json").read_text(encoding="utf-8"))["24h"].get("eventos")
+    except Exception:
+        nombre = None
+    ruta = res / (nombre or "probabilidades_eventos_24h_2026.csv")
     if not ruta.exists():
         return None
     return pd.read_csv(ruta, parse_dates=["fecha_hora"]).drop_duplicates("fecha_hora").set_index("fecha_hora")

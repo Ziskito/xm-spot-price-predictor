@@ -31,7 +31,7 @@ import escenario_realista_24h as er  # noqa: E402
 from o6_comun import EXCLUIR, RES  # noqa: E402
 from lear_24h import EXOG_CORTE, EXOG_OBJ, MISMA_HORA, REZAGOS_CORTE  # noqa: E402
 from reentrenar_tras_fix_demanda import FUTR_EXOG_BIN, FUTR_EXOG_CONT, HIST_EXOG_DL  # noqa: E402
-from ensamble_con_predespacho_24h import alinear_2026, imar  # noqa: E402
+from ensamble_con_predespacho_24h import alinear_2026, imar, imar_con_respaldo  # noqa: E402
 
 OUT = RES / "escenario_realista"
 CORTE, FIN, OCULTO = er.CORTE, er.FIN, er.OCULTO
@@ -197,7 +197,8 @@ if __name__ == "__main__":
     cm = imar()
     pan = pred.dropna(subset=VOT6 + ["real"]).copy()
     pan["dia"], pan["g4"] = (pan.index - pd.Timedelta(hours=1)).normalize(), pan.index.hour // 6
-    pan["Predespacho"] = alinear_2026(pan.index, cm)
+    # dias sin predespacho valido: el del dia anterior a la misma hora (respaldo publico)
+    pan["Predespacho"] = alinear_2026(pan.index, imar_con_respaldo(cm, pan.index.max()))
     previa = origen5()
     previa["Predespacho"] = cm.reindex(previa.index).to_numpy()
     previa = previa.dropna(subset=["Predespacho"])

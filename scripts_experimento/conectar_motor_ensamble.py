@@ -128,7 +128,7 @@ if __name__ == "__main__":
         if not respaldo.exists():
             respaldo.write_text(json.dumps(conf, indent=2, ensure_ascii=False), encoding="utf-8")
         modelos = {"24h": "Ensamble de 7 modelos (6 + predespacho ideal de XM; pesos causales, 1-14 ene con pesos del ultimo año historico) + bandas conformes adaptativas por hora del dia (60 dias)",
-                   "72h": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias)"}
+                   "72h": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias); escenario optimista: supone el precio conocido hasta el corte"}
         for hz, (nombre, df) in salidas.items():
             conf[hz] = {"archivo": nombre, "modelo": modelos[hz], "calibrado": True,
                         "cobertura_objetivo_pct": 80,

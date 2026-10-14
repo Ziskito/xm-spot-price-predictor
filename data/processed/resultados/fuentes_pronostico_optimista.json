@@ -1,0 +1,22 @@
+{
+  "24h": {
+    "archivo": "pronostico_ensamble_bandas_24h_2026.csv",
+    "modelo": "Ensamble de 7 modelos (6 + predespacho ideal de XM; pesos causales, 1-14 ene con pesos del ultimo año historico) + bandas conformes adaptativas por hora del dia (60 dias)",
+    "calibrado": true,
+    "cobertura_objetivo_pct": 80,
+    "cobertura_medida_pct": 80.3,
+    "generado": "2026-10-14",
+    "notebook_origen": "scripts_experimento/conectar_motor_ensamble.py",
+    "notas": "Forma de banda de N-BEATSx recentrada en el ensamble y calibrada por conformal adaptativo. Contrato anterior en fuentes_pronostico_nbeatsx.json."
+  },
+  "72h": {
+    "archivo": "pronostico_ensamble_bandas_72h_2026.csv",
+    "modelo": "Ensamble 72 h (puente 24h->72h + combinador por tramo) + bandas conformes adaptativas por hora del dia (60 dias)",
+    "calibrado": true,
+    "cobertura_objetivo_pct": 80,
+    "cobertura_medida_pct": 80.2,
+    "generado": "2026-10-14",
+    "notebook_origen": "scripts_experimento/conectar_motor_ensamble.py",
+    "notas": "Forma de banda de N-BEATSx recentrada en el ensamble y calibrada por conformal adaptativo. Contrato anterior en fuentes_pronostico_nbeatsx.json."
+  }
+}

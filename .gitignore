@@ -230,3 +230,11 @@ docs/Anexo 1_Formulaci*n del Proyecto*.pdf
 
 # Experimentos de curiosidad: no son parte del proyecto (ver experimentos_curiosidad/README.md)
 experimentos_curiosidad/
+
+# Manual de usuario: perfil temporal del navegador y capturas (se regeneran con scripts_experimento/generar_manual_usuario.py;
+# el entregable es docs/Manual_Usuario_augur.pdf)
+docs/manual/
+# Copias previas a la actualizacion de datos del 14-oct-2026 (las versiones anteriores estan en el historial de git)
+data/processed/resultados/backups_pre_actualizacion_14oct2026/
+# Caches regenerables
+data/processed/resultados/escenario_realista/mejoras/*.pkl
