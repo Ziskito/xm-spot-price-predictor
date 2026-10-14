@@ -154,12 +154,17 @@ def anotar():
         for num, x, y in globos:
             if x < 200:                       # barra lateral: globo en el margen y linea guia
                 cx = MARGEN // 2 - 4
-                dib.line((cx + r, y, MARGEN + max(x - 30, 8), y), fill="black", width=3)
+                dib.line((cx + r, y, MARGEN + max(x - 30, 8), y), fill="#0B1F3A", width=3)
             else:
                 cx = MARGEN + x
-            dib.ellipse((cx - r, y - r, cx + r, y + r), fill="black", outline="white", width=3)
+            dib.ellipse((cx - r, y - r, cx + r, y + r), fill="#0B1F3A", outline="white", width=3)
             dib.text((cx, y + 1), str(num), fill="white", font=fuente, anchor="mm")
         im.save(IMG / f"{nombre}_globos.png")
+
+
+def _mae72(conf):
+    c = pd.read_csv(RES / conf["72h"]["archivo"])
+    return {f"{a}-{b}": float(np.abs(c.q50 - c.real)[c.paso_horas.between(a, b)].mean()) for a, b in ((1, 24), (25, 48), (49, 72))}
 
 
 def cifras():
@@ -170,6 +175,7 @@ def cifras():
             "cob24": conf["24h"].get("cobertura_medida_pct"), "cob72": conf["72h"].get("cobertura_medida_pct"),
             "mae24": float(np.abs(q - y).mean()), "mape24": float((np.abs(q - y) / y).mean() * 100),
             "ancho24": float((c24["q90"] - c24["q10"]).mean()),
+            "mae72": _mae72(conf),
             "desde": c24["fecha_hora"].min(), "hasta": c24["fecha_hora"].max(), "generado": conf["24h"].get("generado")}
 
 
@@ -183,49 +189,70 @@ def fig(nombre, num, pie, ancho="100%"):
 
 
 def aviso(tipo, texto):
-    return f'<table class="aviso"><tr><td class="tipo">{tipo}</td><td>{texto}</td></tr></table>'
+    clase = {"Precaución": "precaucion", "Advertencia": "advertencia"}.get(tipo, "nota")
+    return f'<table class="aviso {clase}"><tr><td class="tipo">{tipo}</td><td>{texto}</td></tr></table>'
+
+
+# identidad de marca de augur (dashboard/app.py, TEMAS["claro"]): tinta, acento ambar, gris del logo, IBM Plex Sans en la marca
+TINTA, ACENTO, TENUE, GRIS = "#0B1F3A", "#D97706", "#94A3B8", "#5B6B82"
+
+
+def logo(tam=48, tinta=TINTA, acento=ACENTO, tenue=TENUE):
+    """Logo de augur: tres aves que suben y crecen (gris, tinta, ambar)."""
+    def ave(x, y, k, color, grosor):
+        return (f'<path d="M{x - 6 * k} {y} C{x - 4 * k} {y - 4 * k} {x - 1.5 * k} {y - 4 * k} {x} {y + k} '
+                f'C{x + 1.5 * k} {y - 4 * k} {x + 4 * k} {y - 4 * k} {x + 6 * k} {y}" stroke="{color}" stroke-width="{grosor}"/>')
+    return (f'<svg width="{tam}" height="{tam}" viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round">'
+            + ave(10, 37, .8, tenue, 2.8) + ave(23, 26, 1.05, tinta, 3.4) + ave(36, 13, 1.3, acento, 3.8) + "</svg>")
+
+
+def marca(tam, tam_nombre, sub=""):
+    return (f'<div class="marca">{logo(tam)}<div><div class="marca-nom" style="font-size:{tam_nombre}pt">augur</div>'
+            + (f'<div class="marca-sub">{sub}</div>' if sub else "") + "</div></div>")
 
 
 CSS = """
 @page { size: letter; margin: 24mm 20mm 22mm 25mm; }
-body { font-family: 'Times New Roman', Times, serif; font-size: 11.5pt; line-height: 1.35; color: #000; margin: 0; text-align: justify; }
-h1 { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 0 0 10pt; padding-bottom: 3pt; border-bottom: 1.2pt solid #000;
-     page-break-before: always; break-after: avoid; }
-h2 { font-size: 12pt; font-weight: bold; margin: 13pt 0 5pt; break-after: avoid; page-break-after: avoid; }
-h3 { font-size: 11.5pt; font-weight: bold; font-style: italic; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
+body { font-family: 'Times New Roman', Times, serif; font-size: 11.5pt; line-height: 1.35; color: #111; margin: 0; text-align: justify; }
+h1 { font-size: 14pt; font-weight: bold; text-transform: uppercase; color: #0B1F3A; margin: 0 0 10pt; padding-bottom: 3pt;
+     border-bottom: 1.5pt solid #D97706; page-break-before: always; break-after: avoid; }
+h2 { font-size: 12pt; font-weight: bold; color: #0B1F3A; margin: 13pt 0 5pt; break-after: avoid; page-break-after: avoid; }
+h3 { font-size: 11.5pt; font-weight: bold; font-style: italic; color: #0B1F3A; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
 p { margin: 0 0 6pt; }
 table { border-collapse: collapse; width: 100%; margin: 4pt 0 4pt; font-size: 10.5pt; page-break-inside: avoid; text-align: left; }
-th, td { border: 0.75pt solid #000; padding: 3pt 5pt; vertical-align: top; }
-th { background: #E6E6E6; font-weight: bold; }
-.tit-tabla { font-size: 10.5pt; margin: 8pt 0 2pt; text-align: center; break-after: avoid; page-break-after: avoid; }
+th, td { border: 0.75pt solid #8A96A8; padding: 3pt 5pt; vertical-align: top; }
+th { background: #0B1F3A; color: #fff; font-weight: bold; border-color: #0B1F3A; }
+.tit-tabla { font-size: 10.5pt; margin: 8pt 0 2pt; text-align: center; color: #0B1F3A; break-after: avoid; page-break-after: avoid; }
 .figura { text-align: center; margin: 8pt 0 10pt; page-break-inside: avoid; }
-.figura img { border: 0.75pt solid #000; }
+.figura img { border: 0.75pt solid #8A96A8; }
 .pie { font-size: 10.5pt; margin-top: 3pt; text-align: center; }
-table.aviso { margin: 8pt 0; border: 1.5pt solid #000; }
+.pie b, .tit-tabla b { color: #0B1F3A; }
+table.aviso { margin: 8pt 0; border: 1.2pt solid #0B1F3A; }
 table.aviso td { border: none; padding: 5pt 7pt; }
-table.aviso td.tipo { width: 26mm; font-weight: bold; text-transform: uppercase; border-right: 1.5pt solid #000; text-align: center; vertical-align: middle; }
-ol.pasos { margin: 2pt 0 8pt 0; padding-left: 0; list-style: none; counter-reset: paso; }
-ol.pasos > li { counter-increment: paso; margin: 0 0 4pt; padding-left: 16mm; position: relative; }
-ol.pasos > li::before { content: "Paso " counter(paso) "."; position: absolute; left: 0; font-weight: bold; }
+table.aviso td.tipo { width: 28mm; font-weight: bold; text-transform: uppercase; text-align: center; vertical-align: middle; color: #fff; background: #0B1F3A; }
+table.aviso.precaucion { border-color: #D97706; } table.aviso.precaucion td.tipo { background: #D97706; }
+table.aviso.advertencia { border-color: #B45309; } table.aviso.advertencia td.tipo { background: #B45309; }
 ul { margin: 2pt 0 6pt; padding-left: 7mm; } li { margin-bottom: 2pt; }
 code { font-family: 'Courier New', monospace; font-size: 10pt; }
+.marca { display: flex; align-items: center; gap: 10px; }
+.marca-nom { font-family: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif; font-weight: 700; color: #0B1F3A; letter-spacing: .3px; line-height: 1; }
+.marca-sub { font-family: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif; font-size: 8.5pt; font-weight: 600; letter-spacing: 1.6pt;
+             text-transform: uppercase; color: #5B6B82; margin-top: 4pt; }
 .portada { text-align: left; }
-.portada .cab { border-top: 3pt solid #000; border-bottom: 0.75pt solid #000; padding: 6pt 0; font-size: 11pt; letter-spacing: 1pt; text-transform: uppercase; }
-.portada .tipo { font-size: 30pt; font-weight: bold; margin: 46mm 0 4mm; letter-spacing: 1pt; }
-.portada .sis { font-size: 17pt; margin-bottom: 2mm; }
-.portada .desc { font-size: 12.5pt; margin-bottom: 30mm; }
+.portada .cab { border-top: 3pt solid #0B1F3A; border-bottom: 1pt solid #D97706; padding: 6pt 0; font-size: 11pt; letter-spacing: 1pt;
+                text-transform: uppercase; color: #0B1F3A; }
+.portada .marca { margin-top: 38mm; }
+.portada .tipo { font-size: 30pt; font-weight: bold; color: #0B1F3A; margin: 14mm 0 3mm; letter-spacing: 1pt; }
+.portada .barra { width: 36mm; height: 3pt; background: #D97706; margin: 0 0 5mm; }
+.portada .desc { font-size: 13pt; margin-bottom: 24mm; color: #2B3D57; }
 .portada table td { font-size: 11pt; }
-.portada table td:first-child { width: 45mm; font-weight: bold; background: #F2F2F2; }
-.portada .nota-pie { margin-top: 26mm; font-size: 10pt; border-top: 0.75pt solid #000; padding-top: 5pt; }
+.portada table td:first-child { width: 45mm; font-weight: bold; color: #0B1F3A; background: #EEF1F6; }
+.portada .nota-pie { margin-top: 22mm; font-size: 10pt; border-top: 1pt solid #D97706; padding-top: 5pt; color: #2B3D57; }
 .indice table, .indice td { border: none; font-size: 11.5pt; padding: 1.5pt 0; }
 .indice td.n { width: 12mm; } .indice td.p { width: 12mm; text-align: right; }
 .indice tr.sub td { font-size: 11pt; } .indice tr.sub td.t { padding-left: 8mm; }
-.indice tr.cap td { font-weight: bold; padding-top: 5pt; }
+.indice tr.cap td { font-weight: bold; color: #0B1F3A; padding-top: 5pt; }
 .falta { border: 0.75pt dashed #000; padding: 14pt; text-align: center; }
-.diagrama { display: flex; align-items: stretch; justify-content: space-between; margin: 8pt 0 4pt; page-break-inside: avoid; }
-.diagrama .bloque { border: 1pt solid #000; padding: 5pt 6pt; width: 23%; font-size: 10pt; text-align: center; }
-.diagrama .bloque b { display: block; margin-bottom: 3pt; font-size: 10.5pt; }
-.diagrama .flecha { align-self: center; font-size: 16pt; }
 """
 
 INDICE = [
@@ -257,12 +284,14 @@ def indice_html(paginas):
 def html(c, paginas):
     f = lambda t: pd.Timestamp(t).strftime("%d/%m/%Y")
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8"><title>{DOC} Manual de usuario de augur</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600;700&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body>
 
 <div class="portada">
   <div class="cab">Proyecto de grado · Ingeniería Electrónica</div>
+  {marca(96, 44, "Motor de decisión · precio de bolsa de energía")}
   <div class="tipo">MANUAL DE USUARIO</div>
-  <div class="sis">augur</div>
+  <div class="barra"></div>
   <div class="desc">Tablero de pronóstico del precio de bolsa y motor de decisión horaria</div>
   <table>
     <tr><td>Documento</td><td>{DOC}</td></tr>
@@ -432,7 +461,9 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Modelo (24 h)</td><td>{c['modelo24']}</td></tr>
 <tr><td>Error absoluto medio (24 h)</td><td>{c['mae24']:.1f} COP/kWh (MAPE {c['mape24']:.1f} %), {f(c['desde'])} a {f(c['hasta'])}</td></tr>
 <tr><td>Cobertura de la banda (24 h)</td><td>{c['cob24']} % (objetivo 80 %); ancho medio {c['ancho24']:.0f} COP/kWh</td></tr>
-<tr><td>Modelo (72 h)</td><td>{c['modelo72']}</td></tr></table>
+<tr><td>Modelo (72 h)</td><td>{c['modelo72']}</td></tr>
+<tr><td>Error absoluto medio (72 h)</td><td>Pasos 1-24: {c['mae72']['1-24']:.1f}; pasos 25-48: {c['mae72']['25-48']:.1f}; pasos 49-72: {c['mae72']['49-72']:.1f} COP/kWh</td></tr>
+<tr><td>Cobertura de la banda (72 h)</td><td>{c['cob72']} % (objetivo 80 %)</td></tr></table>
 <div class="tit-tabla"><b>Tabla A.2.</b> Datos disponibles al emitir el pronóstico del día D (00:00)</div>
 <table><tr><th>Dato</th><th style="width:38mm">Fuente</th><th>Disponible hasta</th></tr>
 <tr><td>Precio de bolsa, demanda, generación</td><td>XM</td><td>23:00 de D-4</td></tr>
@@ -442,17 +473,18 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Predespacho ideal</td><td>XM</td><td>D-1, 10:30</td></tr>
 <tr><td>Despacho programado</td><td>XM</td><td>D-1, 14:30</td></tr></table>
 {aviso("Advertencia", "El cierre de ofertas es a las 08:00 de D-1 (Resolución CREG 025 de 1995) y el predespacho se publica después. El pronóstico de 24 h aplica a decisiones posteriores a la publicación del predespacho, no a la oferta de los generadores.")}
-{aviso("Nota", "El horizonte de 72 h supone el precio conocido hasta el corte (escenario optimista); su desempeño con fuentes públicas sería menor.")}
+{aviso("Nota", "El horizonte de 72 h supone el precio conocido hasta el corte (escenario optimista); su desempeño con fuentes públicas sería menor.") if "optimista" in c["modelo72"] else aviso("Nota", "En el horizonte de 72 h no hay predespacho para los días D+1 y D+2: los pasos 25 a 72 parten del predespacho del día D y su error crece con el horizonte (Tabla A.1).")}
 </body></html>"""
 
 
-PIE = ('<div style="width:100%;font-family:\'Times New Roman\',serif;font-size:8.5pt;display:flex;'
-       'justify-content:space-between;border-top:0.5pt solid #000;padding-top:3pt;margin:0 20mm 0 25mm">'
+PIE = ('<div style="width:100%;font-family:Times New Roman,serif;font-size:8.5pt;color:#2B3D57;margin:0 20mm 0 25mm;'
+       'border-top:1pt solid #D97706;padding-top:3pt;display:flex;justify-content:space-between">'
        f'<span>{DOC} · Rev. {REV} · Manual de usuario de augur</span>'
        '<span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span></div>')
-CABEZA = ('<div style="width:100%;font-family:\'Times New Roman\',serif;font-size:8.5pt;margin:0 20mm 0 25mm;'
-          'border-bottom:0.5pt solid #000;padding-bottom:2pt;display:flex;justify-content:space-between">'
-          '<span>augur · Sistema de pronóstico y motor de decisión</span><span>Proyecto de grado · Ingeniería Electrónica</span></div>')
+CABEZA = ('<div style="width:100%;margin:0 20mm 0 25mm;border-bottom:0.75pt solid #0B1F3A;padding-bottom:3pt;display:flex;'
+          'align-items:center;justify-content:space-between;font-family:Times New Roman,serif;font-size:8.5pt;color:#2B3D57">'
+          f'<span style="display:flex;align-items:center;gap:5px">{logo(16)}<b style="font-family:Arial,sans-serif;font-size:10pt;color:#0B1F3A">augur</b></span>'
+          '<span>Manual de usuario · Proyecto de grado · Ingeniería Electrónica</span></div>')
 
 
 def imprimir(html_ruta, pdf_ruta):

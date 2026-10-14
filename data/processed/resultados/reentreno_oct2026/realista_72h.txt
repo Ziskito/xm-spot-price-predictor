@@ -1,0 +1,10 @@
+k=1 (pasos 25-48): MAE q50 55.44 | referencia (predespacho de D) 63.45 | promedio CatBoost 54.63 | cobertura 82.3 % | 5160 h
+k=2 (pasos 49-72): MAE q50 73.18 | referencia (predespacho de D) 83.51 | promedio CatBoost 71.21 | cobertura 82.0 % | 5159 h
+Contrato (cortes cada 3 dias): 71 cortes, 5112 h, cobertura 83.2 %, ancho medio 224
+  pasos 1-24: MAE realista 33.15 | optimista anterior 38.48 (DM t = -1.99, p = 0.046)
+  pasos 25-48: MAE realista 50.17 | optimista anterior 59.85 (DM t = -4.04, p = 0.000)
+  pasos 49-72: MAE realista 73.15 | optimista anterior 75.23 (DM t = -0.71, p = 0.476)
+  pasos 1-72: MAE realista 52.16 | optimista anterior 57.85 (DM t = -3.37, p = 0.001)
+  cortes diarios, pasos 1-24: MAE 33.73, 5184 h
+  cortes diarios, pasos 25-48: MAE 55.44, 5160 h
+  cortes diarios, pasos 49-72: MAE 73.18, 5159 h
