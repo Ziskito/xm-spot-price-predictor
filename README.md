@@ -535,6 +535,26 @@ Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron
   - Hace commit de los datos y contratos con `github-actions[bot]`, y Streamlit se redespliega solo.
 
   Duración en este equipo: la primera corrida tomó 5,6 min el 24 h y 22 min el 72 h; la corrida diaria, 7 min. GitHub desactiva los workflows programados de un repositorio público tras 60 días sin actividad; si pasa, se reactivan con un clic en Actions. *Manual:* nota de la actualización diaria (Anexo A) y dos filas nuevas en la tabla de problemas (precio real ausente en los últimos días; pronóstico que aún no llega a mañana). *Validación con usuarios (OE4-2):* formulario en Microsoft Forms, «Evaluación del dashboard augur», anónimo y abierto a cualquier persona. Tiene 8 preguntas: perfil (3), 11 afirmaciones Likert sobre el dashboard, nota de 1 a 10 y tres abiertas (lo más útil; qué cambiaría; qué agregaría al proyecto o a la página). Las afirmaciones también miden comprensión, por ejemplo «Entendí qué significa la banda de incertidumbre». Se probó la escala SUS y se quitó, porque su traducción literal sonaba forzada. *Primera corrida en GitHub:* falló porque `o6_comun.py` y `stacking_24h_v2.py` tenían escrita la ruta del equipo de Juan. Ahora la raíz se calcula desde el archivo. Otros scripts de experimentos conservan esa ruta, pero el workflow no los usa.
+- **Informe final (plantilla ABET), borrador completo (15-oct, a pedido de Juan)**: `docs/Informe_Final_ABET_Barcelo_Dede.docx` (+ `.pdf`, 33 páginas).
+
+  *Cómo se arma:*
+  - `generar_informe_final.py` copia el informe ABET del 30-sep y edita cada párrafo y tabla buscándolo por su texto. Así conserva la plantilla, las ecuaciones nativas y el formato.
+  - Las cifras salen de `informe_final_resultados.py` (→ `informe_final_assets/cifras.json`), calculadas con el código del motor y las predicciones guardadas; no hay números escritos a mano.
+  - Las figuras nuevas (diagrama de bloques, motor en operación y capturas del dashboard) salen de `informe_final_figuras.py`.
+  - La tabla de contenido y el PDF se actualizan con Word.
+
+  *Qué cambia frente al informe de avance:*
+  - El diseño definitivo es el predespacho de XM corregido con 3 CatBoost, y se cuenta la historia del escenario realista. Con solo información pública, el ensamble de 6 pasa de MAE 43,1 a 100,7.
+  - Alternativas y matriz de decisión rehechas: ensamble de 6 (2,00), ensamble + predespacho (4,15) y predespacho + CatBoost (4,55).
+  - Variables: 65 (40 públicas con rezagos realistas, 9 del predespacho, 11 de forma y despacho programado, 5 de error reciente). Componentes en la Tabla 12; Ecuación 1 con objetivo MAE; 4 decisiones nuevas en la Tabla 13.
+  - Tabla 14 con 11 modelos en las mismas 4.848 horas. Tabla 15 con los orígenes reentrenados con el ONI corregido. Tabla 16 nueva: validación histórica del ensamble y del diseño definitivo.
+  - 72 h realista; costo del diseño definitivo; motor con el pronóstico realista y el filtro intradía, que elige «rodante» en los 4 casos.
+  - Último mes en pesos, operación de agosto a octubre (MAE 47,8, cobertura 74,1 %) y eventos.
+  - Capturas actuales del dashboard publicado.
+  - Conclusiones: los 4 objetivos cumplidos; OE4 queda sujeto a la validación con usuarios.
+  - Resumen de 260 palabras y abstract de 225.
+
+  *Resaltado en amarillo para completar:* resultados del cuestionario de validación (párrafo de OE4, Tabla 21 y conclusiones), póster, presentación, video y enlace del video. La fecha de la portada quedó en «Noviembre de 2026».
 - **Orígenes históricos 1-5 reentrenados con el ONI corregido (15-oct, a pedido de Juan)**.
 
   *Qué cambió en los datos:* el ONI de NOAA corrigió cuatro trimestres:

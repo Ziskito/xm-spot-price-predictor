@@ -1,0 +1,1094 @@
+{
+ "tabla24": [
+  {
+   "modelo": "Persistencia (precio publicado más reciente)",
+   "MAE": 108.80575823019802,
+   "RMSE": 172.539593232689,
+   "MAPE": 30.38786650484015,
+   "sMAPE": 28.359250350783586,
+   "sesgo": -15.696019851485149,
+   "rMAE": 1.0,
+   "DM_t": null,
+   "DM_p1": null
+  },
+  {
+   "modelo": "XGBoost",
+   "MAE": 103.82898617491749,
+   "RMSE": 159.80265272968694,
+   "MAPE": 26.414437586595152,
+   "sMAPE": 25.829856620042236,
+   "sesgo": -50.60760174669967,
+   "rMAE": 0.9542600305697858,
+   "DM_t": 1.2879307164662908,
+   "DM_p1": 0.09888504095389444
+  },
+  {
+   "modelo": "ARX+GARCH",
+   "MAE": 104.998084393334,
+   "RMSE": 163.3252223003222,
+   "MAPE": 27.11419645573429,
+   "sMAPE": 26.977212536565848,
+   "sesgo": -47.81263473781786,
+   "rMAE": 0.9650048499381052,
+   "DM_t": 1.6771547247168872,
+   "DM_p1": 0.04675611492897041
+  },
+  {
+   "modelo": "N-BEATSx",
+   "MAE": 110.55919909158418,
+   "RMSE": 165.27475083506997,
+   "MAPE": 31.361342318017215,
+   "sMAPE": 27.97757528034559,
+   "sesgo": -7.96390277929043,
+   "rMAE": 1.0161153314852733,
+   "DM_t": -0.37197274108696243,
+   "DM_p1": 0.6450434275437418
+  },
+  {
+   "modelo": "N-HiTS",
+   "MAE": 113.08953538964523,
+   "RMSE": 168.19517949748968,
+   "MAPE": 32.395902928189756,
+   "sMAPE": 28.930194423951832,
+   "sesgo": -13.270441572813535,
+   "rMAE": 1.0393708681335054,
+   "DM_t": -0.8646513860908788,
+   "DM_p1": 0.8063849202992057
+  },
+  {
+   "modelo": "GARCH-ged",
+   "MAE": 100.4236696262203,
+   "RMSE": 154.9127402553116,
+   "MAPE": 27.718210655363574,
+   "sMAPE": 25.937216453308082,
+   "sesgo": -23.782587729096566,
+   "rMAE": 0.9229628216344588,
+   "DM_t": 3.928843766041708,
+   "DM_p1": 4.2677634331109644e-05
+  },
+  {
+   "modelo": "Ensamble de 6 (diseño del informe de avance)",
+   "MAE": 100.71128501574216,
+   "RMSE": 154.11081368188664,
+   "MAPE": 25.477169590055,
+   "sMAPE": 26.993443331243615,
+   "sesgo": -56.1864776306073,
+   "rMAE": 0.9256062055343565,
+   "DM_t": 2.44782313990691,
+   "DM_p1": 0.007186109205638595
+  },
+  {
+   "modelo": "Predespacho ideal de XM",
+   "MAE": 39.16058375618812,
+   "RMSE": 85.11903927266165,
+   "MAPE": 12.858934074081912,
+   "sMAPE": 12.096853730861298,
+   "sesgo": -3.83330958952145,
+   "rMAE": 0.3599127876425153,
+   "DM_t": 11.605274298967421,
+   "DM_p1": 1.9372163005043996e-31
+  },
+  {
+   "modelo": "Ensamble de 6 + predespacho",
+   "MAE": 36.686359555646916,
+   "RMSE": 81.89213562213658,
+   "MAPE": 10.301444227728568,
+   "sMAPE": 9.234382694940834,
+   "sesgo": -3.696058473783604,
+   "rMAE": 0.3371729598908761,
+   "DM_t": 12.876249549846206,
+   "DM_p1": 3.0619935129629036e-38
+  },
+  {
+   "modelo": "Promedio de 3 CatBoost",
+   "MAE": 35.49987844353807,
+   "RMSE": 80.21898351422566,
+   "MAPE": 10.34708281035033,
+   "sMAPE": 9.486215209885858,
+   "sesgo": -2.7319480963240745,
+   "rMAE": 0.32626837973438627,
+   "DM_t": 12.506031279844278,
+   "DM_p1": 3.4597968995015044e-36
+  },
+  {
+   "modelo": "Predespacho + 3 CatBoost (diseño definitivo)",
+   "MAE": 35.0061882668282,
+   "RMSE": 81.35617030760051,
+   "MAPE": 10.038899232005816,
+   "sMAPE": 8.923705036543664,
+   "sesgo": -0.12749018233742326,
+   "rMAE": 0.32173102633746964,
+   "DM_t": 12.806305424960685,
+   "DM_p1": 7.558107156347464e-38
+  }
+ ],
+ "horas_comunes": 4848,
+ "desde_comun": "2026-01-15 01:00:00",
+ "hasta_comun": "2026-08-05 00:00:00",
+ "persistencia_optimista_mae": 57.98162231641914,
+ "ens6_optimista_mae": 43.06420471126179,
+ "ens7_optimista_mae": 32.58696072090721,
+ "dm_definitivo_vs_ens7_realista": [
+  5.721222035423835,
+  5.288028763939096e-09
+ ],
+ "dm_definitivo_vs_predespacho": [
+  7.9971914667854636,
+  6.364461166049877e-16
+ ],
+ "contrato24": {
+  "horas": 5184,
+  "MAE": 33.73247796461664,
+  "RMSE": 79.05723564717134,
+  "MAPE": 10.008578482761346,
+  "sMAPE": 8.876057381410488,
+  "sesgo": 0.19074040045970914,
+  "cobertura": 80.55555555555556,
+  "ancho": 142.47279477584172,
+  "MAE_pers": 105.91920197337961,
+  "MAE_pre": 37.911124253472224,
+  "DM_vs_pers": [
+   13.265904501401327,
+   1.8249509559197618e-40
+  ],
+  "DM_vs_pre": [
+   8.570616005716621,
+   5.146646788716894e-18
+  ]
+ },
+ "alternativas": {
+  "S1": {
+   "MAE": 100.71128501574216,
+   "rMAE_opt": 1.736951830463407,
+   "rMAE_real": 0.9256062055343565,
+   "peor_mes_opt": 2.6318907834105882,
+   "peor_mes_real": 1.1417523621244585
+  },
+  "S2": {
+   "MAE": 36.686359555646916,
+   "rMAE_opt": 0.6327239233742195,
+   "rMAE_real": 0.3371729598908761,
+   "peor_mes_opt": 0.892229637143068,
+   "peor_mes_real": 0.3993513614425605
+  },
+  "S3": {
+   "MAE": 35.0061882668282,
+   "rMAE_opt": 0.6037462711165845,
+   "rMAE_real": 0.32173102633746964,
+   "peor_mes_opt": 0.8277367452845656,
+   "peor_mes_real": 0.4058235699980493
+  }
+ },
+ "rmae_mensual": {
+  "2026-01": 0.3590841953256038,
+  "2026-02": 0.337452336131137,
+  "2026-03": 0.34419050307104737,
+  "2026-04": 0.4058235699980493,
+  "2026-05": 0.25845826865737004,
+  "2026-06": 0.35352572224731904,
+  "2026-07": 0.29675443750180963,
+  "2026-08": 0.28858530998672566
+ },
+ "mae_mensual": {
+  "2026-01": 16.464088295477005,
+  "2026-02": 8.612504470490002,
+  "2026-03": 24.562347319973934,
+  "2026-04": 37.72548411140617,
+  "2026-05": 47.01261930895253,
+  "2026-06": 58.85583864472937,
+  "2026-07": 40.23319860888837,
+  "2026-08": 46.367901606215234
+ },
+ "regimen_normal_ene_abr": {
+  "MAE": 22.778301968816933,
+  "MAE_pre": 30.093134321667318,
+  "MAE_pers": 61.2808294416044,
+  "DM_vs_pre": [
+   12.690934134200946,
+   3.3194599072611865e-37
+  ]
+ },
+ "regimen_el_nino_may_ago": {
+  "MAE": 48.49665024333261,
+  "MAE_pre": 49.164281765726685,
+  "MAE_pers": 161.2378163253796,
+  "DM_vs_pre": [
+   0.9037418703989756,
+   0.18306614579168246
+  ]
+ },
+ "diario": {
+  "dias": 202,
+  "media": 35.006188266828204,
+  "desv": 28.180576570929617,
+  "ic": [
+   28.01416759344071,
+   42.93717886882733
+  ],
+  "ic_pers": [
+   84.53129382528878,
+   134.85221422488652
+  ],
+  "media_pers": 108.80575823019802,
+  "dif_media": 73.7995699633698,
+  "ic_dif": [
+   54.393310495498014,
+   95.17191046769086
+  ],
+  "frac_mejor": 92.57425742574257,
+  "p10": 6.81385816398127,
+  "p90": 68.812652681907,
+  "menor50": 78.71287128712872,
+  "menor50_pers": 28.217821782178216,
+  "mape_media": 10.038899232005816,
+  "ic_mape": [
+   8.392932453459398,
+   11.830425931531687
+  ],
+  "sesgo": -0.12749018233742349,
+  "ic_sesgo": [
+   -7.307740975955375,
+   5.9420947161803515
+  ],
+  "autocorr": 0.5042277077256556
+ },
+ "tabla72": [
+  {
+   "tramo": "1-24 h",
+   "MAE": 33.15001813218357,
+   "MAPE": 9.444595077751163,
+   "MAE_pers": 107.62527737676055,
+   "MAPE_pers": 30.885988717796515,
+   "rMAE": 0.3080133119298388,
+   "DM_t": 8.304149626569705,
+   "cobertura": 83.56807511737088,
+   "ancho": 141.9523300121573,
+   "horas": 1704
+  },
+  {
+   "tramo": "25-48 h",
+   "MAE": 50.17035362370188,
+   "MAPE": 14.903260003090454,
+   "MAE_pers": 117.49355394953054,
+   "MAPE_pers": 34.90646623450003,
+   "rMAE": 0.4270051584723754,
+   "DM_t": 7.957559561928771,
+   "cobertura": 84.27230046948357,
+   "ancho": 231.45115773462447,
+   "horas": 1704
+  },
+  {
+   "tramo": "49-72 h",
+   "MAE": 73.15156885182017,
+   "MAPE": 20.59910282602823,
+   "MAE_pers": 119.73054269366199,
+   "MAPE_pers": 36.367248147513756,
+   "rMAE": 0.6109683227527248,
+   "DM_t": 6.437308442428734,
+   "cobertura": 81.86619718309859,
+   "ancho": 299.5694713755264,
+   "horas": 1704
+  },
+  {
+   "tramo": "1-72 h",
+   "MAE": 52.15731353590187,
+   "MAPE": 14.982319302289952,
+   "MAE_pers": 114.94979133998436,
+   "MAPE_pers": 34.053234366603434,
+   "rMAE": 0.4537399583583182,
+   "DM_t": 11.972502224094468,
+   "cobertura": 83.23552425665102,
+   "ancho": 224.32431970743605,
+   "horas": 5112
+  }
+ ],
+ "cortes72": 71,
+ "operacion": {
+  "desde": "2026-08-05 01:00:00",
+  "hasta": "2026-10-11 23:00:00",
+  "horas": 1631,
+  "MAE": 47.768237390839715,
+  "RMSE": 102.68467308939917,
+  "MAPE": 6.3419783323698,
+  "sMAPE": 6.2383920962432855,
+  "sesgo": -5.260149995757596,
+  "MAE_pre": 49.42488541998773,
+  "cobertura": 74.06499080318822,
+  "mensual": {
+   "2026-08": 28.55774056671931,
+   "2026-09": 55.26160270592441,
+   "2026-10": 74.4120571572978
+  }
+ },
+ "estado_produccion": {
+  "actualizado": "2026-10-14 22:43",
+  "precio_real_hasta": "2026-10-11 23:00:00",
+  "pronostico_24h_hasta": "2026-10-16 00:00:00",
+  "pronostico_72h_ultimo_corte": "2026-10-14",
+  "pronostico_72h_hasta": "2026-10-17 00:00:00",
+  "fuentes": {
+   "oni": "ok",
+   "serie_xm": {
+    "precio_bolsa": "2026-10-11 23:00:00",
+    "volumen_embalses": "2026-10-13 23:00:00"
+   },
+   "predespacho_ideal": "2026-10-15 23:00:00",
+   "dmar_ddem": "2026-10-15 23:00:00"
+  }
+ },
+ "eventos": [
+  {
+   "evento": "desplome",
+   "metodo": "climatologia por hora",
+   "Brier": 0.0406472843920253,
+   "BSS_vs_climatologia": 0.0,
+   "AUC": 0.6409711546700403,
+   "precision_promedio": 0.053258834707774,
+   "eventos": 199,
+   "detectados_p05": 0,
+   "falsas_alarmas_p05": 0,
+   "horas_evaluadas": 5184
+  },
+  {
+   "evento": "desplome",
+   "metodo": "predespacho solo (0/1)",
+   "Brier": 0.0347222222222222,
+   "BSS_vs_climatologia": 0.1457677249151131,
+   "AUC": 0.6587027413899991,
+   "precision_promedio": 0.2171204391158328,
+   "eventos": 199,
+   "detectados_p05": 65,
+   "falsas_alarmas_p05": 46,
+   "horas_evaluadas": 5184
+  },
+  {
+   "evento": "desplome",
+   "metodo": "clasificador realista",
+   "Brier": 0.02716431850991,
+   "BSS_vs_climatologia": 0.3317064370666923,
+   "AUC": 0.939661194639194,
+   "precision_promedio": 0.4287769337100957,
+   "eventos": 199,
+   "detectados_p05": 55,
+   "falsas_alarmas_p05": 32,
+   "horas_evaluadas": 5184
+  },
+  {
+   "evento": "pico",
+   "metodo": "climatologia por hora",
+   "Brier": 0.0841425391603968,
+   "BSS_vs_climatologia": 0.0,
+   "AUC": 0.8588611624202116,
+   "precision_promedio": 0.4002813001532337,
+   "eventos": 566,
+   "detectados_p05": 0,
+   "falsas_alarmas_p05": 0,
+   "horas_evaluadas": 5184
+  },
+  {
+   "evento": "pico",
+   "metodo": "predespacho solo (0/1)",
+   "Brier": 0.0534336419753086,
+   "BSS_vs_climatologia": 0.3649628058709914,
+   "AUC": 0.8738937511381949,
+   "precision_promedio": 0.6040308081091357,
+   "eventos": 566,
+   "detectados_p05": 442,
+   "falsas_alarmas_p05": 153,
+   "horas_evaluadas": 5184
+  },
+  {
+   "evento": "pico",
+   "metodo": "clasificador realista",
+   "Brier": 0.0398766604122048,
+   "BSS_vs_climatologia": 0.5260820411398581,
+   "AUC": 0.9691834226800338,
+   "precision_promedio": 0.8029113663231388,
+   "eventos": 566,
+   "detectados_p05": 403,
+   "falsas_alarmas_p05": 110,
+   "horas_evaluadas": 5184
+  }
+ ],
+ "walkforward_mae": {
+  "Origen 1|ARX+GARCH": 50.477028657262785,
+  "Origen 1|N-BEATSx": 25.50500555675461,
+  "Origen 1|N-HiTS": 54.78189879282616,
+  "Origen 1|Persistencia": 16.80302599086758,
+  "Origen 1|XGBoost": 18.254494341635507,
+  "Origen 2|ARX+GARCH": 19.511017034000723,
+  "Origen 2|N-BEATSx": 19.251294399518155,
+  "Origen 2|N-HiTS": 19.12380497086728,
+  "Origen 2|Persistencia": 17.5189196369863,
+  "Origen 2|XGBoost": 24.13923448593432,
+  "Origen 3|ARX+GARCH": 49.737575933075796,
+  "Origen 3|N-BEATSx": 37.108279419804816,
+  "Origen 3|N-HiTS": 36.859779782008054,
+  "Origen 3|Persistencia": 39.74940643835617,
+  "Origen 3|XGBoost": 59.659495182634465,
+  "Origen 4|ARX+GARCH": 80.61122397419743,
+  "Origen 4|N-BEATSx": 68.86572794898376,
+  "Origen 4|N-HiTS": 70.42318647034581,
+  "Origen 4|Persistencia": 67.18841359289618,
+  "Origen 4|XGBoost": 134.0329103280159,
+  "Origen 5|ARX+GARCH": 102.6519630612649,
+  "Origen 5|N-BEATSx": 102.46050321208372,
+  "Origen 5|N-HiTS": 103.98655430895452,
+  "Origen 5|Persistencia": 101.25249744292236,
+  "Origen 5|XGBoost": 135.25809701272317,
+  "Origen 6|ARX+GARCH": 55.949436309546,
+  "Origen 6|N-BEATSx": 50.76784752414892,
+  "Origen 6|N-HiTS": 47.18473385607966,
+  "Origen 6|Persistencia": 56.543303168756026,
+  "Origen 6|XGBoost": 61.45130853590256
+ },
+ "walkforward_dm": {
+  "ARX+GARCH|Persistencia": {
+   "gana": 0,
+   "pierde": 4
+  },
+  "N-BEATSx|ARX+GARCH": {
+   "gana": 4,
+   "pierde": 0
+  },
+  "N-BEATSx|Persistencia": {
+   "gana": 2,
+   "pierde": 2
+  },
+  "N-HiTS|ARX+GARCH": {
+   "gana": 3,
+   "pierde": 1
+  },
+  "N-HiTS|Persistencia": {
+   "gana": 2,
+   "pierde": 2
+  },
+  "XGBoost|Persistencia": {
+   "gana": 0,
+   "pierde": 6
+  }
+ },
+ "ensamble_historico": [
+  {
+   "origen": "Origen 1",
+   "desde": "2020-07-15",
+   "hasta": "2021-06-30 23:00:00",
+   "horas": 8424,
+   "MAE_ensamble": 15.126307874758163,
+   "MAE_persistencia": 16.506336362773027,
+   "rMAE": 0.916394016353183,
+   "MAPE_ensamble": 9.356373936416796,
+   "MAPE_persistencia": 9.923555597234442,
+   "DM_t_vs_persistencia": 4.4258750772223925,
+   "p_unilateral": 4.802605065523657e-06,
+   "p_bilateral": 9.605210131146496e-06,
+   "mejor_individual": "XGBoost",
+   "MAE_mejor_individual": 18.11244055970629,
+   "DM_t_vs_mejor_individual": 9.62987471938423,
+   "p_bilateral_vs_mejor": 5.980234472825839e-22,
+   "MAE_GARCH-ged": 22.360431520421034,
+   "garch_fallos_de_24": 0,
+   "cobertura_banda_empirica": 75.62316715542522
+  },
+  {
+   "origen": "Origen 2",
+   "desde": "2021-07-15",
+   "hasta": "2022-06-30 23:00:00",
+   "horas": 8424,
+   "MAE_ensamble": 17.01079952941759,
+   "MAE_persistencia": 18.12250367046534,
+   "rMAE": 0.9386561503166078,
+   "MAPE_ensamble": 8.551752591279115,
+   "MAPE_persistencia": 9.460701302623756,
+   "DM_t_vs_persistencia": 2.482220244219014,
+   "p_unilateral": 0.0065283273272521,
+   "p_bilateral": 0.0130566546545044,
+   "mejor_individual": "GARCH-ged",
+   "MAE_mejor_individual": 16.73848882583952,
+   "DM_t_vs_mejor_individual": -0.8898127105431074,
+   "p_bilateral_vs_mejor": 0.3735664604293152,
+   "MAE_GARCH-ged": 16.73848882583952,
+   "garch_fallos_de_24": 0,
+   "cobertura_banda_empirica": 72.5562072336266
+  },
+  {
+   "origen": "Origen 3",
+   "desde": "2022-07-15",
+   "hasta": "2023-06-30 23:00:00",
+   "horas": 8424,
+   "MAE_ensamble": 37.11181583745847,
+   "MAE_persistencia": 41.15267664292497,
+   "rMAE": 0.9018080685120828,
+   "MAPE_ensamble": 13.192506353734029,
+   "MAPE_persistencia": 14.666372495360095,
+   "DM_t_vs_persistencia": 5.048241255228154,
+   "p_unilateral": 2.2294792334509597e-07,
+   "p_bilateral": 4.4589584662386164e-07,
+   "mejor_individual": "N-HiTS",
+   "MAE_mejor_individual": 38.19019692256047,
+   "DM_t_vs_mejor_individual": 1.84391812323633,
+   "p_bilateral_vs_mejor": 0.0651950734623033,
+   "MAE_GARCH-ged": 38.56846802524936,
+   "garch_fallos_de_24": 0,
+   "cobertura_banda_empirica": 71.7008797653959
+  },
+  {
+   "origen": "Origen 4",
+   "desde": "2023-07-15",
+   "hasta": "2024-06-30 23:00:00",
+   "horas": 8448,
+   "MAE_ensamble": 63.341264500690336,
+   "MAE_persistencia": 67.75835014204546,
+   "rMAE": 0.934811198441294,
+   "MAPE_ensamble": 15.855411668714318,
+   "MAPE_persistencia": 16.570068629658977,
+   "DM_t_vs_persistencia": 4.500530979271447,
+   "p_unilateral": 3.389196221337265e-06,
+   "p_bilateral": 6.778392442677434e-06,
+   "mejor_individual": "GARCH-ged",
+   "MAE_mejor_individual": 64.2279307081556,
+   "DM_t_vs_mejor_individual": 1.29412885647663,
+   "p_bilateral_vs_mejor": 0.1956209155882955,
+   "MAE_GARCH-ged": 64.2279307081556,
+   "garch_fallos_de_24": 0,
+   "cobertura_banda_empirica": 74.70760233918129
+  },
+  {
+   "origen": "Origen 5",
+   "desde": "2024-07-15",
+   "hasta": "2025-06-30 23:00:00",
+   "horas": 8424,
+   "MAE_ensamble": 100.78531852901666,
+   "MAE_persistencia": 103.45760950617284,
+   "rMAE": 0.97417018438845,
+   "MAPE_ensamble": 19.47182400606043,
+   "MAPE_persistencia": 20.691803964404347,
+   "DM_t_vs_persistencia": 1.0374516537060994,
+   "p_unilateral": 0.1497627080409953,
+   "p_bilateral": 0.2995254160819905,
+   "mejor_individual": "N-BEATSx",
+   "MAE_mejor_individual": 104.61741771520624,
+   "DM_t_vs_mejor_individual": 1.654446973435037,
+   "p_bilateral_vs_mejor": 0.0980367289696744,
+   "MAE_GARCH-ged": 105.07722131649008,
+   "garch_fallos_de_24": 0,
+   "cobertura_banda_empirica": 77.87145650048876
+  }
+ ],
+ "validacion_predespacho": [
+  {
+   "origen": "Origen 1",
+   "desde": "2020-07-15",
+   "hasta": "2021-06-30",
+   "horas": 8424,
+   "horas_con_predespacho_%": 100.0,
+   "MAE_ens6": 15.126307874758163,
+   "MAE_ens7": 8.935632060098836,
+   "MAE_predespacho_solo": 13.362696768755937,
+   "MAPE_ens6_%": 9.356373936416796,
+   "MAPE_ens7_%": 5.430191864902871,
+   "rMAE_ens6": 0.916394016353183,
+   "rMAE_ens7": 0.541345569586931,
+   "DM_t": 15.390904414719213,
+   "DM_p": 1.8838067882913558e-53,
+   "MAE_rampa_ens6": 31.856450452394853,
+   "MAE_rampa_ens7": 23.65699553588509,
+   "DM_t_rampas": 4.998725776169455,
+   "DM_p_rampas": 5.771040648049541e-07,
+   "rampa_fraccion_ens6": 0.3324938084637912,
+   "rampa_fraccion_ens7": 0.7786842082746125,
+   "cambio_MAE_%": -40.9265490687912
+  },
+  {
+   "origen": "Origen 2",
+   "desde": "2021-07-15",
+   "hasta": "2022-06-30",
+   "horas": 8424,
+   "horas_con_predespacho_%": 98.005698005698,
+   "MAE_ens6": 17.01079952941759,
+   "MAE_ens7": 10.531443140364727,
+   "MAE_predespacho_solo": 11.914859722659935,
+   "MAPE_ens6_%": 8.551752591279115,
+   "MAPE_ens7_%": 5.6446320639792775,
+   "rMAE_ens6": 0.9386561503166078,
+   "rMAE_ens7": 0.5811251762927252,
+   "DM_t": 10.22966929670538,
+   "DM_p": 1.4601714495798036e-24,
+   "MAE_rampa_ens6": 43.19952038421046,
+   "MAE_rampa_ens7": 29.505124032948967,
+   "DM_t_rampas": 8.378179364837102,
+   "DM_p_rampas": 5.3752686723516404e-17,
+   "rampa_fraccion_ens6": 0.1857151171556849,
+   "rampa_fraccion_ens7": 0.4789641351329554,
+   "cambio_MAE_%": -38.08966402694829
+  },
+  {
+   "origen": "Origen 3",
+   "desde": "2022-07-15",
+   "hasta": "2023-06-30",
+   "horas": 8424,
+   "horas_con_predespacho_%": 98.86039886039886,
+   "MAE_ens6": 37.11181583745847,
+   "MAE_ens7": 19.77726269012252,
+   "MAE_predespacho_solo": 22.579913974038732,
+   "MAPE_ens6_%": 13.192506353734029,
+   "MAPE_ens7_%": 6.790247206867177,
+   "rMAE_ens6": 0.9018080685120826,
+   "rMAE_ens7": 0.4805826571556106,
+   "DM_t": 15.374011597768025,
+   "DM_p": 2.445468596160211e-53,
+   "MAE_rampa_ens6": 86.17662646275578,
+   "MAE_rampa_ens7": 60.00557250595905,
+   "DM_t_rampas": 7.491040241760419,
+   "DM_p_rampas": 6.8329861094109e-14,
+   "rampa_fraccion_ens6": 0.1867976108051899,
+   "rampa_fraccion_ens7": 0.494265452607944,
+   "cambio_MAE_%": -46.70898676383136
+  },
+  {
+   "origen": "Origen 4",
+   "desde": "2023-07-15",
+   "hasta": "2024-06-30",
+   "horas": 8448,
+   "horas_con_predespacho_%": 99.43181818181816,
+   "MAE_ens6": 63.341264500690336,
+   "MAE_ens7": 33.987636534488075,
+   "MAE_predespacho_solo": 34.96922849237416,
+   "MAPE_ens6_%": 15.855411668714318,
+   "MAPE_ens7_%": 8.350173414312815,
+   "rMAE_ens6": 0.934811198441294,
+   "rMAE_ens7": 0.5016007099233964,
+   "DM_t": 12.928299457150846,
+   "DM_p": 3.116355063487053e-38,
+   "MAE_rampa_ens6": 128.75594098467317,
+   "MAE_rampa_ens7": 97.4419155091317,
+   "DM_t_rampas": 4.006955049679386,
+   "DM_p_rampas": 6.150656308015107e-05,
+   "rampa_fraccion_ens6": 0.2166115402511996,
+   "rampa_fraccion_ens7": 0.4756773930341162,
+   "cambio_MAE_%": -46.34203026667134
+  },
+  {
+   "origen": "Origen 5",
+   "desde": "2024-07-15",
+   "hasta": "2025-06-30",
+   "horas": 8424,
+   "horas_con_predespacho_%": 99.14529914529916,
+   "MAE_ens6": 100.78531852901666,
+   "MAE_ens7": 53.09882479055536,
+   "MAE_predespacho_solo": 56.51819347092635,
+   "MAPE_ens6_%": 19.47182400606043,
+   "MAPE_ens7_%": 10.699425778668488,
+   "rMAE_ens6": 0.97417018438845,
+   "rMAE_ens7": 0.5132423322364431,
+   "DM_t": 6.315039877854426,
+   "DM_p": 2.700918210182582e-10,
+   "MAE_rampa_ens6": 251.71851082555213,
+   "MAE_rampa_ens7": 152.1019644480084,
+   "DM_t_rampas": 5.501509055891098,
+   "DM_p_rampas": 3.7655426832277976e-08,
+   "rampa_fraccion_ens6": 0.209022638336732,
+   "rampa_fraccion_ens7": 0.5874245461952597,
+   "cambio_MAE_%": -47.31492089766239
+  }
+ ],
+ "validacion_definitivo": [
+  {
+   "origen": "Origen 1",
+   "horas": 8424,
+   "MAE_predespacho": 13.625369669990503,
+   "MAE_simple": 9.31230389713158,
+   "MAE_v2": 9.2288761490004,
+   "MAE_cat_R+P": 11.914864075879246,
+   "MAE_cat_R+P+F+C": 10.678410307413126,
+   "MAE_cat_R+P+E": 11.550067736072457,
+   "MAE_cat_prom3": 11.125771277451898,
+   "DM_t_v2_vs_simple": -3.115779863856839,
+   "DM_p": 0.0018345917098354
+  },
+  {
+   "origen": "Origen 2",
+   "horas": 8424,
+   "MAE_predespacho": 12.532888181386516,
+   "MAE_simple": 11.864593061946511,
+   "MAE_v2": 11.599482484351745,
+   "MAE_cat_R+P": 11.21024317860558,
+   "MAE_cat_R+P+F+C": 10.78682318109318,
+   "MAE_cat_R+P+E": 11.631628908083826,
+   "MAE_cat_prom3": 10.862430069513028,
+   "DM_t_v2_vs_simple": -3.623822954648365,
+   "DM_p": 0.0002902803447085
+  },
+  {
+   "origen": "Origen 3",
+   "horas": 8424,
+   "MAE_predespacho": 23.503295172127256,
+   "MAE_simple": 21.26752049257546,
+   "MAE_v2": 21.11261706723548,
+   "MAE_cat_R+P": 24.68830119689376,
+   "MAE_cat_R+P+F+C": 22.327029141411373,
+   "MAE_cat_R+P+E": 22.8375122344985,
+   "MAE_cat_prom3": 22.207586696153744,
+   "DM_t_v2_vs_simple": -2.982230357859333,
+   "DM_p": 0.0028615659660159
+  },
+  {
+   "origen": "Origen 4",
+   "horas": 8448,
+   "MAE_predespacho": 36.98939120620265,
+   "MAE_simple": 36.26511198725805,
+   "MAE_v2": 36.20451582110792,
+   "MAE_cat_R+P": 45.73579768988788,
+   "MAE_cat_R+P+F+C": 41.98479335287944,
+   "MAE_cat_R+P+E": 43.22060599845925,
+   "MAE_cat_prom3": 42.41476465697065,
+   "DM_t_v2_vs_simple": -1.86364452766099,
+   "DM_p": 0.0623716401974232
+  },
+  {
+   "origen": "Origen 5",
+   "horas": 8424,
+   "MAE_predespacho": 59.52000303893637,
+   "MAE_simple": 56.60969678068729,
+   "MAE_v2": 56.58246740508119,
+   "MAE_cat_R+P": 61.862853548761066,
+   "MAE_cat_R+P+F+C": 59.29843759458269,
+   "MAE_cat_R+P+E": 61.193064445972006,
+   "MAE_cat_prom3": 59.06571817172214,
+   "DM_t_v2_vs_simple": -0.2778202043056567,
+   "DM_p": 0.7811503807136666
+  }
+ ],
+ "validacion_definitivo_fecha": "2026-10-15 09:00",
+ "persistencia_realista_historica": {
+  "Origen 1": 26.59170625593542,
+  "Origen 2": 37.03503047483381,
+  "Origen 3": 87.47724143043685,
+  "Origen 4": 137.56002388612686,
+  "Origen 5": 161.38461520299145
+ },
+ "motor_historico_elegidos": [
+  {
+   "origen": "Origen 1",
+   "rol": "generador",
+   "politica": "base rodante",
+   "ventaja": 52.31096294310848,
+   "peor_mitad": 43.96538118083532
+  },
+  {
+   "origen": "Origen 1",
+   "rol": "comercializador",
+   "politica": "base rodante",
+   "ventaja": 38.04847622119654,
+   "peor_mitad": 33.45550492431995
+  },
+  {
+   "origen": "Origen 2",
+   "rol": "generador",
+   "politica": "base banda",
+   "ventaja": 281.5397902157008,
+   "peor_mitad": 247.06516703280084
+  },
+  {
+   "origen": "Origen 2",
+   "rol": "comercializador",
+   "politica": "base hibrido",
+   "ventaja": 59.82086632436712,
+   "peor_mitad": 61.49526177126097
+  },
+  {
+   "origen": "Origen 3",
+   "rol": "generador",
+   "politica": "base hibrido",
+   "ventaja": 129.57799356101538,
+   "peor_mitad": 81.83624395973402
+  },
+  {
+   "origen": "Origen 3",
+   "rol": "comercializador",
+   "politica": "base rodante",
+   "ventaja": 118.60930934112544,
+   "peor_mitad": 99.52845299616035
+  },
+  {
+   "origen": "Origen 4",
+   "rol": "generador",
+   "politica": "base hibrido",
+   "ventaja": 250.35129139813,
+   "peor_mitad": 226.05093698473445
+  },
+  {
+   "origen": "Origen 4",
+   "rol": "comercializador",
+   "politica": "base rodante",
+   "ventaja": 244.54867548555933,
+   "peor_mitad": 209.637821172184
+  },
+  {
+   "origen": "Origen 5",
+   "rol": "generador",
+   "politica": "base rodante",
+   "ventaja": 303.765569447158,
+   "peor_mitad": 157.36605056920257
+  },
+  {
+   "origen": "Origen 5",
+   "rol": "comercializador",
+   "politica": "base rodante",
+   "ventaja": 268.2445689368557,
+   "peor_mitad": 81.55789990416085
+  }
+ ],
+ "motor": {
+  "precio_medio": 394.9461323090278,
+  "24h|generador": {
+   "metodo_estable": "rodante",
+   "es_estable": true,
+   "metodo_sin_filtro": "hibrido",
+   "peor_mitad_sin_filtro": 73.36590301906452,
+   "metodos": {
+    "fijo": {
+     "ventaja_anio": 366.4925369714822,
+     "frec_anio": 0.21180555555555555,
+     "ventaja_h1": 353.6328019210757,
+     "ventaja_h2": 187.89166701756665,
+     "frec_h1": 0.02700617283950617,
+     "frec_h2": 0.3966049382716049,
+     "estable": false
+    },
+    "banda": {
+     "ventaja_anio": 342.2293018179563,
+     "frec_anio": 0.09722222222222222,
+     "ventaja_h1": 304.5331502067901,
+     "ventaja_h2": 166.82420208773408,
+     "frec_h1": 0.013503086419753086,
+     "frec_h2": 0.18094135802469136,
+     "estable": false
+    },
+    "rodante": {
+     "ventaja_anio": 244.7217428654924,
+     "frec_anio": 0.22106481481481483,
+     "ventaja_h1": 109.26681892968165,
+     "ventaja_h2": 238.36762128732926,
+     "frec_h1": 0.16010802469135801,
+     "frec_h2": 0.2820216049382716,
+     "estable": true
+    },
+    "hibrido": {
+     "ventaja_anio": 132.97118518713194,
+     "frec_anio": 0.1255787037037037,
+     "ventaja_h1": 82.78798595679015,
+     "ventaja_h2": 240.71932592429505,
+     "frec_h1": 0.1388888888888889,
+     "frec_h2": 0.11226851851851852,
+     "estable": true
+    }
+   }
+  },
+  "24h|comercializador": {
+   "metodo_estable": "rodante",
+   "es_estable": true,
+   "metodo_sin_filtro": "rodante",
+   "peor_mitad_sin_filtro": 75.11145736801305,
+   "metodos": {
+    "fijo": {
+     "ventaja_anio": 279.1248044631159,
+     "frec_anio": 0.12268518518518519,
+     "ventaja_h1": 86.82487039189411,
+     "ventaja_h2": 465.4020507534172,
+     "frec_h1": 0.2345679012345679,
+     "frec_h2": 0.010802469135802469,
+     "estable": false
+    },
+    "banda": {
+     "ventaja_anio": 278.4069916577673,
+     "frec_anio": 0.09182098765432099,
+     "ventaja_h1": 86.1660337307099,
+     "ventaja_h2": 465.4020507534172,
+     "frec_h1": 0.1728395061728395,
+     "frec_h2": 0.010802469135802469,
+     "estable": false
+    },
+    "hibrido": {
+     "ventaja_anio": 194.9779665704879,
+     "frec_anio": 0.11361882716049383,
+     "ventaja_h1": 79.2168917993261,
+     "ventaja_h2": 291.67826029812824,
+     "frec_h1": 0.1261574074074074,
+     "frec_h2": 0.10108024691358025,
+     "estable": true
+    },
+    "rodante": {
+     "ventaja_anio": 187.48077130540022,
+     "frec_anio": 0.15952932098765432,
+     "ventaja_h1": 81.50869853701154,
+     "ventaja_h2": 257.84577627090994,
+     "frec_h1": 0.1867283950617284,
+     "frec_h2": 0.13233024691358025,
+     "estable": true
+    }
+   }
+  },
+  "72h|generador": {
+   "metodo_estable": "rodante",
+   "es_estable": true,
+   "metodo_sin_filtro": "rodante",
+   "peor_mitad_sin_filtro": 89.07627523214572,
+   "metodos": {
+    "banda": {
+     "ventaja_anio": 361.8840245755086,
+     "frec_anio": 0.125,
+     "ventaja_h1": 237.95294475983147,
+     "ventaja_h2": 188.67002080496877,
+     "frec_h1": 0.012128325508607199,
+     "frec_h2": 0.2378716744913928,
+     "estable": false
+    },
+    "fijo": {
+     "ventaja_anio": 361.411213613788,
+     "frec_anio": 0.2081377151799687,
+     "ventaja_h1": 326.83220333303257,
+     "ventaja_h2": 183.73016260091742,
+     "frec_h1": 0.02034428794992175,
+     "frec_h2": 0.39593114241001565,
+     "estable": false
+    },
+    "rodante": {
+     "ventaja_anio": 242.5338492487943,
+     "frec_anio": 0.2147887323943662,
+     "ventaja_h1": 116.3524457924178,
+     "ventaja_h2": 229.15173379699002,
+     "frec_h1": 0.15375586854460094,
+     "frec_h2": 0.27582159624413144,
+     "estable": true
+    },
+    "hibrido": {
+     "ventaja_anio": 179.954088980902,
+     "frec_anio": 0.14769170579029733,
+     "ventaja_h1": 96.15348130725167,
+     "ventaja_h2": 248.98005579852543,
+     "frec_h1": 0.14358372456964005,
+     "frec_h2": 0.15179968701095461,
+     "estable": true
+    }
+   }
+  },
+  "72h|comercializador": {
+   "metodo_estable": "rodante",
+   "es_estable": true,
+   "metodo_sin_filtro": "rodante",
+   "peor_mitad_sin_filtro": 72.10111438469042,
+   "metodos": {
+    "banda": {
+     "ventaja_anio": 274.1807802022407,
+     "frec_anio": 0.10758998435054773,
+     "ventaja_h1": 85.01067006346082,
+     "ventaja_h2": 462.60119982003124,
+     "frec_h1": 0.21283255086071987,
+     "frec_h2": 0.002347417840375587,
+     "estable": false
+    },
+    "fijo": {
+     "ventaja_anio": 274.0519267741592,
+     "frec_anio": 0.10993740219092332,
+     "ventaja_h1": 84.95336480810958,
+     "ventaja_h2": 459.2276816382131,
+     "frec_h1": 0.21557120500782473,
+     "frec_h2": 0.004303599374021909,
+     "estable": false
+    },
+    "hibrido": {
+     "ventaja_anio": 208.21389385331727,
+     "frec_anio": 0.1189358372456964,
+     "ventaja_h1": 80.17960333883178,
+     "ventaja_h2": 231.85568110051895,
+     "frec_h1": 0.17370892018779344,
+     "frec_h2": 0.06416275430359937,
+     "estable": false
+    },
+    "rodante": {
+     "ventaja_anio": 190.12908943183558,
+     "frec_anio": 0.14397496087636932,
+     "ventaja_h1": 79.76301513264173,
+     "ventaja_h2": 244.07595723700535,
+     "frec_h1": 0.18192488262910797,
+     "frec_h2": 0.10602503912363068,
+     "estable": true
+    }
+   }
+  },
+  "corte_mitades": "2026-04-19",
+  "barrido": {
+   "metodo": "rodante",
+   "pares": [
+    {
+     "par": "10/90",
+     "ventaja": 293.9788283837827,
+     "frec": 14.756944444444445
+    },
+    {
+     "par": "15/85",
+     "ventaja": 275.31589591768363,
+     "frec": 17.1875
+    },
+    {
+     "par": "20/80",
+     "ventaja": 256.9701645284106,
+     "frec": 19.579475308641975
+    },
+    {
+     "par": "25/75",
+     "ventaja": 244.7217428654924,
+     "frec": 22.10648148148148
+    },
+    {
+     "par": "30/70",
+     "ventaja": 228.34904047092527,
+     "frec": 24.633487654320987
+    },
+    {
+     "par": "35/65",
+     "ventaja": 207.3297310102704,
+     "frec": 27.488425925925924
+    }
+   ]
+  },
+  "ultimo_mes": {
+   "inicio": "2026-07-06",
+   "fin": "2026-08-05",
+   "cobertura": 88.75,
+   "mae": 42.88497744211393,
+   "metodos": {
+    "fijo": {
+     "ventaja": 85.82976574726831,
+     "frec": 50.138888888888886,
+     "horas": 361,
+     "cop": 3098454.543476386
+    },
+    "rodante": {
+     "ventaja": 144.8552254242661,
+     "frec": 36.80555555555556,
+     "horas": 265,
+     "cop": 3838663.4737430518
+    },
+    "banda": {
+     "ventaja": 86.085309500731,
+     "frec": 21.11111111111111,
+     "horas": 152,
+     "cop": 1308496.7044111113
+    },
+    "hibrido": {
+     "ventaja": 142.48986706823666,
+     "frec": 15.972222222222221,
+     "horas": 115,
+     "cop": 1638633.4712847215
+    }
+   }
+  }
+ },
+ "costo": {
+  "catboost_s": 21.598774194717407,
+  "filas_entrenamiento": 65304,
+  "variables": 49
+ }
+}

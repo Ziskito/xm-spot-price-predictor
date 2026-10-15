@@ -239,3 +239,4 @@ data/processed/resultados/backups_pre_actualizacion_14oct2026/
 # Caches regenerables
 data/processed/resultados/escenario_realista/mejoras/*.pkl
 data/processed/resultados/backups_pre_origenes_oni_15oct2026/
+data/processed/resultados/escenario_realista/mejoras/pre_oni_14oct/
