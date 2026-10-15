@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Manual de usuario de augur en PDF (docs/Manual_Usuario_augur.pdf), 14-oct-2026.
+Manual de usuario de augur en PDF (docs/Manual_Usuario_augur.pdf), 14-oct-2026; rev. 1.2 (15-oct) con el dashboard rediseñado.
 
 Formato de manual tecnico (documento MU-AUG-001): Times New Roman, blanco y negro, secciones numeradas, figuras y
 tablas numeradas, globos numerados sobre las capturas, procedimientos por pasos, avisos NOTA / PRECAUCION / ADVERTENCIA,
@@ -95,14 +95,15 @@ def capturar():
 # recortes en pixeles de la captura (escala 1,5): (captura, (x0, y0, x1, y1))
 RECORTES = {
     "sb": ("operador_generador", (0, 0, 450, 1290)),
-    "op_arriba": ("operador_generador", (0, 0, 2160, 1034)),
-    "op_tarjeta": ("operador_generador", (560, 400, 1372, 945)),
-    "op_grafico_dia": ("operador_generador", (1400, 405, 2050, 1030)),
-    "op_franja": ("operador_generador", (546, 1053, 2160, 1297)),
-    "op_calor": ("operador_generador", (546, 1297, 2160, 2305)),
-    "op_indicadores": ("operador_generador", (546, 2300, 2160, 2510)),
-    "op_semana": ("operador_generador", (546, 2520, 2160, 3110)),
-    "an_todo": ("analista", (0, 0, 2160, 1935)),
+    "op_arriba": ("operador_generador", (0, 0, 2160, 1210)),
+    "op_tarjeta": ("operador_generador", (560, 426, 1373, 1099)),
+    "op_grafico_dia": ("operador_generador", (1401, 426, 2050, 1099)),
+    "op_franja": ("operador_generador", (560, 1211, 2050, 1633)),
+    "op_calor": ("operador_generador", (560, 1658, 2050, 2663)),
+    "op_indicadores": ("operador_generador", (560, 2796, 2050, 3082)),
+    "op_semana": ("operador_generador", (560, 3086, 2050, 3721)),
+    "op_oscuro": ("operador_oscuro", (0, 0, 2160, 1210)),
+    "an_todo": ("analista", (0, 0, 2160, 2200)),
 }
 
 
@@ -124,16 +125,17 @@ def img(nombre, ancho="100%", pie=""):
 
 
 DOC = "MU-AUG-001"
-REV = "1.1"
-FECHA = "14 de octubre de 2026"
+REV = "1.2"
+FECHA = "15 de octubre de 2026"
 
 # globos numerados (coordenadas en pixeles del recorte). Los de la barra lateral (x < 200) van en un margen blanco a la
 # izquierda de la figura, con linea guia hasta la etiqueta; los demas, en espacios libres junto al elemento
 GLOBOS = {
-    "op_arriba": [(1, 51, 224), (2, 47, 332), (3, 47, 618), (4, 47, 745), (5, 55, 985), (6, 522, 355), (7, 1200, 296),
-                  (8, 1880, 300), (9, 522, 468), (10, 522, 669), (11, 522, 760), (12, 522, 854), (13, 1388, 470)],
-    "an_todo": [(1, 556, 307), (2, 556, 588), (3, 556, 967), (4, 556, 1892), (5, 33, 1497), (6, 33, 1624), (7, 33, 1750),
-                (8, 33, 1822)],
+    "op_arriba": [(1, 60, 225), (2, 60, 330), (3, 60, 710), (4, 60, 836), (5, 60, 1075), (6, 538, 380), (7, 1400, 330),
+                  (8, 1880, 330), (9, 538, 480), (10, 538, 650), (11, 538, 970), (12, 1387, 970), (13, 1387, 480),
+                  (14, 1855, 489)],
+    "an_todo": [(1, 538, 410), (2, 538, 600), (3, 538, 1120), (4, 538, 2158), (5, 60, 1582), (6, 60, 1708), (7, 60, 1801),
+                (8, 60, 1894)],
 }
 MARGEN = 90
 
@@ -277,7 +279,7 @@ INDICE = [
     ("", "CONTROL DE REVISIONES", 1),
     ("1", "INTRODUCCIÓN", 1),
     ("2", "ACCESO", 1), ("2.1", "Acceso web", 2), ("2.2", "Ejecución local", 2), ("2.3", "Parámetros de la dirección", 2),
-    ("3", "DESCRIPCIÓN DE LA INTERFAZ", 1), ("3.1", "Vista Operador", 2), ("3.2", "Vista Analista", 2),
+    ("3", "DESCRIPCIÓN DE LA INTERFAZ", 1), ("3.1", "Vista Operador", 2), ("3.2", "Vista Analista", 2), ("3.3", "Tema oscuro", 2),
     ("4", "FUNCIONES DE LA VISTA OPERADOR", 1), ("4.1", "Rol y horizonte", 2), ("4.2", "Selección de día y hora", 2),
     ("4.3", "Recomendación horaria", 2), ("4.4", "Pronóstico del día", 2), ("4.5", "Franja horaria", 2),
     ("4.6", "Mapa de calor día-hora", 2), ("4.7", "Indicadores", 2), ("4.8", "Semana de referencia", 2),
@@ -330,7 +332,8 @@ def html(c, paginas):
 <div class="tit-tabla"><b>Tabla 1.</b> Historial de revisiones</div>
 <table><tr><th style="width:14mm">Rev.</th><th style="width:28mm">Fecha</th><th>Descripción</th><th style="width:44mm">Elaboró</th></tr>
 <tr><td>1.0</td><td>14/10/2026</td><td>Emisión inicial. Pronóstico de 24 h del escenario realista y detector de eventos realista.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.1</td><td>14/10/2026</td><td>Actualización diaria automática y pronóstico del día siguiente; versión del modelo en la barra lateral; fechas editables en el mapa de calor; la hora se conserva al cambiar de vista.</td><td>J. Barceló, R. Dede</td></tr></table>
+<tr><td>1.1</td><td>14/10/2026</td><td>Actualización diaria automática y pronóstico del día siguiente; versión del modelo en la barra lateral; fechas editables en el mapa de calor; la hora se conserva al cambiar de vista.</td><td>J. Barceló, R. Dede</td></tr>
+<tr><td>1.2</td><td>15/10/2026</td><td>Interfaz rediseñada: tarjeta de recomendación con medidor, gráfica del día con botón Ampliar y variables que se ocultan o muestran desde la leyenda, franja horaria con precio y acción, tema oscuro de alto contraste y diseño adaptable a pantallas angostas.</td><td>J. Barceló, R. Dede</td></tr></table>
 <h2 style="margin-top:18pt">Contenido</h2>
 <div class="indice">{indice_html(paginas)}</div>
 
@@ -376,10 +379,11 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <tr><td>7</td><td>Anterior / Siguiente / Último</td><td>4.2</td></tr>
 <tr><td>8</td><td>Hora del día</td><td>4.2</td></tr>
 <tr><td>9</td><td>Recomendación</td><td>4.3</td></tr>
-<tr><td>10</td><td>Escala de precio</td><td>4.3</td></tr>
+<tr><td>10</td><td>Medidor de precio</td><td>4.3</td></tr>
 <tr><td>11</td><td>Confianza</td><td>4.3</td></tr>
 <tr><td>12</td><td>Riesgo de salto</td><td>4.3</td></tr>
-<tr><td>13</td><td>Pronóstico del día</td><td>4.4</td></tr></table>
+<tr><td>13</td><td>Pronóstico del día</td><td>4.4</td></tr>
+<tr><td>14</td><td>Ampliar</td><td>4.4</td></tr></table>
 <p class="nota-lado">Debajo se ubican la franja horaria (4.5), el mapa de calor (4.6), los indicadores (4.7) y la semana de referencia (4.8).</p>''', 69)}
 <h2 style="page-break-before:always">3.2 Vista Analista</h2>
 {lado(fig("an_todo_globos", 2, "Vista Analista"), '''<div class="tit-tabla"><b>Tabla 5.</b> Elementos de la vista Analista</div>
@@ -392,6 +396,12 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <tr><td>6</td><td>Rango de fechas</td><td>5.2</td></tr>
 <tr><td>7</td><td>Filtro intradía</td><td>5.3</td></tr>
 <tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 72)}
+<h2 style="page-break-before:always">3.3 Tema oscuro</h2>
+{lado(fig("op_oscuro", 3, "Vista Operador con el tema oscuro"), '''<p>El interruptor <b>Modo oscuro</b> (1) cambia a un tema de fondo negro y
+alto contraste, pensado para salas de control, proyección y uso nocturno. Las señales conservan sus colores (verde, naranja y gris)
+y todas las funciones son las mismas que en el tema claro. El tema también se puede fijar desde la dirección web (Tabla 3).</p>
+<p>En pantallas de menos de 1200 px de ancho (tabletas o ventanas pequeñas), la tarjeta de recomendación y la gráfica del día se
+muestran una debajo de la otra.</p>''', 66)}
 
 <h1 class="salto">4. Funciones de la vista Operador</h1>
 <h2>4.1 Rol y horizonte</h2>
@@ -405,37 +415,45 @@ recorren los días sin abrir el calendario. <b>Hora del día</b> (8) fija la hor
 franja horaria (4.5). El día y la hora seleccionados se conservan al cambiar de vista. Los días más recientes aún no tienen precio
 real: XM lo publica con unos tres días de rezago.</p>
 <h2>4.3 Recomendación horaria</h2>
-{lado(fig("op_tarjeta", 3, "Tarjeta de recomendación"), '''<p>La tarjeta (9) muestra la acción para el día, la hora y el rol seleccionados. La escala de precio (10) ubica el precio esperado frente
-a los umbrales barato y caro del método activo. <b>Confianza</b> (11) clasifica el ancho relativo de la banda frente a las horas
+{lado(fig("op_tarjeta", 4, "Tarjeta de recomendación"), '''<p>La tarjeta (9) muestra la acción para el día, la hora y el rol seleccionados, con una insignia que la califica como favorable,
+desfavorable o neutral. El medidor (10) ubica el precio esperado (aguja y valor en COP/kWh) frente a los tramos barato, normal y caro
+del método activo; a su lado se indican los umbrales de cada tramo y la acción que le corresponde según el rol. La tarjeta toma el
+alto de la gráfica del día. <b>Confianza</b> (11) clasifica el ancho relativo de la banda frente a las horas
 anteriores en alta, media o baja. <b>Riesgo de salto</b> (12) presenta la probabilidad de desplome (▼) y de pico (▲) de la hora; se
 resalta desde 30 % y se listan las horas del día que superan ese umbral.</p>'''
 + aviso("Nota", "El método de umbral de la vista Operador es el más estable del backtest para el rol y el horizonte elegidos (criterio maximin entre mitades del periodo). Si ningún método cumple la condición de estabilidad, la tarjeta muestra el aviso ⚠."), 48)}
 <h2>4.4 Pronóstico del día</h2>
-{lado(fig("op_grafico_dia", 4, "Pronóstico del día"), '''<p>La gráfica (13) presenta la mediana del pronóstico, la banda del 80 %, los umbrales barato y caro y la hora seleccionada (línea
-vertical). En días con precio publicado incluye el precio real. Los marcadores ▼ y ▲ señalan las horas con riesgo de salto.</p>''', 40)}
+{lado(fig("op_grafico_dia", 5, "Pronóstico del día"), '''<p>La gráfica (13) presenta la mediana del pronóstico, la banda del 80 %, los umbrales barato y caro y la hora seleccionada (línea
+vertical). En días con precio publicado incluye el precio real. Los marcadores ▼ y ▲ señalan las horas con riesgo de salto.</p>
+<p>Las <b>variables</b> de la leyenda funcionan como botones: un clic oculta o muestra la variable y un doble clic deja solo esa. Lo
+que se oculta se conserva al cambiar de hora o de día. <b>Ampliar</b> (14) abre la gráfica en una ventana grande, donde además se
+acerca una zona arrastrando sobre ella; un doble clic la restablece.</p>''', 40)}
 <h2>4.5 Franja horaria</h2>
-{fig("op_franja", 5, "Franja horaria")}
-<p>Resume la señal de las 24 horas del día: verde, acción favorable; naranja, acción desfavorable; gris, esperar. Un clic en una hora la
-selecciona como hora de la recomendación.</p>
+{fig("op_franja", 6, "Franja horaria")}
+<p>Resume las 24 horas del día en dos filas. Cada casilla indica la hora, el precio esperado en COP/kWh y la acción abreviada
+(Tabla 8), con el color de la señal: verde, acción favorable; naranja, acción desfavorable; gris, esperar. Los símbolos ▼ y ▲ sobre una
+casilla señalan riesgo de desplome o de pico. Un clic en una casilla selecciona esa hora para la recomendación; la casilla
+seleccionada se resalta con un borde.</p>
 <h2>4.6 Mapa de calor día-hora</h2>
-{lado(fig("op_calor", 6, "Mapa de calor día-hora"), '''<p>Muestra la señal o el precio esperado de varios días a la vez. <b>Días</b> y <b>Horas</b> acotan el periodo y las horas mostradas
+{lado(fig("op_calor", 7, "Mapa de calor día-hora"), '''<p>Muestra la señal o el precio esperado de varios días a la vez. <b>Días</b> y <b>Horas</b> acotan el periodo y las horas mostradas
 (extremos juntos para un solo día u hora). Las fechas de los extremos de <b>Días</b> se escriben directamente o se eligen en el
 calendario, y la barra se ajusta; <b>Colorear por</b> alterna entre <b>Señal del motor</b> y <b>Precio esperado</b>. El
 recuadro marca el día y la hora seleccionados.</p>''', 60)}
 <h2>4.7 Indicadores</h2>
-{lado(fig("op_indicadores", 7, "Indicadores"), '''<div class="tit-tabla"><b>Tabla 6.</b> Indicadores de la vista Operador</div>
+{lado(fig("op_indicadores", 8, "Indicadores"), '''<div class="tit-tabla"><b>Tabla 6.</b> Indicadores de la vista Operador</div>
 <table><tr><th style="width:38mm">Indicador</th><th>Contenido</th></tr>
 <tr><td>Horas para actuar hoy</td><td>Horas del día con acción favorable; barras de los últimos 14 días.</td></tr>
 <tr><td>Ventaja histórica de la regla</td><td>Diferencia entre el precio medio de las horas de acción y el promedio del periodo en el backtest de 2026 (COP/kWh); serie mensual.</td></tr>
-<tr><td>Con qué frecuencia actúa</td><td>Porcentaje de horas con acción favorable; serie mensual. Rango útil: 10 % a 40 %.</td></tr></table>''', 55)}
+<tr><td>Con qué frecuencia actúa</td><td>Porcentaje de horas con acción favorable; serie mensual. Rango útil: 10 % a 40 %. La barra inferior reparte el periodo entre acción favorable, desfavorable y esperar.</td></tr></table>''', 55)}
 <h2>4.8 Semana de referencia</h2>
-{lado(fig("op_semana", 8, "Semana de referencia"), '''<p>Compara el precio real con el pronóstico desde tres días antes hasta cuatro días después del día seleccionado, con las horas de
-acción marcadas. Permite ampliar, desplazar y consultar valores sobre la gráfica.</p>''', 62)}
+{lado(fig("op_semana", 9, "Semana de referencia"), '''<p>Compara el precio real con el pronóstico desde tres días antes hasta cuatro días después del día seleccionado, con las horas de
+acción marcadas. Permite ampliar, desplazar y consultar valores sobre la gráfica, y ocultar o mostrar variables desde la
+leyenda (4.4).</p>''', 62)}
 
 <h1 class="salto">5. Funciones de la vista Analista</h1>
 <p>Los controles de esta vista se ubican en la barra lateral y solo afectan a la vista Analista; la recomendación de la vista Operador
 no cambia.</p>
-{lado(fig("an_controles_globos", 9, "Controles de la vista Analista"), '''<h2 style="margin-top:0">5.1 Parámetros del umbral</h2>
+{lado(fig("an_controles_globos", 10, "Controles de la vista Analista"), '''<h2 style="margin-top:0">5.1 Parámetros del umbral</h2>
 <p><b>Percentiles del umbral</b> (5) define los percentiles bajo y alto que separan los precios baratos y caros (25 y 75 por defecto).</p>
 <h2>5.2 Rango de evaluación</h2>
 <p><b>Rango de fechas</b> (6) delimita el periodo sobre el que se calculan los resultados y se sugiere el método.</p>
@@ -453,10 +471,12 @@ barata (comercializador). Activo por defecto.</p>
 <h2>5.5 Resultados y comparación de métodos</h2>
 <p>Las tarjetas (1) muestran la ventaja económica, la frecuencia de acción y las horas de acción del método seleccionado. La tabla (2)
 compara los cuatro métodos e indica si su frecuencia está en el rango de 10 % a 40 %. La gráfica (3) muestra el precio real, el
-pronóstico, la banda y las señales del método en el rango elegido.</p>
+pronóstico, la banda y las señales del método en el rango elegido; sus variables se ocultan o muestran desde la leyenda (4.4) y el
+botón de pantalla completa, en la esquina superior derecha de la gráfica, la muestra en toda la pantalla.</p>
 <h2>5.6 Datos filtrados</h2>
 <p><b>Ver datos filtrados</b> (4) despliega la tabla horaria del rango: precio real, cuantiles del pronóstico, señal y probabilidades de
-evento. La tabla admite ordenamiento y descarga en CSV.</p>
+evento. El selector <b>Mostrar</b> deja todas las horas o solo las de una señal (acción favorable, desfavorable o esperar). La tabla
+admite búsqueda, ordenamiento y descarga en CSV.</p>
 
 <h1>6. Referencia de señales y símbolos</h1>
 <div class="tit-tabla"><b>Tabla 8.</b> Señales y símbolos</div>
@@ -464,11 +484,14 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Verde</td><td>Vender (generador) o comprar (comercializador).</td></tr>
 <tr><td>Naranja</td><td>Retener (generador) o evitar compra en bolsa (comercializador).</td></tr>
 <tr><td>Gris</td><td>Esperar.</td></tr>
+<tr><td>VEN / COM / RET / EVI / ESP</td><td>Vender, comprar, retener, evitar compra y esperar (abreviaturas de la franja horaria).</td></tr>
+<tr><td>Favorable / desfavorable / neutral</td><td>Insignia de la tarjeta de recomendación.</td></tr>
 <tr><td>▼</td><td>Probabilidad de desplome ≥ 30 % (precio ≤ 0,7 × mediana del día).</td></tr>
 <tr><td>▲</td><td>Probabilidad de pico ≥ 30 % (precio ≥ 1,3 × mediana del día).</td></tr>
 <tr><td>⚠</td><td>Ningún método fue estable en el backtest.</td></tr>
 <tr><td>Confianza alta / media / baja</td><td>Ancho relativo de la banda frente a las horas anteriores.</td></tr>
-<tr><td>Línea vertical (gráficas)</td><td>Hora seleccionada.</td></tr></table>
+<tr><td>Línea vertical (gráficas)</td><td>Hora seleccionada.</td></tr>
+<tr><td>Ampliar</td><td>Abre la gráfica del día en una ventana grande.</td></tr></table>
 
 <h1>7. Solución de problemas</h1>
 <div class="tit-tabla"><b>Tabla 9.</b> Síntoma, causa y acción</div>
@@ -479,6 +502,7 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Sin precio real en los últimos días.</td><td>XM publica el precio con unos 3 días de rezago.</td><td>Ninguna; se completa en las actualizaciones siguientes.</td></tr>
 <tr><td>El pronóstico no llega a mañana.</td><td>XM aún no publica el predespacho del día siguiente.</td><td>Consultar después de las 16:00.</td></tr>
 <tr><td>Sin marcadores ▼ / ▲.</td><td>Horizonte de 72 h.</td><td>Seleccionar 24 h.</td></tr>
+<tr><td>Una variable no aparece en la gráfica.</td><td>Se ocultó con un clic en la leyenda.</td><td>Clic de nuevo en su nombre o doble clic sobre la leyenda.</td></tr>
 <tr><td>Aviso ⚠ en la recomendación.</td><td>Ningún método estable para el rol y horizonte.</td><td>Revisar la comparación de métodos (5.5).</td></tr></table>
 
 <h1 class="salto">Anexo A. Modelo y datos</h1>
@@ -590,7 +614,7 @@ if __name__ == "__main__":
     recortar()
     anotar()
     from PIL import Image
-    Image.open(IMG / "an_todo_globos.png").crop((0, 1390, 545, 1900)).save(IMG / "an_controles_globos.png")
+    Image.open(IMG / "an_todo_globos.png").crop((0, 1450, 545, 1960)).save(IMG / "an_controles_globos.png")
     c = cifras()
     ruta = MAN / "manual.html"
     ruta.write_text(html(c, {}), encoding="utf-8")

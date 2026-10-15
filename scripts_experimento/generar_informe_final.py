@@ -664,12 +664,16 @@ R_("Figura 3.", "**Figura 3.** Motor de decisión en operación, método «rodan
                 "de julio de 2026): pronóstico mediano, banda [q10, q90], umbrales rodantes y acción recomendada en cada hora.")
 R_("Dashboard.", (
     "**Dashboard.** Se publicó en Streamlit Community Cloud (augurpredictor.streamlit.app) con la marca augur. La vista Operador "
-    "aplica el método que elige el criterio de estabilidad y muestra, para el día y la hora elegidos, la acción recomendada, la "
-    "posición del precio esperado entre los umbrales, un nivel de confianza según el ancho relativo de la banda y la "
-    "probabilidad de pico o desplome; la acompañan la franja de 24 horas, el mapa de calor día-hora, tres indicadores del "
-    "backtest y la semana de referencia, cada imagen con sus metadatos (unidad, periodo, confianza y versión del modelo). La "
-    "vista Analista permite fijar el método, los percentiles, el rango de fechas y el filtro intradía. La interfaz se verificó "
-    "con pruebas automatizadas de Streamlit en las 16 combinaciones de tema, vista, rol y horizonte, y en un navegador."))
+    "aplica el método que elige el criterio de estabilidad y muestra, para el día y la hora elegidos, la acción recomendada con "
+    "una insignia (favorable, desfavorable o neutral), un medidor que ubica el precio esperado entre los tramos barato, normal y "
+    "caro, un nivel de confianza según el ancho relativo de la banda y la probabilidad de pico o desplome; la acompañan la "
+    "gráfica del día (con un botón para ampliarla y variables que se ocultan o muestran desde la leyenda), la franja de 24 horas "
+    "con el precio y la acción de cada hora, el mapa de calor día-hora, tres indicadores del backtest y la semana de referencia, "
+    "cada imagen con sus metadatos (unidad, periodo, confianza y versión del modelo). La vista Analista permite fijar el método, "
+    "los percentiles, el rango de fechas y el filtro intradía. La presentación se rediseñó el 15 de octubre con la "
+    "retroalimentación del equipo (tarjetas, tema oscuro de alto contraste y diseño adaptable a pantallas angostas) sin cambiar "
+    "el motor ni los datos. La interfaz se verificó con pruebas automatizadas de Streamlit en las 16 combinaciones de tema, "
+    "vista, rol y horizonte, y en un navegador a varios anchos de pantalla."))
 R_("Funcionamiento del prototipo.", (
     "**Funcionamiento del prototipo y operación diaria.** El sistema funciona de principio a fin sin intervención manual. Todos "
     "los días a las 15:40 y a las 18:40, un flujo de GitHub Actions descarga los datos nuevos de XM y NOAA, reentrena los "
@@ -680,14 +684,15 @@ R_("Funcionamiento del prototipo.", (
     "en el Anexo 3, el manual de usuario en el Anexo 4 y los resultados que demuestran el funcionamiento de cada bloque, en la "
     "Sección 7."))
 R_("Vista Operador.", (
-    "**Vista Operador.** La Figura 4 muestra la vista Operador el 15 de octubre de 2026 a las 08:00 h para el generador, con el "
-    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el precio esperado, 429 COP/kWh, está por debajo "
-    "del umbral barato (≤ 503) y lejos del caro (≥ 723), con confianza alta (banda de ±34 COP/kWh, más ancha que solo el 21 % de "
-    "las horas anteriores). El riesgo de desplome a esa hora es de 16 % y el detector anticipa un posible pico entre las 15:00 y "
-    "las 22:00, que la gráfica del día marca con ▲. Ese día el generador tenía 7 de 24 horas para despachar y vender, y la regla "
-    "activa, «rodante», tiene una ventaja histórica de +244 COP/kWh y actúa en el 22 % de las horas."))
+    "**Vista Operador.** La Figura 4 muestra la vista Operador el 16 de octubre de 2026 a las 08:00 h para el generador, con el "
+    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 431 COP/kWh, "
+    "en el tramo barato (≤ 503) y lejos del caro (≥ 720), con confianza alta (banda de ±42 COP/kWh, más ancha que el 35 % de las "
+    "horas anteriores). El riesgo de desplome a esa hora es de 49 %: el detector anticipa un posible desplome entre las 08:00 y "
+    "las 11:00 y un posible pico entre las 16:00 y las 21:00, que la gráfica del día marca con ▼ y ▲. Ese día el generador tiene "
+    "6 de 24 horas para despachar y vender, y la regla activa, «rodante», tiene una ventaja histórica de +244 COP/kWh y actúa en "
+    "el 22 % de las horas."))
 imagen("Figura 4.", "dash_operador.png", 6.3)
-R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (15 de octubre de 2026, 08:00 h, rol generador, horizonte "
+R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (16 de octubre de 2026, 08:00 h, rol generador, horizonte "
                 "24 h).")
 R_("Rol generador.", (
     "**Mapa de calor día-hora.** El mapa de calor (Figura 5) resume la señal de los 14 días anteriores hora por hora: en la "
@@ -695,15 +700,15 @@ R_("Rol generador.", (
     "desde el 11 de octubre, con precios más bajos, retener en buena parte de la mañana y del mediodía. Las fechas de los extremos se escriben o se eligen en un "
     "calendario, y el modo «Precio esperado» colorea las celdas con la escala de color del precio de bolsa que usa XM."))
 imagen("Figura 5.", "dash_calor.png", 6.0)
-R_("Figura 5.", "**Figura 5.** Mapa de calor día-hora de la señal del motor (2 al 15 de octubre de 2026, rol generador).")
+R_("Figura 5.", "**Figura 5.** Mapa de calor día-hora de la señal del motor (3 al 16 de octubre de 2026, rol generador).")
 R_("Vista Analista.", (
     "**Vista Analista.** La Figura 6 muestra la vista Analista para el generador a 24 h con todo el periodo publicado (1 de enero "
-    "al 16 de octubre de 2026). La tabla compara los cuatro métodos por ventaja y frecuencia de acción en el rango elegido: "
+    "al 17 de octubre de 2026). La tabla compara los cuatro métodos por ventaja y frecuencia de acción en el rango elegido: "
     "«banda» queda sugerido por ventaja (+323 COP/kWh en el 18 % de las horas), pero la vista Operador usa el criterio de "
     "estabilidad, que elige «rodante» porque «banda» y «fijo» casi no actúan en la primera mitad del año (Tabla 20). Debajo, la "
     "tabla «Ver datos filtrados» permite auditar cada recomendación hora a hora y descargarla."))
 imagen("Figura 6.", "dash_analista.png", 4.3)
-R_("Figura 6.", "**Figura 6.** Dashboard publicado, vista Analista (rol generador, horizonte 24 h, 1 de enero al 16 de octubre de "
+R_("Figura 6.", "**Figura 6.** Dashboard publicado, vista Analista (rol generador, horizonte 24 h, 1 de enero al 17 de octubre de "
                 "2026).")
 eliminar(P("Rol generador en la vista Analista."))
 
