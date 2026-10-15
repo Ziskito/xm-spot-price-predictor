@@ -45,6 +45,25 @@ RAIZ = encontrar_raiz_proyecto()
 if str(RAIZ / "src") not in sys.path:
     sys.path.insert(0, str(RAIZ / "src"))
 
+
+@st.cache_resource
+def _version_cargada():
+    return {"v": None}
+
+
+def _version_datos():
+    """Huella de los archivos de pronostico: cambia con cada actualizacion diaria (GitHub Actions)."""
+    res = RAIZ / "data" / "processed" / "resultados"
+    return tuple(f.stat().st_mtime_ns if f.exists() else 0 for f in
+                 (res / "fuentes_pronostico.json", res / "produccion" / "estado.json"))
+
+
+# st.cache_data no sabe que los CSV cambiaron: sin esto, la app en linea seguiria mostrando los datos del
+# momento en que arranco aunque el workflow diario suba datos nuevos
+if _version_cargada()["v"] != _version_datos():
+    st.cache_data.clear()
+    _version_cargada()["v"] = _version_datos()
+
 from motor_decision import (  # noqa: E402
     generar_senales, evaluar_backtest, comparar_metodos, elegir_mejor_metodo,
     comparar_metodos_estable, elegir_mejor_metodo_estable,
@@ -158,6 +177,21 @@ hr { border-color: $linea !important; }
   left: -12px; right: 50%; }
 [data-testid="stSlider"] div:has(> div[data-rac] + div[data-rac]) > div[data-rac] + div[data-rac]::before {
   left: 50%; right: -12px; }
+/* mapa de calor: las fechas de los extremos de la barra de dias se editan directamente (campos de fecha con el
+   aspecto de las etiquetas de la barra); las etiquetas propias de la barra se ocultan */
+.st-key-dias_calor [data-testid="stSliderThumbValue"], .st-key-dias_calor [data-testid="stSliderTickBar"] { display: none; }
+.st-key-dias_calor, .st-key-dias_calor [data-testid="stHorizontalBlock"] { gap: 0 !important; }
+.st-key-dias_calor [data-testid="stDateInputField"] {
+  background: transparent !important; border: none !important; box-shadow: none !important; min-height: 0 !important;
+  height: 22px; padding: 0 !important; }
+.st-key-dias_calor [data-testid="stDateInputField"] [role="group"] { padding: 0 !important; }
+.st-key-dias_calor [data-testid="stHorizontalBlock"] { margin-top: 13px; margin-bottom: -13px; position: relative; z-index: 1; }
+.st-key-dias_calor [data-testid="stDateInputField"] span { color: $gris !important; -webkit-text-fill-color: $gris !important;
+  font-size: .875rem; cursor: text; }
+.st-key-dias_calor [data-testid="stDateInputField"]:hover span { color: $tinta !important; -webkit-text-fill-color: $tinta !important; }
+.st-key-dias_calor [data-testid="stDateInputField"] button { display: none; }
+.st-key-dias_fin [data-testid="stDateInputField"] [role="group"] { justify-content: flex-end; }
+.etq-dias { font-size: .875rem; font-weight: 600; color: $tinta; margin-bottom: 2px; }
 /* botones de dia anterior / siguiente / ultimo */
 .st-key-dia_ant button, .st-key-dia_sig button, .st-key-dia_ult button {
   background: $control !important; color: $tinta !important; border: 1px solid $control_borde !important;
@@ -960,29 +994,35 @@ def vista_operador():
         else:
             previos = [d for d in completos if d <= dia]
             st.session_state[clave_dias] = (previos[-14:][0], previos[-1])
-    # calendario de rango sincronizado con la barra: si la barra cambio, el calendario la sigue; si el usuario
-    # elige un rango completo en el calendario, la barra toma ese rango (con un solo extremo elegido no se toca)
-    clave_cal = f"cal_{clave_dias}"
+    # las fechas de los extremos de la barra se pueden escribir: si la barra cambio, las fechas la siguen; si el
+    # usuario escribe una fecha, la barra toma el nuevo rango (si quedan al reves, se ordenan)
+    clave_ini, clave_fin = f"ini_{clave_dias}", f"fin_{clave_dias}"
     actual = tuple(st.session_state[clave_dias])
-    if st.session_state.get(f"_ultimo_{clave_dias}") != actual or clave_cal not in st.session_state:
-        st.session_state[clave_cal] = actual
+    if (st.session_state.get(f"_ultimo_{clave_dias}") != actual or clave_ini not in st.session_state
+            or clave_fin not in st.session_state):
+        st.session_state[clave_ini], st.session_state[clave_fin] = actual
         st.session_state[f"_ultimo_{clave_dias}"] = actual
 
-    def _calendario_a_barra():
-        v = st.session_state.get(clave_cal)
-        if isinstance(v, (tuple, list)) and len(v) == 2:
-            st.session_state[clave_dias] = st.session_state[f"_copia_{clave_dias}"] = tuple(v)
-            st.session_state[f"_ultimo_{clave_dias}"] = tuple(v)
-    c_cal, c_dias, c_horas, c_modo = st.columns([2.4, 4, 3, 2])
-    with c_cal:
-        st.date_input("Del … al", min_value=completos[0], max_value=completos[-1], key=clave_cal,
-                      format="DD/MM/YYYY", on_change=_calendario_a_barra,
-                      help="Elige el primer y el último día en el calendario; la barra se ajusta sola.")
-    with c_dias:
+    def _fechas_a_barra():
+        a, b = st.session_state.get(clave_ini), st.session_state.get(clave_fin)
+        if a is None or b is None:
+            return
+        nuevo = (min(a, b), max(a, b))
+        st.session_state[clave_dias] = st.session_state[f"_copia_{clave_dias}"] = nuevo
+        st.session_state[f"_ultimo_{clave_dias}"] = None          # las fechas se reescriben ya ordenadas
+    c_dias, c_horas, c_modo = st.columns([5, 3, 2])
+    with c_dias, st.container(key="dias_calor"):
+        st.markdown('<div class="etq-dias">Días</div>', unsafe_allow_html=True)
+        f_ini, _, f_fin = st.columns([1, 1, 1])
+        with f_ini:
+            st.date_input("Primer día", min_value=completos[0], max_value=completos[-1], key=clave_ini,
+                          format="DD/MM/YYYY", on_change=_fechas_a_barra, label_visibility="collapsed")
+        with f_fin, st.container(key="dias_fin"):
+            st.date_input("Último día", min_value=completos[0], max_value=completos[-1], key=clave_fin,
+                          format="DD/MM/YYYY", on_change=_fechas_a_barra, label_visibility="collapsed")
         rango_dias = st.slider("Días", min_value=completos[0], max_value=completos[-1], key=clave_dias,
                                step=pd.Timedelta(days=1).to_pytimedelta(), format="DD/MM/YYYY",
-                               help="Del primer día disponible al más reciente. Para ver un solo día, "
-                                    "junta los dos extremos.")
+                               label_visibility="collapsed")
         d_ini, d_fin = rango_dias if isinstance(rango_dias, (tuple, list)) else (rango_dias, rango_dias)
         st.session_state[f"_copia_{clave_dias}"] = (d_ini, d_fin)
     with c_horas:
