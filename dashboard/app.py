@@ -14,7 +14,7 @@ Dos vistas, elegibles en la barra lateral:
   * "Analista": los controles finos (metodo manual, percentiles, rango de
     fechas, tabla comparativa de metodos).
 
-Tema claro u oscuro con el interruptor de la barra lateral. La vista y el tema
+Tema claro u oscuro (negro puro) con el interruptor de la barra lateral. La vista y el tema
 iniciales se pueden fijar por enlace: ?vista=analista&tema=oscuro.
 
 Los datos entran SIEMPRE por cargar_fuente_pronostico() (src/motor_decision.py),
@@ -93,24 +93,31 @@ TEMAS = {
         "neutro_bg": "#E9EDF3", "control": "#FFFFFF", "control_borde": "#C9D2DF",
         "banda": "rgba(30,58,138,0.12)", "q50": "#1E3A8A",
         "acento": "#D97706", "acento_texto": "#FFFFFF", "acento_sombra": "rgba(217,119,6,.35)",
-        "calor_verde": "#059669", "calor_ambar": "#CBD5E1", "calor_rojo": "#EA580C",
+        "calor_verde": "#6CCB9F", "calor_ambar": "#E6ECF3", "calor_rojo": "#F6AE79",
         "scroll": "#94A3B8", "scroll_hover": "#5B6B82", "sombra": "0 1px 2px rgba(11,31,58,.07)",
         "logo_tenue": "#94A3B8",
     },
-    "oscuro": {
-        "verde": "#34D399", "verde_bg": "rgba(52,211,153,0.15)",
-        "rojo": "#FB923C", "rojo_bg": "rgba(251,146,60,0.16)",
-        "ambar": "#94A3B8", "ambar_bg": "rgba(148,163,184,0.16)",
-        "tinta": "#EAF0F8", "texto": "#BCC8DA", "gris": "#8193AD",
-        "linea": "#1D3355", "panel": "#0D1F38", "fondo": "#071426", "lateral": "#0A1A30",
-        "neutro_bg": "#17304F", "control": "#10243F", "control_borde": "#26406A",
-        "banda": "rgba(251,191,36,0.16)", "q50": "#FBBF24",
-        "acento": "#FBBF24", "acento_texto": "#0B1F3A", "acento_sombra": "rgba(251,191,36,.30)",
-        "calor_verde": "#10B981", "calor_ambar": "#334155", "calor_rojo": "#F97316",
-        "scroll": "#3A5478", "scroll_hover": "#8193AD", "sombra": "0 1px 3px rgba(0,0,0,.35)",
-        "logo_tenue": "#64748B",
+    "oscuro": {  # negro puro, de alto contraste (elegido por Juan el 15-oct-2026)
+        "verde": "#22C55E", "verde_bg": "rgba(34,197,94,0.15)",
+        "rojo": "#F97316", "rojo_bg": "rgba(249,115,22,0.16)",
+        "ambar": "#9CA3AF", "ambar_bg": "rgba(156,163,175,0.16)",
+        "tinta": "#FFFFFF", "texto": "#D4D4D8", "gris": "#9CA3AF",
+        "linea": "#26262B", "panel": "#0B0B0D", "fondo": "#000000", "lateral": "#050506",
+        "neutro_bg": "#1A1A1F", "control": "#0B0B0D", "control_borde": "#2E2E35",
+        "banda": "rgba(250,204,21,0.16)", "q50": "#FACC15",
+        "acento": "#FACC15", "acento_texto": "#000000", "acento_sombra": "rgba(250,204,21,0.3)",
+        "calor_verde": "#22C55E", "calor_ambar": "#27272A", "calor_rojo": "#F97316",
+        "scroll": "#2E2E35", "scroll_hover": "#9CA3AF", "sombra": "0 1px 3px rgba(0,0,0,.45)",
+        "logo_tenue": "#71717A",
     },
 }
+
+
+def _rgba(hexa, a):
+    h = hexa.lstrip("#")
+    return f"rgba({int(h[0:2], 16)},{int(h[2:4], 16)},{int(h[4:6], 16)},{a})"
+
+
 FUENTE = "'IBM Plex Sans', 'Segoe UI', sans-serif"  # cargada desde Google Fonts en .streamlit/config.toml
 
 CSS_BASE = Template("""
@@ -223,8 +230,8 @@ hr { border-color: $linea !important; }
 .marca-sub { font-size: .62rem; letter-spacing: .13em; text-transform: uppercase; color: $gris; font-weight: 600; margin-top: 5px; }
 .marca-lateral { margin: 0 0 14px; }
 .marca-lateral .marca-nom { font-size: 1.7rem; }
-.marca-cab { margin-bottom: .55rem; }
-.marca-cab .marca-nom { font-size: 2.1rem; }
+.marca-cab { margin-bottom: 0; flex: none; }
+.marca-cab .marca-nom { font-size: 1.9rem; }
 .marca-cab .marca-sub { font-size: .74rem; }
 .sub-app { color: $gris; margin-bottom: 1.1rem; font-size: .95rem; }
 .seccion { font-weight: 700; color: $tinta; margin: 10px 0 4px; }
@@ -288,6 +295,102 @@ hr { border-color: $linea !important; }
 .etq-si { background: $verde_bg; color: $verde; }
 .etq-no { background: $rojo_bg; color: $rojo; }
 .etq-sug { background: $neutro_bg; color: $tinta; }
+/* APROBADO: vistas como navegacion en la barra lateral, la activa en una tarjeta oscura */
+[data-testid="stSidebar"] .st-key-vista_sel [role="radiogroup"] { gap: 4px; width: 100%; }
+[data-testid="stSidebar"] .st-key-vista_sel label { width: 100%; padding: 8px 12px; border-radius: 8px; margin: 0; }
+[data-testid="stSidebar"] .st-key-vista_sel label:has(input:checked) { background: $tinta; }
+[data-testid="stSidebar"] .st-key-vista_sel label:has(input:checked) * { color: $panel !important; }
+
+/* ===== v2: estilo "Control Room" (Stitch) ===== */
+.stApp { font-variant-numeric: tabular-nums; }
+.block-container { max-width: 1320px; }
+.cab-card { background: $panel; border: 1px solid $linea; border-radius: 12px; padding: 16px 22px; box-shadow: $sombra;
+            display: flex; align-items: center; gap: 22px; margin-bottom: 16px; }
+.cab-card .tit { font-size: 1.3rem; font-weight: 700; color: $tinta; line-height: 1.25; }
+.cab-card .bajada { font-size: .9rem; color: $gris; margin-top: 4px; max-width: 80ch; }
+.cab-card .der { margin-left: auto; text-align: right; font-size: .78rem; color: $gris; white-space: nowrap; }
+.cab-card .der b { color: $tinta; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700;
+        letter-spacing: .06em; text-transform: uppercase; background: $neutro_bg; color: $tinta; }
+.st-key-sec_franja, .st-key-sec_calor, .st-key-sec_semana, .st-key-sec_datos, .st-key-sec_metodos, .st-key-sec_backtest {
+  background: $panel; border: 1px solid $linea; border-radius: 12px; padding: 16px 18px 6px; box-shadow: $sombra;
+  margin-bottom: 14px; }
+[data-testid="stPlotlyChart"] { border: none !important; box-shadow: none !important; padding: 0 !important;
+  border-radius: 0 !important; background: transparent !important; }
+.sec-tit { font-size: 1.05rem; font-weight: 700; color: $tinta; }
+.sec-sub { font-size: .82rem; color: $gris; margin: 2px 0 8px; }
+.meta { background: $fondo; border: 1px solid $linea; border-radius: 8px; padding: 8px 12px; margin: 4px 0 16px; }
+.hero { border-radius: 12px; min-height: 0; }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: .7rem; font-weight: 700;
+         letter-spacing: .07em; text-transform: uppercase; vertical-align: middle; }
+.badge-verde { background: $verde_bg; color: $verde; border: 1px solid $verde; }
+.badge-rojo { background: $rojo_bg; color: $rojo; border: 1px solid $rojo; }
+.badge-ambar { background: $ambar_bg; color: $ambar; border: 1px solid $ambar; }
+.hero-cab { display: flex; align-items: center; gap: 12px; margin: .35rem 0 .45rem; }
+.hero-cab .hero-accion { margin: 0; }
+.escala-tit { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: $gris; font-weight: 700;
+              margin-top: 18px; display: flex; justify-content: space-between; align-items: baseline; }
+.escala-tit .v { font-size: 1.25rem; letter-spacing: 0; text-transform: none; color: $tinta; font-weight: 700; }
+.gauge-track { height: 12px; border-radius: 4px; margin: 26px 0 6px; border: none; }
+.gauge-marker { top: -7px; height: 26px; width: 3px; }
+.gauge-bocadillo { position: absolute; top: -26px; transform: translateX(-50%); background: $tinta; color: $panel;
+                   font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.escala3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: .72rem; color: $gris; line-height: 1.35; }
+.escala3 div:nth-child(2) { text-align: center; }
+.escala3 div:nth-child(3) { text-align: right; }
+.escala3 b { color: $tinta; }
+.sub-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.sub-card { border: 1px solid $linea; border-radius: 8px; padding: 10px 12px; background: $fondo; font-size: .8rem; color: $texto; }
+.sub-card .t { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: $gris; font-weight: 700; margin-bottom: 4px; }
+.sub-card .g { font-size: .95rem; font-weight: 700; color: $tinta; }
+.stat-l { text-transform: uppercase; letter-spacing: .07em; font-size: .7rem; font-weight: 700; }
+.distrib { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0 6px; }
+.distrib-ley { font-size: .74rem; color: $gris; }
+.distrib-ley i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 0 8px; }
+.st-key-sec_franja { padding: 12px 16px 8px; }
+.st-key-sec_franja [data-testid="stVerticalBlock"] { gap: .6rem; }
+.st-key-sec_franja .leyenda { font-size: .72rem; line-height: 1.45; }
+.st-key-sec_franja .sec-sub { margin-bottom: 4px; }
+[data-testid="stLayoutWrapper"]:has(> [class*="st-key-sec_dia_"]), [class*="st-key-sec_dia_"] { flex: 1 1 auto; }
+[class*="st-key-sec_dia_"] { background: $panel; border: 1px solid $linea; border-radius: 12px; padding: 14px 16px 4px;
+  box-shadow: $sombra; }
+[class*="st-key-sec_dia_"] [data-testid="stPlotlyChart"], .st-key-sec_semana [data-testid="stPlotlyChart"] {
+  border: none; box-shadow: none; padding: 0; }
+[class*="st-key-sec_dia_"] [data-testid="stVerticalBlock"], .st-key-sec_semana [data-testid="stVerticalBlock"] { gap: .45rem; }
+.pista-ley { font-size: .74rem; color: $gris; }
+/* pantalla completa de Streamlit y ventana Ampliar: sin el borde ni el relleno de tarjeta, que la hacian desbordar */
+[data-testid="stPlotlyChart"]:has(button[aria-label="Close fullscreen"]), .st-key-graf_ampliada [data-testid="stPlotlyChart"] {
+  padding: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
+.st-key-graf_ampliada { overflow: hidden; }
+[class*="st-key-ampliar_"] { display: flex; justify-content: flex-end; }
+[class*="st-key-ampliar_"] button p { font-size: .8rem; }
+/* tarjeta de recomendacion con medidor */
+.hero-d { padding: 14px 18px 16px; }
+/* la tarjeta se estira hasta el alto de la grafica del dia y reparte el espacio sobrante */
+[data-testid="stElementContainer"]:has(.hero-d) { flex: 1 1 auto; }
+[data-testid="stElementContainer"]:has(.hero-d) .stMarkdown,
+[data-testid="stElementContainer"]:has(.hero-d) .stMarkdown > div,
+[data-testid="stElementContainer"]:has(.hero-d) [data-testid="stMarkdownContainer"] { height: 100%; align-items: stretch; }
+.hero-d { height: 100%; box-sizing: border-box; margin-bottom: 0; display: flex; flex-direction: column;
+          justify-content: space-evenly; gap: 6px; }
+.hero-d .hero-tag { font-size: .68rem; }
+.hero-d .hero-cab { margin: 0 0 .1rem; }
+.hero-d .badge { font-size: .66rem; padding: 2px 8px; }
+.hero-d .hero-accion { font-size: clamp(1.2rem, 1.75vw, 1.6rem); margin: .15rem 0 .35rem; }
+.hero-d .hero-frase { font-size: .95rem; line-height: 1.5; }
+.hero-d .sub-cards { margin-top: 10px; gap: 8px; }
+.hero-d .sub-card { padding: 9px 12px; font-size: .76rem; line-height: 1.5; }
+.hero-d .sub-card .t { font-size: .6rem; margin-bottom: 2px; }
+.hero-d .sub-card .g { font-size: .92rem; }
+.hero-d .chip { font-size: .68rem; padding: 2px 8px; }
+.hero-d .hd-fila { display: grid; grid-template-columns: 190px 1fr; gap: 18px; align-items: center; margin-top: 4px; }
+.hd-svg { width: 100%; display: block; }
+.hd-et { font-size: 12px; font-weight: 700; fill: $gris; }
+.hd-v { text-align: center; font-size: 1.6rem; font-weight: 800; color: $tinta; margin-top: -2px; line-height: 1.1; }
+.hd-u { text-align: center; font-size: .7rem; color: $gris; }
+.hd-ley { font-size: .78rem; color: $gris; margin-top: 8px; line-height: 1.65; }
+.hd-ley i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+.hd-ley b { color: $tinta; }
 """)
 
 CSS_OSCURO_EXTRA = """
@@ -463,10 +566,17 @@ def _mover_dia(paso, dias):
     st.session_state["dia_operador"] = st.session_state["_copia_dia_operador"] = nuevo
 
 
+ETQ_CORTA = {"vender": "VEN", "comprar": "COM", "retener": "RET", "evitar_compra": "EVI", "esperar": "ESP"}
+
+
 def franja_botones(dia_df, hora_sel, tk):
     """Franja horaria clickeable: cada hora es un boton coloreado segun su senal;
     comparte estado con el deslizador de hora (session_state["hora_operador"])."""
     color_bg = {"verde": tk["verde_bg"], "rojo": tk["rojo_bg"], "ambar": tk["ambar_bg"]}
+    color_etq = {c: tk["tinta"] for c in color_bg}
+    if tk["panel"] == TEMAS["oscuro"]["panel"]:
+        color_bg = {"verde": _rgba(tk["verde"], .30), "rojo": _rgba(tk["rojo"], .32), "ambar": _rgba(tk["gris"], .07)}
+        color_etq = {"verde": tk["verde"], "rojo": tk["rojo"], "ambar": tk["gris"]}
     reglas = []
     for _, r in dia_df.iterrows():
         h = int(r["fecha_hora"].hour)
@@ -479,10 +589,15 @@ def franja_botones(dia_df, hora_sel, tk):
             f'.st-key-hora_c_{h} button:focus, .st-key-hora_c_{h} button:active {{ '
             f'background:{color_bg[color]} !important; color:{tk["tinta"]} !important; '
             f'border:{borde} !important; box-shadow:none !important; '
-            f'border-radius:6px !important; font-weight:700 !important; '
-            f'font-size:.72rem !important; padding:9px 0 !important; min-height:0 !important; }}'
-            f'.st-key-hora_c_{h} button p {{ color:{tk["tinta"]} !important; white-space:nowrap; '
-            f'font-size:.72rem !important; }}'
+            f'border-radius:8px !important; font-weight:600 !important; '
+            f'font-size:.66rem !important; padding:4px 0 !important; min-height:0 !important; '
+            f'flex-direction:column !important; gap:0 !important; }}'
+            f'.st-key-hora_c_{h} button p {{ color:{tk["gris"]} !important; white-space:pre; line-height:1.25; '
+            f'font-size:.6rem !important; text-align:center; margin:0 !important; }}'
+            f'.st-key-hora_c_{h} button p::after {{ content:"\\A {r["q50"]:.0f}"; '
+            f'white-space:pre; color:{tk["tinta"]}; font-weight:700; font-size:.8rem; }}'
+            f'.st-key-hora_c_{h} button::after {{ content:"{ETQ_CORTA[r["senal"]]}"; display:block; '
+            f'color:{color_etq[color]}; font-weight:700; font-size:.64rem; letter-spacing:.04em; line-height:1.25; }}'
         )
         # marca de riesgo de salto: triangulo hacia abajo (desplome) o hacia arriba (pico)
         pd_, pp_ = r.get("p_desplome", np.nan), r.get("p_pico", np.nan)
@@ -495,13 +610,15 @@ def franja_botones(dia_df, hora_sel, tk):
                           f'pointer-events:none; }}')
     st.markdown(f"<style>{''.join(reglas)}</style>", unsafe_allow_html=True)
 
-    cols = st.columns(24, gap="small")
-    for col, (_, r) in zip(cols, dia_df.iterrows()):
-        h = int(r["fecha_hora"].hour)
-        with col:
-            with st.container(key=f"hora_c_{h}"):
-                st.button(f"{h:02d}", key=f"hora_btn_{h}", on_click=_set_hora, args=(h,),
-                          use_container_width=True)
+    filas_dia = list(dia_df.iterrows())
+    for mitad in (filas_dia[:12], filas_dia[12:]):
+        cols = st.columns(12, gap="small")
+        for col, (_, r) in zip(cols, mitad):
+            h = int(r["fecha_hora"].hour)
+            with col:
+                with st.container(key=f"hora_c_{h}"):
+                    st.button(f"{h:02d}", key=f"hora_btn_{h}", on_click=_set_hora, args=(h,),
+                              use_container_width=True)
 
 
 def mini_linea(valores, color, linea, ancho=130, alto=38):
@@ -573,10 +690,10 @@ def estilo_figura(fig, tk, alto, titulo, margen_leyenda=64):
 
 
 def trazar_banda(fig, df, tk):
-    fig.add_trace(go.Scatter(x=df["fecha_hora"], y=df["q90"], line=dict(width=0),
+    fig.add_trace(go.Scatter(x=df["fecha_hora"], y=df["q90"], line=dict(width=0), legendgroup="banda",
                              showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=df["fecha_hora"], y=df["q10"], line=dict(width=0), fill="tonexty",
-                             fillcolor=tk["banda"], name="Banda [q10, q90]", hoverinfo="skip"))
+                             fillcolor=tk["banda"], name="Banda [q10, q90]", legendgroup="banda", hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=df["fecha_hora"], y=df["q50"], name="Pronóstico (q50)",
                              line=dict(color=tk["q50"], width=1.6, dash="dot"),
                              hovertemplate="%{y:,.0f} COP/kWh"))
@@ -601,6 +718,45 @@ def grafico_precio(df, tk, titulo, alto=340, marca_x=None):
     if marca_x is not None:
         fig.add_vline(x=marca_x, line_dash="dot", line_color=tk["gris"])
     return estilo_figura(fig, tk, alto, titulo)
+
+
+NOMBRE_CORTO = {"Banda [q10, q90]": "Banda", "Pronóstico (q50)": "Pronóstico",
+                "Riesgo de desplome": "Desplome", "Riesgo de pico": "Pico"}
+
+
+def leyenda_en_columnas(fig, ancho=72, columnas_min=2):
+    """Entradas de la leyenda de igual ancho en pixeles, asi quedan en columnas alineadas aunque ocupen varias filas.
+    Las series vacias (p. ej. el precio real de un dia que XM aun no publica) salen de la leyenda."""
+    for tr in fig.data:
+        tr.name = NOMBRE_CORTO.get(tr.name, tr.name)
+        if tr.name and tr.y is not None and pd.isna(pd.Series(tr.y, dtype="float64")).all():
+            tr.showlegend = False
+    n = sum(1 for tr in fig.data if tr.showlegend is not False and tr.name)
+    filas = -(-n // columnas_min)
+    fig.update_layout(legend=dict(entrywidth=ancho, entrywidthmode="pixels", itemwidth=30, xref="container", x=0.02,
+                                  font_size=10.5),
+                      margin_b=34 + 22 * filas)
+    return fig
+
+
+@st.dialog("Pronóstico del día", width="large")
+def ampliar_grafica(fig):
+    leyenda_en_columnas(fig, ancho=110)
+    fig.update_layout(height=500, margin_b=56)
+    st.markdown('<div class="pista-ley">&#128161; Variables de la gráfica: clic para ocultar o mostrar &middot; doble clic para ver solo una &middot; '
+                'arrastra sobre la gráfica para acercar y haz doble clic en ella para volver.</div>', unsafe_allow_html=True)
+    st.plotly_chart(fig, width="stretch", theme=None, config={"displayModeBar": False}, key="graf_ampliada")
+
+
+def pista_variables(cont):
+    cont.markdown('<div class="pista-ley">&#128161; Variables: clic para ocultar o mostrar &middot; doble clic para ver '
+                  'solo una.</div>', unsafe_allow_html=True)
+
+
+def sin_titulo(fig):
+    # el titulo va en la tarjeta; uirevision: lo que se oculta con la leyenda se conserva al cambiar de hora o de dia
+    fig.update_layout(title_text="", margin_t=12, uirevision="fija")
+    return fig
 
 
 def grafico_dia(dia_df, bajo_s, alto_s, hora, tk):
@@ -798,11 +954,13 @@ with st.sidebar:
     except (OSError, ValueError, KeyError):
         pass
 
-st.markdown(marca_html(tk, 54, "Motor de decisión &middot; precio de bolsa de energía", "marca-cab"),
-            unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-app">Pronóstico hora a hora del precio de bolsa de energía en Colombia y recomendación de '
-    'cuándo comprar, vender o esperar. Herramienta de apoyo a la decisión; no es asesoría financiera.</div>',
+    f'<div class="cab-card">{marca_html(tk, 46, "Motor de decisión", "marca-cab")}'
+    f'<div><div class="tit">Motor de decisión &middot; precio de bolsa de energía '
+    f'<span class="pill">Colombia &middot; SIN</span></div>'
+    f'<div class="bajada">Pronóstico hora a hora del precio de bolsa de energía en Colombia y recomendación de cuándo '
+    f'comprar, vender o esperar. Herramienta de apoyo a la decisión; no es asesoría financiera.</div></div>'
+    f'<div class="der">Pronóstico de {horizonte}<br>versión <b>{meta.get("generado", "n/d")}</b></div></div>',
     unsafe_allow_html=True,
 )
 
@@ -900,17 +1058,23 @@ def vista_operador():
         )
     else:
         pb, pa, pq = (pos_en_barra(x, lo, hi) for x in (bajo_val, alto_val, q50))
-        grad = (f"linear-gradient(90deg,{tk['verde_bg']} 0%,{tk['verde_bg']} {pb:.1f}%,"
+        # tramos: barato | normal | caro, con el color de la accion que le corresponde a cada rol
+        c_bar, c_car = ((tk["verde"], tk["rojo"]) if rol == "comercializador" else (tk["rojo"], tk["verde"]))
+        grad = (f"linear-gradient(90deg,{c_bar} 0%,{c_bar} {pb:.1f}%,"
                 f"{tk['neutro_bg']} {pb:.1f}%,{tk['neutro_bg']} {pa:.1f}%,"
-                f"{tk['rojo_bg']} {pa:.1f}%,{tk['rojo_bg']} 100%)")
+                f"{c_car} {pa:.1f}%,{c_car} 100%)")
+        a_bar, a_car = (("comprar en bolsa", "evitar la bolsa") if rol == "comercializador"
+                        else ("retener generación", "despachar y vender"))
         gauge_html = f"""
-  <div class="gauge-track" style="background:{grad}">
+  <div class="escala-tit"><span>Escala de precio</span><span>esperado ahora <span class="v">{q50:,.1f} COP/kWh</span></span></div>
+  <div class="gauge-track" style="background:{grad};opacity:.85">
     <div class="gauge-marker" style="left:{pq:.1f}%"></div>
+    <div class="gauge-bocadillo" style="left:{pq:.1f}%">{q50:.0f}</div>
   </div>
-  <div class="gauge-labels">
-    <span>barato &le; {bajo_val:.0f}</span>
-    <span>esperado ahora: <b>{q50:.0f} COP/kWh</b></span>
-    <span>caro &ge; {alto_val:.0f}</span>
+  <div class="escala3">
+    <div><b>Barato &le; {bajo_val:.0f}</b><br>{a_bar}</div>
+    <div><b>{bajo_val:.0f} &ndash; {alto_val:.0f}</b><br>esperar</div>
+    <div><b>Caro &ge; {alto_val:.0f}</b><br>{a_car}</div>
   </div>"""
 
     # riesgo de salto de la hora (desplome / pico) segun el detector de eventos
@@ -928,10 +1092,9 @@ def vista_operador():
             resumen.append(f"posible desplome a las {', '.join(f'{h:02d}' for h in horas_d)} h")
         if horas_p:
             resumen.append(f"posible pico a las {', '.join(f'{h:02d}' for h in horas_p)} h")
-        riesgo_html = (f'<div style="margin-top:10px">{chip_riesgo("&#9660; Desplome", p_d, "chip-baja")} '
-                       f'{chip_riesgo("&#9650; Pico", p_p, "chip-alta")}'
-                       f'<span class="chip-nota">riesgo de salto en esta hora'
-                       f'{" &middot; hoy: " + "; ".join(resumen) if resumen else ""}</span></div>')
+        riesgo_html = (f'<div class="sub-card"><div class="t">Riesgo de salto en esta hora</div>'
+                       f'{chip_riesgo("&#9660; Desplome", p_d, "chip-baja")} {chip_riesgo("&#9650; Pico", p_p, "chip-alta")}'
+                       f'<div style="margin-top:6px">{"Hoy: " + "; ".join(resumen) if resumen else "Sin alertas hoy."}</div></div>')
 
     # si ninguna regla fue estable en el backtest, se avisa en la tarjeta (no solo al final de la pagina)
     aviso_estable = ("" if es_valido else
@@ -939,32 +1102,75 @@ def vista_operador():
                      f'se usa <b>{metodo}</b>, la menos inestable. Tómala con cautela (detalle al final de la página).</div>')
 
     # ---- Recomendacion + pronostico del dia ----
+    favorable = {"verde": "favorable", "rojo": "desfavorable", "ambar": "neutral"}[color]
+    c_bar, c_car = (tk["verde"], tk["rojo"]) if rol == "comercializador" else (tk["rojo"], tk["verde"])
+    a_bar, a_car = (("comprar en bolsa", "evitar la bolsa") if rol == "comercializador"
+                    else ("retener generación", "despachar y vender"))
+    umbral_ok = not (np.isnan(bajo_val) or np.isnan(alto_val))
+    tag = (f'<div class="hero-tag">Recomendaci&oacute;n &middot; {dia:%d/%m/%Y} &middot; {hora:02d}:00 h '
+           f'&middot; rol {rol}</div>')
+    badge = f'<span class="badge badge-{color}">{favorable}</span>'
+    conf_card = (f'<div class="sub-card"><div class="t">Nivel de confianza</div><div class="g">Confianza {conf}</div>'
+                 f'banda de &plusmn;{ancho_t0 / 2:.0f} COP/kWh, más ancha que el {conf_pct:.0f} % de las horas '
+                 f'anteriores{aviso_estable}</div>')
+    tramos = ([(f"Barato &le; {bajo_val:.0f}", a_bar, c_bar),
+               (f"{bajo_val:.0f} &ndash; {alto_val:.0f}", "esperar", tk["ambar"]),
+               (f"Caro &ge; {alto_val:.0f}", a_car, c_car)] if umbral_ok else [])
+
+    def medidor():
+        if not umbral_ok:
+            return gauge_html
+        cx, cy, r = 130, 132, 96
+
+        def punto(f, rr=r):
+            ang = np.pi * (1 - min(max(f, 0.0), 1.0))
+            return cx + rr * np.cos(ang), cy - rr * np.sin(ang)
+
+        def arco(f1, f2, col):
+            (x1, y1), (x2, y2) = punto(f1), punto(f2)
+            return (f'<path d="M{x1:.1f},{y1:.1f} A{r},{r} 0 0 1 {x2:.1f},{y2:.1f}" stroke="{col}" '
+                    f'stroke-width="20" fill="none"/>')
+        fb, fa, fq = pb / 100, pa / 100, pq / 100
+        xa, ya = punto(fq, r - 28)
+        (lbx, lby), (lax, lay) = punto(fb, r + 21), punto(fa, r + 21)
+        return ('<svg viewBox="0 0 260 150" class="hd-svg">'
+                + arco(0, fb, c_bar) + arco(fb, fa, tk["control_borde"]) + arco(fa, 1, c_car)
+                + f'<line x1="{cx}" y1="{cy}" x2="{xa:.1f}" y2="{ya:.1f}" stroke="{tk["tinta"]}" stroke-width="4" '
+                  'stroke-linecap="round"/>'
+                + f'<circle cx="{cx}" cy="{cy}" r="7" fill="{tk["tinta"]}"/>'
+                + f'<text x="{lbx:.1f}" y="{lby:.1f}" class="hd-et" text-anchor="middle">{bajo_val:.0f}</text>'
+                + f'<text x="{lax:.1f}" y="{lay:.1f}" class="hd-et" text-anchor="middle">{alto_val:.0f}</text>'
+                + '</svg>')
+
+    ley = "".join(f'<div><i style="background:{c}"></i><b>{a}</b> &middot; {b}</div>' for a, b, c in tramos)
+    tarjeta = (f'<div class="hero hero-{color} hero-d">{tag}<div class="hd-fila"><div>{medidor()}'
+               f'<div class="hd-v">{q50:,.1f}</div><div class="hd-u">COP/kWh esperado</div></div>'
+               f'<div><div class="hero-cab">{badge}</div><div class="hero-accion">{titulo}</div>'
+               f'<div class="hero-frase">{frase}</div><div class="hd-ley">{ley}</div></div></div>'
+               f'<div class="sub-cards">{conf_card}{riesgo_html}</div></div>')
     col_hero, col_dia = st.columns([5, 4], gap="medium")
     with col_hero:
-        st.markdown(f"""
-<div class="hero hero-{color}">
-  <div class="hero-tag">Recomendaci&oacute;n &middot; {dia:%d/%m/%Y} &middot; {hora:02d}:00 h &middot; rol {rol}</div>
-  <div class="hero-accion">{titulo}</div>
-  <div class="hero-frase">{frase}</div>
-  {gauge_html}
-  <div style="margin-top:14px">
-    <span class="chip chip-{conf}">Confianza {conf}</span>
-    <span class="chip-nota">banda de &plusmn;{ancho_t0/2:.0f} COP/kWh &mdash;
-      relativo al precio, más ancha que el {conf_pct:.0f}% de las horas anteriores</span>{aviso_estable}
-  </div>
-  {riesgo_html}
-</div>
-""", unsafe_allow_html=True)
+        st.markdown(tarjeta, unsafe_allow_html=True)
     with col_dia:
-        st.plotly_chart(grafico_dia(dia_df, bajo_s, alto_s, hora, tk), width="stretch", theme=None,
-                        config={"displayModeBar": False})
+        sec_d = st.container(key="sec_dia_principal")
+        c_tit, c_amp = sec_d.columns([3, 1], vertical_alignment="center")
+        c_tit.markdown('<div class="sec-tit">Pronóstico del día</div>', unsafe_allow_html=True)
+        pista_variables(sec_d)
+        fig_dia = sin_titulo(grafico_dia(dia_df, bajo_s, alto_s, hora, tk))
+        if c_amp.button("Ampliar", icon=":material/open_in_full:", key="ampliar_dia", type="tertiary"):
+            ampliar_grafica(go.Figure(fig_dia))
+        sec_d.plotly_chart(leyenda_en_columnas(fig_dia), width="stretch",
+                           theme=None, config={"displayModeBar": False}, key="graf_dia")
     st.markdown(metadatos_html(f"{dia:%d/%m/%Y}, 00:00 a 23:00 h",
                                "Semáforo y pronóstico del día con su banda de incertidumbre"),
                 unsafe_allow_html=True)
 
     # ---- El dia hora por hora ----
-    st.markdown('<div class="seccion">El día, hora por hora</div>', unsafe_allow_html=True)
-    franja_botones(dia_df, hora, tk)
+    sec = st.container(key="sec_franja")
+    sec.markdown('<div class="sec-tit">El día, hora por hora</div><div class="sec-sub">Pronóstico de cada hora y la '
+                 'acción del motor; haz clic en una hora para verla arriba.</div>', unsafe_allow_html=True)
+    with sec:
+        franja_botones(dia_df, hora, tk)
     if rol == "comercializador":
         leyenda = ("<b>Verde</b> = hora para comprar en bolsa &nbsp;&middot;&nbsp; "
                    "<b>naranja</b> = hora para cubrirse con contratos &nbsp;&middot;&nbsp; "
@@ -978,10 +1184,13 @@ def vista_operador():
     if dia_df["p_desplome"].notna().any():
         leyenda += (f" &#9660; / &#9650; sobre una hora = riesgo de desplome / pico de {UMBRAL_ALERTA * 100:.0f} % o más "
                     "(precio 30 % por debajo / por encima de la mediana del día).")
-    st.markdown(f'<div class="leyenda">{leyenda}</div>', unsafe_allow_html=True)
+    sec.markdown(f'<div class="leyenda" style="margin-bottom:10px">{leyenda}</div>', unsafe_allow_html=True)
 
     # ---- Mapa de calor dia-hora: rango de dias (de 1 dia al ultimo disponible) y de horas a eleccion ----
-    st.markdown('<div class="seccion">Mapa de calor día-hora</div>', unsafe_allow_html=True)
+    sec_calor = st.container(key="sec_calor")
+    sec_calor.markdown('<div class="sec-tit">Mapa de calor día-hora</div><div class="sec-sub">La señal o el precio '
+                       'esperado de varios días a la vez; el recuadro marca el día y la hora elegidos.</div>',
+                       unsafe_allow_html=True)
     clave_dias = f"rango_dias_calor_{horizonte}"  # por horizonte: cada uno tiene su propio rango de fechas
     # Streamlit borra el estado de un control que no se dibuja (el del otro horizonte), asi que se guarda
     # una copia aparte. El estado solo se escribe para restaurarla o para inicializar: escribirlo en cada
@@ -1012,7 +1221,7 @@ def vista_operador():
         nuevo = (min(a, b), max(a, b))
         st.session_state[clave_dias] = st.session_state[f"_copia_{clave_dias}"] = nuevo
         st.session_state[f"_ultimo_{clave_dias}"] = None          # las fechas se reescriben ya ordenadas
-    c_dias, c_horas, c_modo = st.columns([5, 3, 2])
+    c_dias, c_horas, c_modo = sec_calor.columns([5, 3, 2])
     with c_dias, st.container(key="dias_calor"):
         st.markdown('<div class="etq-dias">Días</div>', unsafe_allow_html=True)
         f_ini, _, f_fin = st.columns([1, 1, 1])
@@ -1035,8 +1244,8 @@ def vista_operador():
         modo_calor = st.radio("Colorear por", ["Señal del motor", "Precio esperado"], key="modo_calor")
     dias_calor = [d for d in completos if d_ini <= d <= d_fin]
     horas_calor = list(range(h_ini, h_fin + 1))
-    st.plotly_chart(grafico_calor(df, dias_calor, horas_calor, dia, hora, modo_calor, tk), width="stretch",
-                    theme=None, config={"displayModeBar": False})
+    sec_calor.plotly_chart(grafico_calor(df, dias_calor, horas_calor, dia, hora, modo_calor, tk), width="stretch",
+                           theme=None, config={"displayModeBar": False})
     n_d, n_h = len(dias_calor), len(horas_calor)
     st.markdown(metadatos_html(f"{d_ini:%d/%m/%Y} a {d_fin:%d/%m/%Y}, {h_ini:02d}:00 a {h_fin:02d}:00 h "
                                f"({n_d} día{'s' if n_d > 1 else ''} × {n_h} hora{'s' if n_h > 1 else ''})",
@@ -1052,6 +1261,16 @@ def vista_operador():
     ventaja = bt["ventaja_cop_kwh"]
     mensual = resumen_mensual(horizonte, rol, metodo, INTRADIA)
     verbo = "comprado más barato" if rol == "comercializador" else "vendido más caro"
+    # reparto de las senales en todo el periodo (favorable / desfavorable / esperar)
+    favor, contra = ("comprar", "evitar_compra") if rol == "comercializador" else ("vender", "retener")
+    reparto = df["senal"].value_counts(normalize=True)
+    pf, pc_, pe = (float(reparto.get(x, 0)) * 100 for x in (favor, contra, "esperar"))
+    distrib_html = (f'<div class="distrib"><div style="width:{pf:.1f}%;background:{tk["verde"]}"></div>'
+                    f'<div style="width:{pc_:.1f}%;background:{tk["rojo"]}"></div>'
+                    f'<div style="width:{pe:.1f}%;background:{tk["neutro_bg"]}"></div></div>'
+                    f'<div class="distrib-ley"><i style="background:{tk["verde"]}"></i>{favor.replace("_", " ")} {pf:.0f} %'
+                    f'<i style="background:{tk["rojo"]}"></i>{SIGNIFICADO[contra][0].capitalize().split()[0].lower()} {pc_:.0f} %'
+                    f'<i style="background:{tk["neutro_bg"]}"></i>esperar {pe:.0f} %</div>')
     st.markdown(tarjetas_html([
         ("Horas para actuar hoy", f"{n_accion_dia} de 24",
          mini_barras(ultimos.values, tk["verde"]),
@@ -1063,7 +1282,7 @@ def vista_operador():
         ("Con qué frecuencia actúa",
          f"{bt['frecuencia_accion']*100:.0f}% del tiempo",
          mini_linea(mensual["frecuencia"], tk["ambar"], tk["linea"]),
-         f"{bt['horas_accion']} horas de acción en todo el periodo; línea: mes a mes"),
+         f"{bt['horas_accion']} horas de acción en todo el periodo; línea: mes a mes" + distrib_html),
     ]), unsafe_allow_html=True)
 
     # ---- Contexto: la semana alrededor del dia elegido ----
@@ -1071,8 +1290,11 @@ def vista_operador():
     fin = pd.Timestamp(dia) + pd.Timedelta(days=4)
     ventana = df[(df["fecha_hora"] >= ini) & (df["fecha_hora"] < fin)]
     marca = pd.Timestamp(dia) + pd.Timedelta(hours=int(hora))
-    st.plotly_chart(
-        grafico_precio(ventana, tk, "La semana alrededor del día elegido", marca_x=marca),
+    sec_sem = st.container(key="sec_semana")
+    sec_sem.markdown('<div class="sec-tit">La semana alrededor del día elegido</div>', unsafe_allow_html=True)
+    pista_variables(sec_sem)
+    sec_sem.plotly_chart(
+        sin_titulo(grafico_precio(ventana, tk, "La semana alrededor del día elegido", marca_x=marca)),
         width="stretch", theme=None, config={"displaylogo": False},
     )
     # periodo realmente graficado (al final de la serie la semana puede quedar recortada)
@@ -1151,12 +1373,19 @@ def vista_analista():
          f"del {inicio:%d/%m/%Y} al {fin:%d/%m/%Y}"),
     ]), unsafe_allow_html=True)
 
-    st.markdown('<div class="seccion">Comparación de métodos en el rango elegido</div>', unsafe_allow_html=True)
-    st.markdown(tabla_metodos_html(tabla_metodos, metodo, metodo_sugerido), unsafe_allow_html=True)
-    st.markdown("")
+    sec_m = st.container(key="sec_metodos")
+    sec_m.markdown('<div class="sec-tit">Comparación de métodos en el rango elegido</div><div class="sec-sub">Ventaja y '
+                   'frecuencia de acción de cada método; la vista Operador usa el más estable entre las dos mitades del '
+                   'periodo, no el de mayor ventaja.</div>', unsafe_allow_html=True)
+    sec_m.markdown(tabla_metodos_html(tabla_metodos, metodo, metodo_sugerido), unsafe_allow_html=True)
+    sec_m.markdown("")
 
-    st.plotly_chart(
-        grafico_precio(base, tk, f"Precio real, pronóstico y señales — método {metodo}", alto=460),
+    sec_bt = st.container(key="sec_backtest")
+    sec_bt.markdown(f'<div class="sec-tit">Precio real, pronóstico y señales &mdash; método {metodo}</div>',
+                    unsafe_allow_html=True)
+    pista_variables(sec_bt)
+    sec_bt.plotly_chart(
+        sin_titulo(grafico_precio(base, tk, f"Precio real, pronóstico y señales — método {metodo}", alto=460)),
         width="stretch", theme=None, config={"displaylogo": False},
     )
     st.markdown(metadatos_html(f"{inicio:%d/%m/%Y} a {fin:%d/%m/%Y}",
@@ -1168,7 +1397,26 @@ def vista_analista():
                "(q10 a q90), la señal del método (senal), si el método aún no tenía umbral (sin_umbral) y, en 24 h, "
                "las probabilidades de desplome y pico. Se puede ordenar por columna y descargar en CSV.")
     with st.expander("Ver datos filtrados"):
-        st.dataframe(base, width="stretch")
+        favor, contra = ("comprar", "evitar_compra") if rol == "comercializador" else ("vender", "retener")
+        filtro = st.segmented_control("Mostrar", ["Todas", f"Solo {favor}", f"Solo {contra.replace('_', ' ')}", "Solo esperar"],
+                                      default="Todas", key="filtro_datos")
+        vista_df = base
+        if filtro == f"Solo {favor}":
+            vista_df = base[base["senal"] == favor]
+        elif filtro and filtro.startswith("Solo") and filtro != "Solo esperar":
+            vista_df = base[base["senal"] == contra]
+        elif filtro == "Solo esperar":
+            vista_df = base[base["senal"] == "esperar"]
+        st.dataframe(vista_df, width="stretch", hide_index=True,
+                     column_config={"fecha_hora": st.column_config.DatetimeColumn("Fecha y hora", format="DD/MM/YYYY HH:mm"),
+                                    "real": st.column_config.NumberColumn("Real (COP/kWh)", format="%.1f"),
+                                    "q10": st.column_config.NumberColumn("q10", format="%.1f"),
+                                    "q50": st.column_config.NumberColumn("q50", format="%.1f"),
+                                    "q90": st.column_config.NumberColumn("q90", format="%.1f"),
+                                    "senal": "Señal", "sin_umbral": "Sin umbral",
+                                    "p_desplome": st.column_config.NumberColumn("P(desplome)", format="percent"),
+                                    "p_pico": st.column_config.NumberColumn("P(pico)", format="percent")})
+        st.caption(f"{len(vista_df):,} horas. Usa la lupa de la tabla para buscar y el botón de descarga para bajarla en CSV.")
 
 
 if vista == "Operador":
