@@ -448,7 +448,7 @@ def umbrales_serie(bandas, metodo, precio_hist, p_bajo, p_alto):
 
 
 def _set_hora(h):
-    st.session_state["hora_operador"] = h
+    st.session_state["hora_operador"] = st.session_state["_copia_hora_operador"] = h
 
 
 def _mover_dia(paso, dias):
@@ -845,9 +845,11 @@ def vista_operador():
                   on_click=_mover_dia, args=("ultimo", completos), disabled=dia >= dia_max,
                   help="Último día con pronóstico")
     with c2:
+        # como el dia: Streamlit borra el estado del control al pasar por la vista Analista, asi que se guarda una copia
         if "hora_operador" not in st.session_state:
-            st.session_state["hora_operador"] = 8
+            st.session_state["hora_operador"] = st.session_state.get("_copia_hora_operador", 8)
         hora = st.number_input("Hora del día", 0, 23, step=1, key="hora_operador")
+        st.session_state["_copia_hora_operador"] = hora
 
     dia_df = df[df["fecha_hora"].dt.date == dia]
     if dia_df.empty:

@@ -145,7 +145,7 @@ def activar(cob):
                                  "(combinador causal, objetivo MAE) + bandas conformes por hora en escala log (60 dias)",
                        "eventos": "probabilidades_eventos_24h_realista_2026.csv",
                        "calibrado": True, "cobertura_objetivo_pct": 80, "cobertura_medida_pct": round(cob, 1),
-                       "generado": pd.Timestamp.now().strftime("%Y-%m-%d"),
+                       "generado": hoy().strftime("%Y-%m-%d"),          # fecha de Colombia (el runner esta en UTC)
                        "notebook_origen": "scripts_experimento/pronostico_realista_24h.py",
                        "notas": "Solo usa lo que XM y NOAA ya publicaron a las 00:00 del dia (precio con ~3 dias de rezago). "
                                 "Configuracion anterior (ensamble de 7, escenario optimista) en fuentes_pronostico_optimista.json."}

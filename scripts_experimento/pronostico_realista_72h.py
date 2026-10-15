@@ -237,7 +237,7 @@ def activar(cob):
                                  "corte + promedio de 3 CatBoost por horizonte reentrenados cada mes (combinador causal, objetivo MAE) "
                                  "+ bandas conformes por hora en escala log (60 dias)",
                        "calibrado": True, "cobertura_objetivo_pct": 80, "cobertura_medida_pct": round(cob, 1),
-                       "generado": pd.Timestamp.now().strftime("%Y-%m-%d"),
+                       "generado": hoy().strftime("%Y-%m-%d"),          # fecha de Colombia (el runner esta en UTC)
                        "notebook_origen": "scripts_experimento/pronostico_realista_72h.py",
                        "notas": "Solo usa lo publicado a las 00:00 del dia del corte. Contrato anterior (escenario optimista) en "
                                 "fuentes_pronostico_optimista.json."}

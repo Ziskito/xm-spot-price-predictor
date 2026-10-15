@@ -96,13 +96,13 @@ def capturar():
 RECORTES = {
     "sb": ("operador_generador", (0, 0, 450, 1290)),
     "op_arriba": ("operador_generador", (0, 0, 2160, 1034)),
-    "op_tarjeta": ("operador_generador", (560, 400, 1370, 930)),
+    "op_tarjeta": ("operador_generador", (560, 400, 1372, 945)),
     "op_grafico_dia": ("operador_generador", (1400, 405, 2050, 1030)),
     "op_franja": ("operador_generador", (546, 1053, 2160, 1297)),
     "op_calor": ("operador_generador", (546, 1297, 2160, 2305)),
-    "op_indicadores": ("operador_generador", (546, 2330, 2160, 2720)),
-    "op_semana": ("operador_generador", (546, 2730, 2160, 3360)),
-    "an_todo": ("analista", (0, 0, 2160, 1905)),
+    "op_indicadores": ("operador_generador", (546, 2300, 2160, 2510)),
+    "op_semana": ("operador_generador", (546, 2520, 2160, 3110)),
+    "an_todo": ("analista", (0, 0, 2160, 1935)),
 }
 
 
@@ -124,7 +124,7 @@ def img(nombre, ancho="100%", pie=""):
 
 
 DOC = "MU-AUG-001"
-REV = "1.0"
+REV = "1.1"
 FECHA = "14 de octubre de 2026"
 
 # globos numerados (coordenadas en pixeles del recorte). Los de la barra lateral (x < 200) van en un margen blanco a la
@@ -132,7 +132,7 @@ FECHA = "14 de octubre de 2026"
 GLOBOS = {
     "op_arriba": [(1, 51, 224), (2, 47, 332), (3, 47, 618), (4, 47, 745), (5, 55, 985), (6, 522, 355), (7, 1200, 296),
                   (8, 1880, 300), (9, 522, 468), (10, 522, 669), (11, 522, 760), (12, 522, 854), (13, 1388, 470)],
-    "an_todo": [(1, 556, 307), (2, 556, 588), (3, 556, 967), (4, 556, 1794), (5, 33, 1497), (6, 33, 1624), (7, 33, 1750),
+    "an_todo": [(1, 556, 307), (2, 556, 588), (3, 556, 967), (4, 556, 1892), (5, 33, 1497), (6, 33, 1624), (7, 33, 1750),
                 (8, 33, 1822)],
 }
 MARGEN = 90
@@ -169,7 +169,7 @@ def _mae72(conf):
 
 def cifras():
     conf = json.loads((RES / "fuentes_pronostico.json").read_text(encoding="utf-8"))
-    c24 = pd.read_csv(RES / conf["24h"]["archivo"], parse_dates=["fecha_hora"])
+    c24 = pd.read_csv(RES / conf["24h"]["archivo"], parse_dates=["fecha_hora"]).dropna(subset=["real"])
     y, q = c24["real"], c24["q50"]
     return {"modelo24": conf["24h"]["modelo"], "modelo72": conf["72h"]["modelo"],
             "cob24": conf["24h"].get("cobertura_medida_pct"), "cob72": conf["72h"].get("cobertura_medida_pct"),
@@ -329,7 +329,8 @@ def html(c, paginas):
 <h1 class="salto">Control de revisiones</h1>
 <div class="tit-tabla"><b>Tabla 1.</b> Historial de revisiones</div>
 <table><tr><th style="width:14mm">Rev.</th><th style="width:28mm">Fecha</th><th>Descripción</th><th style="width:44mm">Elaboró</th></tr>
-<tr><td>1.0</td><td>14/10/2026</td><td>Emisión inicial. Pronóstico de 24 h del escenario realista y detector de eventos realista.</td><td>J. Barceló, R. Dede</td></tr></table>
+<tr><td>1.0</td><td>14/10/2026</td><td>Emisión inicial. Pronóstico de 24 h del escenario realista y detector de eventos realista.</td><td>J. Barceló, R. Dede</td></tr>
+<tr><td>1.1</td><td>14/10/2026</td><td>Actualización diaria automática y pronóstico del día siguiente; versión del modelo en la barra lateral; fechas editables en el mapa de calor; la hora se conserva al cambiar de vista.</td><td>J. Barceló, R. Dede</td></tr></table>
 <h2 style="margin-top:18pt">Contenido</h2>
 <div class="indice">{indice_html(paginas)}</div>
 
@@ -395,13 +396,14 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <h1 class="salto">4. Funciones de la vista Operador</h1>
 <h2>4.1 Rol y horizonte</h2>
 <p><b>Rol</b> (3) define cómo se traduce el pronóstico en acciones (Tabla 2). <b>Horizonte de pronóstico</b> (4) selecciona el
-pronóstico de 24 h, emitido a las 00:00 para la 01:00 a 00:00 siguientes, o el de 72 h. El recuadro <b>Modelo activo</b> (5) identifica el
-modelo en uso y la cobertura medida de su banda; debajo se indica la fecha de la última actualización, hasta dónde llega el precio real
+pronóstico de 24 h, emitido a las 00:00 para la 01:00 a 00:00 siguientes, o el de 72 h. El recuadro <b>Modelo activo</b> (5) indica la
+versión del pronóstico y la cobertura medida de su banda; debajo se indica la fecha de la última actualización, hasta dónde llega el precio real
 publicado por XM y hasta dónde llega el pronóstico. Las probabilidades de picos y desplomes solo están disponibles con el horizonte de 24 h.</p>
 <h2>4.2 Selección de día y hora</h2>
 <p><b>Día operativo</b> (6) solo admite días con las 24 horas pronosticadas. Los botones <b>Anterior</b>, <b>Siguiente</b> y <b>Último</b> (7)
 recorren los días sin abrir el calendario. <b>Hora del día</b> (8) fija la hora de la recomendación; también se selecciona con un clic en la
-franja horaria (4.5). El día seleccionado se conserva al cambiar de vista.</p>
+franja horaria (4.5). El día y la hora seleccionados se conservan al cambiar de vista. Los días más recientes aún no tienen precio
+real: XM lo publica con unos tres días de rezago.</p>
 <h2>4.3 Recomendación horaria</h2>
 {lado(fig("op_tarjeta", 3, "Tarjeta de recomendación"), '''<p>La tarjeta (9) muestra la acción para el día, la hora y el rol seleccionados. La escala de precio (10) ubica el precio esperado frente
 a los umbrales barato y caro del método activo. <b>Confianza</b> (11) clasifica el ancho relativo de la banda frente a las horas
@@ -417,7 +419,8 @@ vertical). En días con precio publicado incluye el precio real. Los marcadores 
 selecciona como hora de la recomendación.</p>
 <h2>4.6 Mapa de calor día-hora</h2>
 {lado(fig("op_calor", 6, "Mapa de calor día-hora"), '''<p>Muestra la señal o el precio esperado de varios días a la vez. <b>Días</b> y <b>Horas</b> acotan el periodo y las horas mostradas
-(extremos juntos para un solo día u hora); <b>Colorear por</b> alterna entre <b>Señal del motor</b> y <b>Precio esperado</b>. El
+(extremos juntos para un solo día u hora). Las fechas de los extremos de <b>Días</b> se escriben directamente o se eligen en el
+calendario, y la barra se ajusta; <b>Colorear por</b> alterna entre <b>Señal del motor</b> y <b>Precio esperado</b>. El
 recuadro marca el día y la hora seleccionados.</p>''', 60)}
 <h2>4.7 Indicadores</h2>
 {lado(fig("op_indicadores", 7, "Indicadores"), '''<div class="tit-tabla"><b>Tabla 6.</b> Indicadores de la vista Operador</div>
@@ -587,7 +590,7 @@ if __name__ == "__main__":
     recortar()
     anotar()
     from PIL import Image
-    Image.open(IMG / "an_todo_globos.png").crop((0, 1390, 545, 1880)).save(IMG / "an_controles_globos.png")
+    Image.open(IMG / "an_todo_globos.png").crop((0, 1390, 545, 1900)).save(IMG / "an_controles_globos.png")
     c = cifras()
     ruta = MAN / "manual.html"
     ruta.write_text(html(c, {}), encoding="utf-8")
