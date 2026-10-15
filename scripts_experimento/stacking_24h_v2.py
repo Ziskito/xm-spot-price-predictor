@@ -27,7 +27,7 @@ from scipy.optimize import nnls, linprog
 from scipy import sparse
 import statsmodels.api as sm
 
-RAIZ = Path(r"C:\Users\mgdbj\xm-spot-price-predictor")
+RAIZ = Path(__file__).resolve().parents[1]
 RES = RAIZ / "data/processed/resultados"
 
 BASE5 = ["Persistencia", "XGBoost", "ARX+GARCH", "N-BEATSx", "N-HiTS"]

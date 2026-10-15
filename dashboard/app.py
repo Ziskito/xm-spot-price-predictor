@@ -623,10 +623,12 @@ def grafico_calor(df, dias, horas, dia_sel, hora_sel, modo, tk):
     hueco_y, hueco_x = (2 if len(dias) <= 45 else 1), (2 if len(horas) <= 30 else 1)
     etiqueta = {k: v[0].capitalize() for k, v in SIGNIFICADO.items()}
     sub["etq"] = sub["senal"].map(etiqueta)
-    datos = np.dstack([piv("q50").to_numpy(), piv("real").to_numpy(), piv("q10").to_numpy(),
+    # XM publica el precio real con ~3 dias de rezago: los dias recientes y futuros aun no lo tienen
+    sub["real_txt"] = sub["real"].map(lambda v: "aún sin publicar" if pd.isna(v) else f"{v:,.0f}")
+    datos = np.dstack([piv("q50").to_numpy(), piv("real_txt").to_numpy(), piv("q10").to_numpy(),
                        piv("q90").to_numpy(), piv("etq").to_numpy()])
     plantilla = ("%{y} · %{x}:00 h<br>%{customdata[4]}<br>Pronóstico: %{customdata[0]:,.0f} COP/kWh"
-                 "<br>Banda: %{customdata[2]:,.0f} – %{customdata[3]:,.0f}<br>Real: %{customdata[1]:,.0f}"
+                 "<br>Banda: %{customdata[2]:,.0f} – %{customdata[3]:,.0f}<br>Real: %{customdata[1]}"
                  "<extra></extra>")
     if modo == "Señal del motor":
         z = piv("senal").apply(lambda c: c.map(CODIGO_SENAL)).to_numpy(dtype=float)

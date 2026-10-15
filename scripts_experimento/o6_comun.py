@@ -8,7 +8,7 @@ queda alineado hora a hora con walkforward_predicciones_crudas.csv y puede entra
 import pandas as pd
 from pathlib import Path
 
-RAIZ = Path(r"C:\Users\mgdbj\xm-spot-price-predictor")
+RAIZ = Path(__file__).resolve().parents[1]
 RES = RAIZ / "data/processed/resultados"
 EXCLUIR = ["fecha_hora", "precio_bolsa", "demanda", "generacion", "anio", "mes", "hora", "dia_semana", "dia_anio"]
 HIST = ["volumen_embalses", "aportes_hidricos", "demanda_lag24h"]
