@@ -73,6 +73,35 @@ def leer_imar(texto, dia):
                          "mpo": filas.get("mpo"), "delta": filas.get("delta")})
 
 
+def leer_mes(mes):
+    """iMAR de los dias de un mes (carpeta AAAA-MM de XM) con fechas de creacion (publicado) y modificacion;
+    None si no hay archivos."""
+    # hasta abr-2025 el archivo se llama iMARmmdd_NAL.TXT; desde may-2025, iMARmmdd.txt
+    fs = [f for f in listar(f"{RUTA}/{mes}") if re.fullmatch(r"(?i)imar\d{4}(_NAL)?\.txt", f["nombre"])]
+    if not fs:
+        return None
+    publicado = {f["nombre"].lower(): f["fechaCreacion"] for f in fs}
+    modificado = {f["nombre"].lower(): f.get("fechaModificacion") for f in fs}
+    z = descargar_zip([f["id"] for f in fs])
+    anio = int(mes[:4])
+    dfs = []
+    # el zip de varios archivos a veces omite algunos (p. ej. 25-27 ene 2026): se piden uno por uno
+    en_zip = {Path(n).name.lower() for n in z.namelist()}
+    extra = [descargar_zip([f["id"]]) for f in fs if f["nombre"].lower() not in en_zip]
+    archivos = [(n, z) for n in z.namelist()] + [(n, zz) for zz in extra for n in zz.namelist()]
+    for nombre, z in archivos:
+        m = re.fullmatch(r"(?i)imar(\d{2})(\d{2})(?:_NAL)?\.txt", Path(nombre).name)
+        if not m:
+            continue
+        mm, dd = int(m.group(1)), int(m.group(2))
+        dia = pd.Timestamp(anio - (1 if (mes.endswith("-01") and mm == 12) else 0), mm, dd)
+        df = leer_imar(z.read(nombre).decode("latin-1"), dia)
+        df["publicado"] = publicado.get(Path(nombre).name.lower())
+        df["modificado"] = modificado.get(Path(nombre).name.lower())
+        dfs.append(df)
+    return pd.concat(dfs).sort_values("fecha_hora") if dfs else None
+
+
 if __name__ == "__main__":
     CACHE.mkdir(parents=True, exist_ok=True)
     meses = sorted(f["nombre"] for f in listar(RUTA) if re.fullmatch(r"\d{4}-\d{2}", f["nombre"]))
@@ -83,31 +112,13 @@ if __name__ == "__main__":
         if ruta_cache.exists() and mes < pd.Timestamp.now().strftime("%Y-%m"):
             partes.append(pd.read_csv(ruta_cache, parse_dates=["fecha_hora"]))
             continue
-        # hasta abr-2025 el archivo se llama iMARmmdd_NAL.TXT; desde may-2025, iMARmmdd.txt
-        fs = [f for f in listar(f"{RUTA}/{mes}") if re.fullmatch(r"(?i)imar\d{4}(_NAL)?\.txt", f["nombre"])]
-        if not fs:
+        mesdf = leer_mes(mes)
+        if mesdf is None:
             continue
-        publicado = {f["nombre"].lower(): f["fechaCreacion"] for f in fs}
-        z = descargar_zip([f["id"] for f in fs])
-        anio = int(mes[:4])
-        dfs = []
-        # el zip de varios archivos a veces omite algunos (p. ej. 25-27 ene 2026): se piden uno por uno
-        en_zip = {Path(n).name.lower() for n in z.namelist()}
-        extra = [descargar_zip([f["id"]]) for f in fs if f["nombre"].lower() not in en_zip]
-        archivos = [(n, z) for n in z.namelist()] + [(n, zz) for zz in extra for n in zz.namelist()]
-        for nombre, z in archivos:
-            m = re.fullmatch(r"(?i)imar(\d{2})(\d{2})(?:_NAL)?\.txt", Path(nombre).name)
-            if not m:
-                continue
-            mm, dd = int(m.group(1)), int(m.group(2))
-            dia = pd.Timestamp(anio - (1 if (mes.endswith("-01") and mm == 12) else 0), mm, dd)
-            df = leer_imar(z.read(nombre).decode("latin-1"), dia)
-            df["publicado"] = publicado.get(Path(nombre).name.lower())
-            dfs.append(df)
-        mesdf = pd.concat(dfs).sort_values("fecha_hora")
+        mesdf = mesdf.drop(columns="modificado")
         mesdf.to_csv(ruta_cache, index=False)
         partes.append(mesdf)
-        print(f"  {mes}: {len(dfs)} dias", flush=True)
+        print(f"  {mes}: {mesdf['fecha_hora'].dt.normalize().nunique()} dias", flush=True)
     t = pd.concat(partes).drop_duplicates("fecha_hora").sort_values("fecha_hora")
     t.to_csv(SALIDA, index=False)
     print("guardado", SALIDA, len(t), t["fecha_hora"].min(), t["fecha_hora"].max())

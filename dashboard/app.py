@@ -756,6 +756,14 @@ with st.sidebar:
         f"Cobertura medida: {meta.get('cobertura_medida_pct', '-')}% "
         f"(objetivo {meta.get('cobertura_objetivo_pct', 80)}%)"
     )
+    # actualizacion diaria (scripts_experimento/actualizar_produccion.py, GitHub Actions)
+    try:
+        est = json.loads((RAIZ / "data/processed/resultados/produccion/estado.json").read_text(encoding="utf-8"))
+        st.caption(f"Actualizado {pd.Timestamp(est['actualizado']):%d/%m/%Y %H:%M} · precio real de XM hasta el "
+                   f"{pd.Timestamp(est['precio_real_hasta']):%d/%m %H:%M} · pronóstico hasta el "
+                   f"{pd.Timestamp(est['pronostico_24h_hasta']):%d/%m %H:%M}")
+    except (OSError, ValueError, KeyError):
+        pass
 
 st.markdown(marca_html(tk, 54, "Motor de decisión &middot; precio de bolsa de energía", "marca-cab"),
             unsafe_allow_html=True)

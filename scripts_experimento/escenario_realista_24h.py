@@ -49,9 +49,18 @@ def por_hora(serie, horas_dia, k=96):
     return np.where(horas_dia == 0, serie.shift(k + 24), serie.shift(k))
 
 
-def features_realistas():
-    m = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, parse_dates=["fecha_hora"])
-                   for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]).drop_duplicates("fecha_hora")
+def features_realistas(produccion=False, hasta=None):
+    """produccion: el maestro oficial se completa con data/produccion/serie_xm.csv (produccion_datos.py) y con horas
+    sin publicar hasta `hasta` (objetivos futuros); su calendario se calcula con el procedimiento del notebook 05."""
+    if produccion:
+        from produccion_datos import maestro_produccion
+        m = maestro_produccion()
+        if hasta is not None and hasta > m["fecha_hora"].max():
+            futuras = pd.DataFrame({"fecha_hora": pd.date_range(m["fecha_hora"].max() + pd.Timedelta(hours=1), hasta, freq="h")})
+            m = pd.concat([m, futuras.assign(es_pandemia=0)], ignore_index=True)
+    else:
+        m = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, parse_dates=["fecha_hora"])
+                       for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]).drop_duplicates("fecha_hora")
     m = m.sort_values("fecha_hora").reset_index(drop=True)
     actual = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, parse_dates=["fecha_hora"])
                         for f in ("dataset_features_2019_2025.csv", "dataset_features_2026.csv")])
@@ -88,6 +97,11 @@ def features_realistas():
     # calendario y festivos: identicos al proyecto
     cal = [c for c in actual.columns if c not in d.columns]
     d = d.merge(actual[["fecha_hora"] + cal].drop_duplicates("fecha_hora"), on="fecha_hora", how="left")
+    falta = d["hora_sin"].isna().to_numpy()
+    if produccion and falta.any():          # horas posteriores al dataset oficial
+        from actualizar_datos_oct2026 import features
+        f = features(m).set_index("fecha_hora")
+        d.loc[falta, cal] = f.loc[d.loc[falta, "fecha_hora"], cal].to_numpy()
     return d[actual.columns.tolist()].sort_values("fecha_hora").reset_index(drop=True)
 
 

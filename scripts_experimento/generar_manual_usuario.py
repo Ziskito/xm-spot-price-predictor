@@ -396,7 +396,8 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <h2>4.1 Rol y horizonte</h2>
 <p><b>Rol</b> (3) define cómo se traduce el pronóstico en acciones (Tabla 2). <b>Horizonte de pronóstico</b> (4) selecciona el
 pronóstico de 24 h, emitido a las 00:00 para la 01:00 a 00:00 siguientes, o el de 72 h. El recuadro <b>Modelo activo</b> (5) identifica el
-modelo en uso y la cobertura medida de su banda. Las probabilidades de picos y desplomes solo están disponibles con el horizonte de 24 h.</p>
+modelo en uso y la cobertura medida de su banda; debajo se indica la fecha de la última actualización, hasta dónde llega el precio real
+publicado por XM y hasta dónde llega el pronóstico. Las probabilidades de picos y desplomes solo están disponibles con el horizonte de 24 h.</p>
 <h2>4.2 Selección de día y hora</h2>
 <p><b>Día operativo</b> (6) solo admite días con las 24 horas pronosticadas. Los botones <b>Anterior</b>, <b>Siguiente</b> y <b>Último</b> (7)
 recorren los días sin abrir el calendario. <b>Hora del día</b> (8) fija la hora de la recomendación; también se selecciona con un clic en la
@@ -472,6 +473,8 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Página en blanco o en carga.</td><td>Servidor en activación.</td><td>Esperar y recargar.</td></tr>
 <tr><td>«No pude cargar la fuente de pronóstico».</td><td>Falta el archivo indicado en <code>fuentes_pronostico.json</code>.</td><td>Restaurar el repositorio completo.</td></tr>
 <tr><td>Día no seleccionable.</td><td>Día sin las 24 horas pronosticadas.</td><td>Seleccionar otro día.</td></tr>
+<tr><td>Sin precio real en los últimos días.</td><td>XM publica el precio con unos 3 días de rezago.</td><td>Ninguna; se completa en las actualizaciones siguientes.</td></tr>
+<tr><td>El pronóstico no llega a mañana.</td><td>XM aún no publica el predespacho del día siguiente.</td><td>Consultar después de las 16:00.</td></tr>
 <tr><td>Sin marcadores ▼ / ▲.</td><td>Horizonte de 72 h.</td><td>Seleccionar 24 h.</td></tr>
 <tr><td>Aviso ⚠ en la recomendación.</td><td>Ningún método estable para el rol y horizonte.</td><td>Revisar la comparación de métodos (5.5).</td></tr></table>
 
@@ -492,6 +495,7 @@ evento. La tabla admite ordenamiento y descarga en CSV.</p>
 <tr><td>Disponibilidad declarada</td><td>XM</td><td>D-1, 08:10</td></tr>
 <tr><td>Predespacho ideal</td><td>XM</td><td>D-1, 10:30</td></tr>
 <tr><td>Despacho programado</td><td>XM</td><td>D-1, 14:30</td></tr></table>
+{aviso("Nota", "El pronóstico se actualiza todos los días hacia las 15:40 y las 18:40 (hora de Colombia): se descargan los datos nuevos de XM y NOAA, se reentrenan los modelos del mes con todo lo publicado y se pronostica hasta la ventana del día siguiente. Lo ya pronosticado para un día iniciado no se modifica; el precio real se completa a medida que XM lo publica.")}
 {aviso("Advertencia", "El cierre de ofertas es a las 08:00 de D-1 (Resolución CREG 025 de 1995) y el predespacho se publica después. El pronóstico de 24 h aplica a decisiones posteriores a la publicación del predespacho, no a la oferta de los generadores.")}
 {aviso("Nota", "El horizonte de 72 h supone el precio conocido hasta el corte (escenario optimista); su desempeño con fuentes públicas sería menor.") if "optimista" in c["modelo72"] else aviso("Nota", "En el horizonte de 72 h no hay predespacho para los días D+1 y D+2: los pasos 25 a 72 parten del predespacho del día D y su error crece con el horizonte (Tabla A.1).")}
 </body></html>"""

@@ -1,0 +1,10 @@
+# Dependencias de la actualizacion diaria (scripts_experimento/actualizar_produccion.py, GitHub Actions).
+# Mismas versiones que requirements.txt; sin torch, neuralforecast ni las librerias de notebooks. Probado con Python 3.12.
+pandas==2.3.3
+numpy==2.4.4
+scipy==1.18.0
+statsmodels==0.15.0
+scikit-learn==1.9.0
+catboost==1.2.10
+holidays==0.102
+requests==2.33.1

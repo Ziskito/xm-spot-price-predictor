@@ -39,6 +39,7 @@ def bandas(fecha, real, q50):
     m = np.full(len(d), np.nan)
     for dia in d["dia"].unique():
         hist = d[(d["dia"] <= dia - pd.Timedelta(days=RETRASO)) & (d["dia"] > dia - pd.Timedelta(days=RETRASO + VENTANA))]
+        hist = hist[hist["s"].notna()]                          # horas con precio real ya publicado
         hoy = (d["dia"] == dia).to_numpy()
         for h, g in hist.groupby("hora"):
             sel = hoy & (d["hora"] == h).to_numpy()

@@ -35,16 +35,23 @@ def alinear(idx, serie):
     return serie.reindex(pd.DatetimeIndex(fuente)).to_numpy()
 
 
-def tabla_realista(forzar=False):
-    if CACHE.exists() and not forzar:
-        return pd.read_pickle(CACHE)
+def tabla_realista(forzar=False, produccion=False):
+    """produccion: datos hasta hoy (produccion_datos.py) y horas objetivo hasta 3 dias despues del ultimo predespacho
+    publicado, sin las variables que no usan los modelos en produccion (h_*, delta_*, prog_*); cache aparte."""
+    cache = MEJ / "tabla_realista_produccion.pkl" if produccion else CACHE
+    if cache.exists() and not forzar:
+        return pd.read_pickle(cache)
     MEJ.mkdir(parents=True, exist_ok=True)
-    base = er.features_realistas()
-    rel, _, _ = rr.features_relleno(base)
-    d = base.copy()
-    for c in ["precio_lag24h", "precio_media_24h", "precio_media_7d", "precio_media_30d", "precio_std_24h", "precio_std_7d",
-              "precio_rango_24h", "ratio_volatilidad"]:
-        d[f"h_{c}"] = rel[c].to_numpy()
+    if produccion:
+        base = er.features_realistas(produccion=True, hasta=imar().index.max().normalize() + pd.Timedelta(days=3))
+        d = base.copy()
+    else:
+        base = er.features_realistas()
+        rel, _, _ = rr.features_relleno(base)
+        d = base.copy()
+        for c in ["precio_lag24h", "precio_media_24h", "precio_media_7d", "precio_media_30d", "precio_std_24h", "precio_std_7d",
+                  "precio_rango_24h", "ratio_volatilidad"]:
+            d[f"h_{c}"] = rel[c].to_numpy()
     idx = pd.DatetimeIndex(d["fecha_hora"])
     cm = imar_con_respaldo(imar(), idx.max())
     d["pre_obj"] = alinear(idx, cm)
@@ -56,6 +63,10 @@ def tabla_realista(forzar=False):
     d["pre_lag24"] = cm.reindex(idx - pd.Timedelta(hours=24)).to_numpy()
     d["pre_cambio24"] = d["pre_obj"] / d["pre_lag24"]
     d["log_pre"] = np.log(d["pre_obj"].clip(lower=1))
+    d["dia"] = dia
+    if produccion:
+        d.to_pickle(cache)
+        return d
     # delta ex post conocido al corte
     ruta = RAIZ / "data" / "raw" / "delta_expost_2018_2026.csv"
     if not ruta.exists():
@@ -82,7 +93,6 @@ def tabla_realista(forzar=False):
         d["prog_total_rel"] = d["prog_total"] / tot_dia
         ter_dia = pd.Series(d["prog_termica"].to_numpy(), index=idx).groupby(dia).transform("mean").to_numpy()
         d["prog_termica_dia"] = ter_dia
-    d["dia"] = dia
     d.to_pickle(CACHE)
     return d
 

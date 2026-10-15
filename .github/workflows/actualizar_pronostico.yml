@@ -1,0 +1,60 @@
+# Actualizacion diaria del dashboard augur: baja lo nuevo de XM y NOAA, reentrena los CatBoost del mes, pronostica
+# hasta la ventana de manana y sube los resultados al repositorio (Streamlit Community Cloud se redespliega solo).
+# Detalle en scripts_experimento/actualizar_produccion.py. Tambien se puede lanzar a mano desde la pestana Actions.
+name: Actualizar pronostico
+
+on:
+  schedule:
+    # 15:40 y 18:40 de Colombia (UTC-5): XM publica el predespacho ideal del dia siguiente hacia las 10:30 y el
+    # despacho programado hacia las 14:30. La segunda corrida cubre retrasos de XM o de GitHub.
+    - cron: "40 20 * * *"
+    - cron: "40 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-pronostico
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-produccion.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-produccion.txt
+
+      - name: Datos nuevos y pronostico
+        run: python scripts_experimento/actualizar_produccion.py
+
+      - name: Subir resultados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/produccion data/processed/predespacho_ideal_xm.csv data/processed/despacho_programado_cm_demanda_xm.csv \
+            data/processed/resultados/produccion data/processed/resultados/fuentes_pronostico.json \
+            data/processed/resultados/ensamble_24h_realista_2026.csv \
+            data/processed/resultados/pronostico_realista_bandas_24h_2026.csv \
+            data/processed/resultados/probabilidades_eventos_24h_realista_2026.csv \
+            data/processed/resultados/pronostico_realista_72h_diario_2026.csv \
+            data/processed/resultados/pronostico_realista_bandas_72h_2026.csv
+          if git diff --cached --quiet; then
+            echo "sin cambios"
+            exit 0
+          fi
+          git commit -m "Actualizacion diaria del pronostico ($(TZ=America/Bogota date +'%Y-%m-%d %H:%M'))"
+          for i in 1 2 3; do
+            git pull --rebase && git push && exit 0
+            sleep 15
+          done
+          exit 1

@@ -260,6 +260,8 @@ def evaluar_backtest(df, senal, rol):
     regla realmente encuentra horas mejores que el azar antes de confiar en ella.
     """
     accion = "comprar" if rol == "comercializador" else "vender"
+    con_real = df["real"].notna().to_numpy()      # en operacion, las horas recientes y futuras aun no tienen precio real
+    df, senal = df[con_real], senal[con_real]
     mask = senal == accion
     precio_medio_general = df["real"].mean()
 

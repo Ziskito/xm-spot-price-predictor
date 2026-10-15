@@ -35,7 +35,7 @@ def causal(d, previa, cols, grupo, margen=5, min_dias=14, iteraciones=3, objetiv
     P = np.full(len(d), np.nan)
     for i in range(len(dias)):
         conocidos = dias[:max(0, i - margen + 1)]
-        tr_m, te_m = np.isin(dia, conocidos), dia == dias[i]
+        tr_m, te_m = np.isin(dia, conocidos) & ~np.isnan(y), dia == dias[i]          # sin las horas aun sin precio real
         for gg in np.unique(g[te_m]):
             tr, te = tr_m & (g == gg), te_m & (g == gg)
             Xt, yt, dt = X[tr], y[tr], dia[tr]

@@ -50,6 +50,50 @@ def texto(zz, nombre):
         return crudo.decode("latin-1")
 
 
+def leer_mes(mes):
+    """Costo marginal y demanda programados de los dias de un mes (carpeta AAAA-MM de XM); None si no hay archivos."""
+    fs = [f for f in listar(f"{RUTA}/{mes}", "dMAR") + listar(f"{RUTA}/{mes}", "dDEM")
+          if re.fullmatch(r"(?i)d(mar|dem)\d{4}\.txt", f["nombre"])]
+    if not fs:
+        return None
+    pub = {f["nombre"].lower(): (f["fechaCreacion"], f["fechaModificacion"]) for f in fs}
+    z = dpi.descargar_zip([f["id"] for f in fs])
+    en_zip = {Path(n).name.lower() for n in z.namelist()}
+    extra = [dpi.descargar_zip([f["id"]]) for f in fs if f["nombre"].lower() not in en_zip]
+    dias = {}
+    for nombre, zz in [(n, z) for n in z.namelist()] + [(n, e) for e in extra for n in e.namelist()]:
+        m = re.fullmatch(r"(?i)d(mar|dem)(\d{2})(\d{2})\.txt", Path(nombre).name)
+        if not m:
+            continue
+        anio = int(mes[:4]) - (1 if (mes.endswith("-01") and int(m.group(2)) == 12) else 0)
+        dia = pd.Timestamp(anio, int(m.group(2)), int(m.group(3)))
+        tipo = m.group(1).lower()
+        v = leer_mar(texto(zz, nombre)) if tipo == "mar" else leer_dem(texto(zz, nombre))
+        if v is None:
+            continue
+        c, mo = pub.get(Path(nombre).name.lower(), (None, None))
+        dias.setdefault(dia, {})[tipo] = (v, c, mo)
+    filas = []
+    for dia, x in sorted(dias.items()):
+        df = pd.DataFrame({"fecha_hora": pd.date_range(dia, periods=24, freq="h")})
+        for tipo, col in (("mar", "cm_programado"), ("dem", "demanda_programada")):
+            v, c, mo = x.get(tipo, (np.full(24, np.nan), None, None))
+            df[col], df[f"creado_{tipo}"], df[f"modificado_{tipo}"] = v, c, mo
+        filas.append(df)
+    return pd.concat(filas) if filas else None
+
+
+def marcar_a_tiempo(t):
+    """a_tiempo_*: archivo creado y modificado antes de las 23:00 del dia anterior."""
+    corte = t["fecha_hora"].dt.normalize() - pd.Timedelta(hours=1)
+    for tipo in ("mar", "dem"):
+        mod = pd.to_datetime(t[f"modificado_{tipo}"].str[:19])
+        # 13-feb-2025: migracion en bloque del repositorio (ver descargar_despacho_programado.py)
+        t[f"a_tiempo_{tipo}"] = ((pd.to_datetime(t[f"creado_{tipo}"].str[:19]) < corte)
+                                 & ((mod < corte) | (mod.dt.normalize() == pd.Timestamp("2025-02-13"))))
+    return t
+
+
 if __name__ == "__main__":
     CACHE.mkdir(parents=True, exist_ok=True)
     meses = sorted(f["nombre"] for f in dpi.listar(RUTA) if re.fullmatch(r"\d{4}-\d{2}", f["nombre"]) and f["nombre"] >= "2018-01")
@@ -61,47 +105,13 @@ if __name__ == "__main__":
         if cache.exists() and mes < pd.Timestamp.now().strftime("%Y-%m"):
             partes.append(pd.read_csv(cache, parse_dates=["fecha_hora"]))
             continue
-        fs = [f for f in listar(f"{RUTA}/{mes}", "dMAR") + listar(f"{RUTA}/{mes}", "dDEM")
-              if re.fullmatch(r"(?i)d(mar|dem)\d{4}\.txt", f["nombre"])]
-        if not fs:
+        mdf = leer_mes(mes)
+        if mdf is None:
             continue
-        pub = {f["nombre"].lower(): (f["fechaCreacion"], f["fechaModificacion"]) for f in fs}
-        z = dpi.descargar_zip([f["id"] for f in fs])
-        en_zip = {Path(n).name.lower() for n in z.namelist()}
-        extra = [dpi.descargar_zip([f["id"]]) for f in fs if f["nombre"].lower() not in en_zip]
-        dias = {}
-        for nombre, zz in [(n, z) for n in z.namelist()] + [(n, e) for e in extra for n in e.namelist()]:
-            m = re.fullmatch(r"(?i)d(mar|dem)(\d{2})(\d{2})\.txt", Path(nombre).name)
-            if not m:
-                continue
-            anio = int(mes[:4]) - (1 if (mes.endswith("-01") and int(m.group(2)) == 12) else 0)
-            dia = pd.Timestamp(anio, int(m.group(2)), int(m.group(3)))
-            tipo = m.group(1).lower()
-            v = leer_mar(texto(zz, nombre)) if tipo == "mar" else leer_dem(texto(zz, nombre))
-            if v is None:
-                continue
-            c, mo = pub.get(Path(nombre).name.lower(), (None, None))
-            dias.setdefault(dia, {})[tipo] = (v, c, mo)
-        filas = []
-        for dia, x in sorted(dias.items()):
-            df = pd.DataFrame({"fecha_hora": pd.date_range(dia, periods=24, freq="h")})
-            for tipo, col in (("mar", "cm_programado"), ("dem", "demanda_programada")):
-                v, c, mo = x.get(tipo, (np.full(24, np.nan), None, None))
-                df[col], df[f"creado_{tipo}"], df[f"modificado_{tipo}"] = v, c, mo
-            filas.append(df)
-        if not filas:
-            continue
-        mdf = pd.concat(filas)
         mdf.to_csv(cache, index=False)
         partes.append(mdf)
-        print(f"  {mes}: {len(filas)} dias", flush=True)
-    t = pd.concat(partes).drop_duplicates("fecha_hora").sort_values("fecha_hora")
-    corte = t["fecha_hora"].dt.normalize() - pd.Timedelta(hours=1)
-    for tipo in ("mar", "dem"):
-        mod = pd.to_datetime(t[f"modificado_{tipo}"].str[:19])
-        # 13-feb-2025: migracion en bloque del repositorio (ver descargar_despacho_programado.py)
-        t[f"a_tiempo_{tipo}"] = ((pd.to_datetime(t[f"creado_{tipo}"].str[:19]) < corte)
-                                 & ((mod < corte) | (mod.dt.normalize() == pd.Timestamp("2025-02-13"))))
+        print(f"  {mes}: {mdf['fecha_hora'].dt.normalize().nunique()} dias", flush=True)
+    t = marcar_a_tiempo(pd.concat(partes).drop_duplicates("fecha_hora").sort_values("fecha_hora"))
     t.to_csv(SALIDA, index=False)
     print("guardado", SALIDA, len(t), t["fecha_hora"].min(), t["fecha_hora"].max(),
           "| a tiempo mar:", round(t["a_tiempo_mar"].mean() * 100, 2), "% dem:", round(t["a_tiempo_dem"].mean() * 100, 2), "%")

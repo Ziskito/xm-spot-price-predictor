@@ -62,9 +62,9 @@ def bajar(metrica, frecuencia, ini, fin):
     return pd.Series(dict(filas)).sort_index()
 
 
-def oni_causal(indice):
-    """Misma rampa causal del notebook 02 (celda 30), con el archivo del proyecto."""
-    ancho = pd.read_csv(EXT / "oni_index.csv")
+def oni_causal(indice, ruta=None):
+    """Misma rampa causal del notebook 02 (celda 30), con el archivo del proyecto (o la tabla ONI de `ruta`)."""
+    ancho = pd.read_csv(ruta or EXT / "oni_index.csv")
     temp = ["DJF", "JFM", "FMA", "MAM", "AMJ", "MJJ", "JJA", "JAS", "ASO", "SON", "OND", "NDJ"]
     largo = ancho.melt(id_vars="anio", value_vars=temp, var_name="t", value_name="oni")
     largo["mes"] = largo["t"].map({t: i + 1 for i, t in enumerate(temp)})
