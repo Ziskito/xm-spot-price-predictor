@@ -32,8 +32,12 @@ CACHE = RAIZ / "data" / "raw" / "predespacho_ideal"
 SALIDA = RAIZ / "data" / "processed" / "predespacho_ideal_xm.csv"
 
 
+# esperas crecientes entre reintentos: el portal de XM a veces no responde por unos minutos (15-oct-2026, desde GitHub)
+ESPERAS = (15, 30, 60, 120, 180, 0)
+
+
 def listar(ruta, n=200):
-    for intento in range(4):
+    for intento in range(6):
         try:
             r = requests.get(f"{API}/ficheros", params={"ruta": ruta, "contenedor": "storageportalxm", "ordenarPor": "nombre",
                                                          "orden": "DESC", "pagina": 1, "resultadosPorPagina": n, "nombre": ""}, timeout=60)
@@ -41,12 +45,12 @@ def listar(ruta, n=200):
             return r.json().get("ficheros") or []
         except Exception as e:
             print(f"  reintento listar {ruta}: {str(e)[:80]}", flush=True)
-            time.sleep(5)
+            time.sleep(ESPERAS[intento])
     raise RuntimeError(ruta)
 
 
 def descargar_zip(ids):
-    for intento in range(4):
+    for intento in range(6):
         try:
             r = requests.get(f"{API}/ficheros/descargar-archivos", timeout=180,
                              params={"ficheros": ",".join(map(str, ids)), "nombreBlobContainer": "storageportalxm"})
@@ -54,7 +58,7 @@ def descargar_zip(ids):
             return zipfile.ZipFile(io.BytesIO(r.content))
         except Exception as e:
             print(f"  reintento descarga: {str(e)[:80]}", flush=True)
-            time.sleep(5)
+            time.sleep(ESPERAS[intento])
     raise RuntimeError("descarga")
 
 

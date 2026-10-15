@@ -40,7 +40,8 @@ def bajar(metrica, frecuencia, ini, fin):
     filas, a = [], ini
     while a <= fin:
         b = min(a + pd.Timedelta(days=27), fin)
-        for intento in range(4):
+        r = None
+        for intento in range(6):  # esperas crecientes: la API de XM a veces no responde por unos minutos
             try:
                 r = requests.post(f"{API}/{frecuencia}", timeout=60, json={"MetricId": metrica, "StartDate": f"{a:%Y-%m-%d}",
                                                                             "EndDate": f"{b:%Y-%m-%d}", "Entity": "Sistema"})
@@ -48,7 +49,10 @@ def bajar(metrica, frecuencia, ini, fin):
                 break
             except Exception as e:
                 print(f"  reintento {metrica} {a:%Y-%m-%d}: {str(e)[:60]}", flush=True)
-                time.sleep(5)
+                r = None
+                time.sleep((15, 30, 60, 120, 180, 0)[intento])
+        if r is None:
+            raise RuntimeError(f"API de XM sin respuesta para {metrica} {a:%Y-%m-%d} a {b:%Y-%m-%d}")
         for it in r.json().get("Items", []):
             if frecuencia == "hourly":
                 v = it["HourlyEntities"][0]["Values"]
