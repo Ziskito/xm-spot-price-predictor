@@ -598,9 +598,8 @@ def metadatos_html(periodo, contenido):
     confianza y version del modelo)."""
     cob = meta.get("cobertura_medida_pct", "n/d")
     return (f'<div class="meta"><b>{contenido}</b> &middot; Unidad: COP/kWh &middot; Periodo: {periodo} '
-            f'&middot; Confianza: banda [q10, q90], cobertura medida {cob} % (objetivo '
-            f'{meta.get("cobertura_objetivo_pct", 80)} %) &middot; Modelo ({horizonte}): '
-            f'{meta.get("modelo", "n/d")}, versión {meta.get("generado", "n/d")}</div>')
+            f'&middot; Confianza: banda [q10, q90], cobertura medida {cob} % &middot; Modelo de {horizonte}, '
+            f'versión {meta.get("generado", "n/d")}</div>')
 
 
 CODIGO_SENAL = {"evitar_compra": 0, "retener": 0, "esperar": 1, "comprar": 2, "vender": 2}
@@ -751,13 +750,11 @@ with st.sidebar:
     st.divider()
     estado = "Modelo activo" if meta.get("calibrado") else "Modelo activo (sin calibrar)"
     st.markdown(
-        f'<div class="modelo"><b>{estado}</b><br><span>{meta.get("modelo", "n/d")}</span></div>',
+        f'<div class="modelo"><b>{estado}</b><br><span>Pronóstico de {horizonte}, versión '
+        f'{meta.get("generado", "n/d")}</span></div>',
         unsafe_allow_html=True,
     )
-    st.caption(
-        f"Cobertura medida: {meta.get('cobertura_medida_pct', '-')}% "
-        f"(objetivo {meta.get('cobertura_objetivo_pct', 80)}%)"
-    )
+    st.caption(f"Cobertura medida de la banda: {meta.get('cobertura_medida_pct', '-')}%")
     # actualizacion diaria (scripts_experimento/actualizar_produccion.py, GitHub Actions)
     try:
         est = json.loads((RAIZ / "data/processed/resultados/produccion/estado.json").read_text(encoding="utf-8"))
@@ -770,8 +767,8 @@ with st.sidebar:
 st.markdown(marca_html(tk, 54, "Motor de decisión &middot; precio de bolsa de energía", "marca-cab"),
             unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-app">Qué conviene hacer con la energía en cada hora, según el pronóstico con '
-    'bandas de incertidumbre. Prototipo OE3 &middot; no es asesoría financiera ni una simulación de portafolio.</div>',
+    '<div class="sub-app">Pronóstico hora a hora del precio de bolsa de energía en Colombia y recomendación de '
+    'cuándo comprar, vender o esperar. Herramienta de apoyo a la decisión; no es asesoría financiera.</div>',
     unsafe_allow_html=True,
 )
 
@@ -963,7 +960,24 @@ def vista_operador():
         else:
             previos = [d for d in completos if d <= dia]
             st.session_state[clave_dias] = (previos[-14:][0], previos[-1])
-    c_dias, c_horas, c_modo = st.columns([5, 3, 2])
+    # calendario de rango sincronizado con la barra: si la barra cambio, el calendario la sigue; si el usuario
+    # elige un rango completo en el calendario, la barra toma ese rango (con un solo extremo elegido no se toca)
+    clave_cal = f"cal_{clave_dias}"
+    actual = tuple(st.session_state[clave_dias])
+    if st.session_state.get(f"_ultimo_{clave_dias}") != actual or clave_cal not in st.session_state:
+        st.session_state[clave_cal] = actual
+        st.session_state[f"_ultimo_{clave_dias}"] = actual
+
+    def _calendario_a_barra():
+        v = st.session_state.get(clave_cal)
+        if isinstance(v, (tuple, list)) and len(v) == 2:
+            st.session_state[clave_dias] = st.session_state[f"_copia_{clave_dias}"] = tuple(v)
+            st.session_state[f"_ultimo_{clave_dias}"] = tuple(v)
+    c_cal, c_dias, c_horas, c_modo = st.columns([2.4, 4, 3, 2])
+    with c_cal:
+        st.date_input("Del … al", min_value=completos[0], max_value=completos[-1], key=clave_cal,
+                      format="DD/MM/YYYY", on_change=_calendario_a_barra,
+                      help="Elige el primer y el último día en el calendario; la barra se ajusta sola.")
     with c_dias:
         rango_dias = st.slider("Días", min_value=completos[0], max_value=completos[-1], key=clave_dias,
                                step=pd.Timedelta(days=1).to_pytimedelta(), format="DD/MM/YYYY",
@@ -1072,10 +1086,10 @@ def vista_analista():
         opciones = ["fijo", "rodante", "banda", "hibrido"]
         metodo = st.selectbox(
             "Método de umbral", opciones, index=opciones.index(metodo_sugerido),
-            help=("fijo: percentiles del precio histórico 2019-2025. "
-                  "rodante: percentiles con ventana móvil causal de 30 días. "
-                  "banda: percentiles fijos + 'esperar' forzado cuando la banda de incertidumbre es ancha. "
-                  "hibrido: umbral rodante + el mismo filtro de 'esperar' de banda.\n\n"
+            help=("**fijo**: percentiles del precio histórico 2019-2025.\n\n"
+                  "**rodante**: percentiles con ventana móvil de los 30 días anteriores.\n\n"
+                  "**banda**: percentiles fijos, y «esperar» cuando la banda de incertidumbre es ancha.\n\n"
+                  "**hibrido**: umbral rodante con el mismo «esperar» del método banda.\n\n"
                   f"Sugerido por el backtest económico en el rango de fechas elegido: {etiqueta}."),
         )
 
@@ -1107,6 +1121,10 @@ def vista_analista():
                                f"Backtest del método {metodo} sobre real frente a pronóstico"),
                 unsafe_allow_html=True)
 
+    st.caption("La tabla de abajo trae, hora a hora y solo para el rango de fechas elegido, los datos con los que se "
+               "calculan las cifras y la gráfica de esta vista: precio real (real), pronóstico (q50) y su banda "
+               "(q10 a q90), la señal del método (senal), si el método aún no tenía umbral (sin_umbral) y, en 24 h, "
+               "las probabilidades de desplome y pico. Se puede ordenar por columna y descargar en CSV.")
     with st.expander("Ver datos filtrados"):
         st.dataframe(base, width="stretch")
 
