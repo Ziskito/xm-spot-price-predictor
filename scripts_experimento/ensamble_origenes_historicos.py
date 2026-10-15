@@ -115,6 +115,9 @@ if __name__ == "__main__":
         d = c.pivot_table(index="fecha_hora", columns="modelo", values="prediccion")
         d = d.join(c.groupby("fecha_hora")["real"].first())
         g, fallos = garch_ged(df, d.index.min(), d.index.max())
+        # cache que reutilizan validacion_historica_predespacho.py y ensamble_24h_enero.py (15-oct: se renueva aqui
+        # para que no quede uno calculado con datos anteriores)
+        g.rename("GARCH-ged").to_frame().to_csv(RES / f"garch_ged_origen{o[-1]}_24h.csv")
         d = d.join(g, how="left").dropna(subset=VOTANTES + ["real"])
         d["dia"] = d.index.normalize()
         d["g4"] = d.index.hour // 6

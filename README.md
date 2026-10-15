@@ -535,6 +535,40 @@ Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron
   - Hace commit de los datos y contratos con `github-actions[bot]`, y Streamlit se redespliega solo.
 
   Duración en este equipo: la primera corrida tomó 5,6 min el 24 h y 22 min el 72 h; la corrida diaria, 7 min. GitHub desactiva los workflows programados de un repositorio público tras 60 días sin actividad; si pasa, se reactivan con un clic en Actions. *Manual:* nota de la actualización diaria (Anexo A) y dos filas nuevas en la tabla de problemas (precio real ausente en los últimos días; pronóstico que aún no llega a mañana). *Validación con usuarios (OE4-2):* formulario en Microsoft Forms, «Evaluación del dashboard augur», anónimo y abierto a cualquier persona. Tiene 8 preguntas: perfil (3), 11 afirmaciones Likert sobre el dashboard, nota de 1 a 10 y tres abiertas (lo más útil; qué cambiaría; qué agregaría al proyecto o a la página). Las afirmaciones también miden comprensión, por ejemplo «Entendí qué significa la banda de incertidumbre». Se probó la escala SUS y se quitó, porque su traducción literal sonaba forzada. *Primera corrida en GitHub:* falló porque `o6_comun.py` y `stacking_24h_v2.py` tenían escrita la ruta del equipo de Juan. Ahora la raíz se calcula desde el archivo. Otros scripts de experimentos conservan esa ruta, pero el workflow no los usa.
+- **Orígenes históricos 1-5 reentrenados con el ONI corregido (15-oct, a pedido de Juan)**.
+
+  *Qué cambió en los datos:* el ONI de NOAA corrigió cuatro trimestres:
+  - 2021: JFM -0,9 → -0,8 y JJA -0,3 → -0,4.
+  - 2023: DJF -0,5 → -0,6 y JAS 1,3 → 1,2.
+
+  Son 5.780 horas, y caen en el entrenamiento o en la prueba de los 5 orígenes. Todos los modelos menos la persistencia usan el ONI.
+
+  *Procedimiento:* `reentrenar_origenes_oni_oct2026.py` replica las celdas de predicción del notebook 10, que no se modificó. Con `--verificar`, y con los datos anteriores a la corrección, reproduce exactamente lo guardado en el Origen 1 en los 5 modelos (diferencia ≤ 1e-13). Luego reemplaza los orígenes 1-5 en `walkforward_predicciones_crudas.csv` y recalcula `diebold_mariano.csv` (35 min). Después se volvieron a correr, en este orden:
+  - `ensamble_origenes_historicos.py`, que ahora también renueva las cachés `garch_ged_origenN_24h.csv`;
+  - `motor_backtest_historico.py`;
+  - `resumen_walkforward_anual.py`;
+  - `rmae_walkforward_completo.py`;
+  - `validacion_historica_predespacho.py`.
+
+  Las versiones anteriores están en `resultados/backups_pre_origenes_oni_15oct2026/`, y el resumen en `resultados/reentreno_oct2026/origenes_oni.txt`.
+
+  *Resultados:*
+  - **Sensibilidad de las redes:** XGBoost y ARX+GARCH casi no cambian (≤ 0,4 de MAE). N-BEATSx y N-HiTS se mueven hasta 3 puntos (por ejemplo, N-BEATSx en el Origen 3 pasa de 40,22 a 37,11 y en el Origen 2 de 17,17 a 19,25). Es la misma sensibilidad de las redes a cambios pequeños en los datos que se vio en el Origen 6 el 14-oct.
+  - **Diebold-Mariano:** cambian 6 de 36 conclusiones, todas de las redes en los orígenes 2 y 3. Los conteos que cita el informe quedan así:
+    - N-BEATSx le gana a ARX+GARCH en **4/6** orígenes (antes 5/6), y N-HiTS en **3/6** (antes 4/6).
+    - Frente a la persistencia, cada red gana en 2/6 y pierde en 2/6 (antes 1 y 1).
+    - ARX+GARCH sigue perdiendo contra la persistencia en 4/6, y XGBoost en 6/6.
+  - **Ensamble histórico:** la conclusión no cambia. Le gana a la persistencia con significancia en 4 de 5 años y no en el quinto. MAE (rMAE, DM t):
+    - O1: 15,13 (0,916; 4,43)
+    - O2: 17,01 (0,939; 2,48)
+    - O3: 37,11 (0,902; 5,05)
+    - O4: 63,34 (0,935; 4,50)
+    - O5: 100,79 (0,974; 1,04, p = 0,15)
+
+    Antes: 15,14 / 16,64 / 37,58 / 62,92 / 101,51.
+  - **Validación histórica del predespacho:** igual. El ensamble de 7 baja el error entre 38 % y 47 % en todos los orígenes (DM t de 6,3 a 15,4).
+  - **Backtest histórico del motor:** ninguna elección por estabilidad cambia. Las ventajas medias se mueven menos de 2 COP/kWh, y las combinaciones válidas en ambas mitades pasan de 26 a 27 de 60.
+  - **Pendiente:** el informe debe actualizar los conteos de Diebold-Mariano. `walkforward_5origenes.csv` (notebook 07, versión anterior sin festivos) no se regeneró, porque nada lo usa ya.
 - **Dashboard publicado (14-oct):** https://augurpredictor.streamlit.app (Streamlit Community Cloud, cuenta Ziskito, rama `main`, `dashboard/app.py`); se actualiza solo con cada push a `main`.
 - **Dashboard listo para Streamlit Community Cloud (6-oct)**: `dashboard/requirements.txt` con solo 4 librerías fijas (streamlit 1.63.0, pandas 2.3.3, numpy 2.4.4, plotly 7.0.0); Streamlit Cloud lo toma antes que el `requirements.txt` de la raíz (136 paquetes). Probado en un entorno virtual limpio (42 paquetes) sobre una copia de solo los archivos que quedarían en GitHub (190 MB): 8 combinaciones de vista, rol y horizonte sin excepciones. Para publicar: en share.streamlit.io, iniciar sesión con GitHub → Create app → repositorio `Ziskito/xm-spot-price-predictor`, rama `main`, archivo `dashboard/app.py`, Python 3.12 en Advanced settings.
 - **Mapa de calor con rango de días y horas elegible; notebook de opciones de diseño (6-oct)**: (1) En `dashboard/app.py`, el mapa de calor día-hora tiene ahora dos deslizadores de rango: **días** (de un solo día a todo el periodo disponible, con 202 días completos a 24 h y 212 a 72 h; por defecto, los 14 días que terminan en el día elegido) y **horas** (de una sola hora a las 24). El tamaño de la figura, el espaciado de las celdas y las marcas de los ejes se ajustan al rango, y el pie de metadatos indica el periodo exacto (por ejemplo, "01/07/2026 a 31/07/2026, 18:00 a 20:00 h (31 días × 3 horas)"). Cada horizonte recuerda su propio rango de días al cambiar entre 24 h y 72 h. Se validó con `AppTest`: un día, un mes, todo el rango, 3 horas, cambio de horizonte de ida y vuelta, modo oscuro y vista analista, sin excepciones. (2) `notebooks/13_opciones_diseno_dashboard_juan.ipynb`: seis propuestas de diseño y colorimetría, cada una en modo claro y oscuro, con vistas previas HTML hechas con datos reales (tarjeta principal, indicadores con minigráfica, franja de 24 h, mapa de calor y pronóstico con banda): A Pizarra (actual), B Energía, C Grafito, D Accesible (Okabe-Ito), E Nórdico y F Sala de control. Además de los colores, varían la tipografía, las esquinas, las sombras y el estilo de la tarjeta principal. Incluye dos chequeos objetivos: contraste WCAG sobre el panel y simulación de deuteranopía y protanopía (Machado et al., 2009) con ΔE mínimo entre señales. Solo B y D separan las tres señales en todas las variantes (ΔE ≥ 23); la actual queda en el límite (ΔE 18 en deuteranopía, modo oscuro). **Juan eligió la B (Energía) y ya está aplicada** en `dashboard/app.py` (tokens de `TEMAS`, esquinas de 10 px, tarjeta principal con barra superior, leyendas "naranja" y "gris") y en `.streamlit/config.toml` (IBM Plex Sans desde Google Fonts y color primario ámbar). Se validó con `AppTest` en las 16 combinaciones, sin excepciones.

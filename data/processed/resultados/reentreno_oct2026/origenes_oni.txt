@@ -1,0 +1,13 @@
+MAE por origen y modelo (antes -> con el ONI corregido):
+  Origen 1: ARX+GARCH 50.88 -> 50.48 | N-BEATSx 25.79 -> 25.51 | N-HiTS 55.38 -> 54.78 | Persistencia 16.80 -> 16.80 | XGBoost 18.25 -> 18.25
+  Origen 2: ARX+GARCH 19.51 -> 19.51 | N-BEATSx 17.17 -> 19.25 | N-HiTS 17.86 -> 19.12 | Persistencia 17.52 -> 17.52 | XGBoost 24.14 -> 24.14
+  Origen 3: ARX+GARCH 49.74 -> 49.74 | N-BEATSx 40.22 -> 37.11 | N-HiTS 37.97 -> 36.86 | Persistencia 39.75 -> 39.75 | XGBoost 59.60 -> 59.66
+  Origen 4: ARX+GARCH 80.80 -> 80.61 | N-BEATSx 66.36 -> 68.87 | N-HiTS 68.47 -> 70.42 | Persistencia 67.19 -> 67.19 | XGBoost 133.99 -> 134.03
+  Origen 5: ARX+GARCH 102.64 -> 102.65 | N-BEATSx 104.59 -> 102.46 | N-HiTS 103.05 -> 103.99 | Persistencia 101.25 -> 101.25 | XGBoost 135.47 -> 135.26
+Diebold-Mariano: 6 de 36 conclusiones cambian:
+  Origen 2 N-BEATSx vs ARX+GARCH: N-BEATSx GANA (sig.) -> sin diferencia significativa (t = -0.44)
+  Origen 2 N-BEATSx vs Persistencia: sin diferencia significativa -> N-BEATSx PIERDE (sig.) (t = 2.70)
+  Origen 2 N-HiTS vs ARX+GARCH: N-HiTS GANA (sig.) -> sin diferencia significativa (t = -0.60)
+  Origen 2 N-HiTS vs Persistencia: sin diferencia significativa -> N-HiTS PIERDE (sig.) (t = 2.33)
+  Origen 3 N-BEATSx vs Persistencia: sin diferencia significativa -> N-BEATSx GANA (sig.) (t = -2.54)
+  Origen 3 N-HiTS vs Persistencia: sin diferencia significativa -> N-HiTS GANA (sig.) (t = -2.78)
