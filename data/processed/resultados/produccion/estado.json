@@ -1,16 +1,13 @@
 {
-  "actualizado": "2026-10-14 22:43",
+  "actualizado": "2026-10-15 16:34",
   "precio_real_hasta": "2026-10-11 23:00:00",
   "pronostico_24h_hasta": "2026-10-16 00:00:00",
   "pronostico_72h_ultimo_corte": "2026-10-14",
   "pronostico_72h_hasta": "2026-10-17 00:00:00",
   "fuentes": {
     "oni": "ok",
-    "serie_xm": {
-      "precio_bolsa": "2026-10-11 23:00:00",
-      "volumen_embalses": "2026-10-13 23:00:00"
-    },
-    "predespacho_ideal": "2026-10-15 23:00:00",
+    "serie_xm": "ERROR: cannot access local variable 'r' where it is not associated with a value",
+    "predespacho_ideal": "ERROR: /M:/InformacionAgentes/Usuarios/Publico/PredespachoIdeal/2026-10",
     "dmar_ddem": "2026-10-15 23:00:00"
   }
 }
