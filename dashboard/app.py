@@ -364,6 +364,18 @@ hr { border-color: $linea !important; }
 .st-key-graf_ampliada { overflow: hidden; }
 [class*="st-key-ampliar_"] { display: flex; justify-content: flex-end; }
 [class*="st-key-ampliar_"] button p { font-size: .8rem; }
+/* pantallas angostas (tablet, ventana pequena): tarjeta y grafica del dia una debajo de la otra, asi la
+   leyenda cabe en dos columnas y la tarjeta no se aprieta */
+@media (max-width: 1200px) {
+  [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .hero-d) { flex-wrap: wrap; }
+  [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .hero-d) > [data-testid="stColumn"] {
+    width: 100% !important; flex: 1 1 100% !important; min-width: 100% !important; }
+}
+@media (max-width: 900px) {
+  .cab-card { flex-wrap: wrap; gap: 12px 22px; }
+  .cab-card > div:nth-child(2) { flex: 1 1 100%; }
+  .cab-card .der { margin-left: 0; text-align: left; }
+}
 /* tarjeta de recomendacion con medidor */
 .hero-d { padding: 14px 18px 16px; }
 /* la tarjeta se estira hasta el alto de la grafica del dia y reparte el espacio sobrante */
