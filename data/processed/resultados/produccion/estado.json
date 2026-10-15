@@ -1,12 +1,15 @@
 {
-  "actualizado": "2026-10-15 16:49",
-  "precio_real_hasta": "2026-10-11 23:00:00",
+  "actualizado": "2026-10-15 18:18",
+  "precio_real_hasta": "2026-10-12 23:00:00",
   "pronostico_24h_hasta": "2026-10-17 00:00:00",
   "pronostico_72h_ultimo_corte": "2026-10-14",
   "pronostico_72h_hasta": "2026-10-17 00:00:00",
   "fuentes": {
     "oni": "ok",
-    "serie_xm": "ERROR: API de XM sin respuesta para PrecBolsNaci 2026-08-06 a 2026-09-02",
+    "serie_xm": {
+      "precio_bolsa": "2026-10-12 23:00:00",
+      "volumen_embalses": "2026-10-14 23:00:00"
+    },
     "predespacho_ideal": "2026-10-16 23:00:00",
     "dmar_ddem": "2026-10-16 23:00:00"
   }
