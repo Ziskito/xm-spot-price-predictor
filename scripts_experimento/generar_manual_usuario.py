@@ -273,12 +273,14 @@ table.compacta th, table.compacta td { padding: 1.5pt 5pt; white-space: nowrap; 
 .indice { column-count: 2; column-gap: 14mm; }
 .portada { display: flex; gap: 16mm; align-items: center; height: 170mm; }
 .portada .izq { width: 55%; } .portada .der { width: 45%; }
+.anexo table { font-size: 9.8pt; margin: 2pt 0; } .anexo th, .anexo td { padding: 2pt 5pt; }
+.anexo table.aviso { margin: 5pt 0; } .anexo table.aviso td { padding: 3pt 6pt; font-size: 9.8pt; }
 """
 
 INDICE = [
     ("", "CONTROL DE REVISIONES", 1),
     ("1", "INTRODUCCIÓN", 1),
-    ("2", "ACCESO", 1), ("2.1", "Acceso web", 2), ("2.2", "Ejecución local", 2), ("2.3", "Parámetros de la dirección", 2),
+    ("2", "ACCESO", 1), ("2.1", "Acceso web", 2), ("2.2", "Parámetros de la dirección", 2),
     ("3", "DESCRIPCIÓN DE LA INTERFAZ", 1), ("3.1", "Vista Operador", 2), ("3.2", "Vista Analista", 2), ("3.3", "Tema oscuro", 2),
     ("4", "FUNCIONES DE LA VISTA OPERADOR", 1), ("4.1", "Rol y horizonte", 2), ("4.2", "Selección de día y hora", 2),
     ("4.3", "Recomendación horaria", 2), ("4.4", "Pronóstico del día", 2), ("4.5", "Franja horaria", 2),
@@ -352,19 +354,12 @@ motor sobre datos históricos.</p>
 <h2>2.1 Acceso web</h2>
 <p>El tablero está publicado en Streamlit Community Cloud en <code>https://augurpredictor.streamlit.app</code> y no requiere
 autenticación. La primera carga del día puede demorar hasta un minuto mientras se activa el servidor.</p>
-<div class="dos"><div>
-<h2>2.2 Ejecución local</h2>
-<p>Requiere Python 3.12. Desde la raíz del repositorio <code>github.com/Ziskito/xm-spot-price-predictor</code>:</p>
-<p><code>pip install -r dashboard/requirements.txt</code><br><code>streamlit run dashboard/app.py</code></p>
-<p>El tablero queda disponible en <code>http://localhost:8501</code>.</p>
-</div><div>
-<h2>2.3 Parámetros de la dirección</h2>
+<h2>2.2 Parámetros de la dirección</h2>
 <div class="tit-tabla" style="text-align:left"><b>Tabla 3.</b> Parámetros de la dirección web</div>
 <table class="compacta"><tr><th>Parámetro</th><th>Efecto</th></tr>
 <tr><td><code>vista=operador | analista</code></td><td>Vista inicial</td></tr>
 <tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial</td></tr>
 <tr><td><code>?vista=analista&amp;tema=oscuro</code></td><td>Ejemplo combinado</td></tr></table>
-</div></div>
 
 <h1 class="salto">3. Descripción de la interfaz</h1>
 <h2>3.1 Vista Operador</h2>
@@ -395,7 +390,7 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <tr><td>5</td><td>Percentiles del umbral</td><td>5.1</td></tr>
 <tr><td>6</td><td>Rango de fechas</td><td>5.2</td></tr>
 <tr><td>7</td><td>Filtro intradía</td><td>5.3</td></tr>
-<tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 72)}
+<tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 56)}
 <h2 style="page-break-before:always">3.3 Tema oscuro</h2>
 {lado(fig("op_oscuro", 3, "Vista Operador con el tema oscuro"), '''<p>El interruptor <b>Modo oscuro</b> (1) cambia a un tema de fondo negro y
 alto contraste, pensado para salas de control, proyección y uso nocturno. Las señales conservan sus colores (verde, naranja y gris)
@@ -506,6 +501,7 @@ admite búsqueda, ordenamiento y descarga en CSV.</p>
 <tr><td>Aviso ⚠ en la recomendación.</td><td>Ningún método estable para el rol y horizonte.</td><td>Revisar la comparación de métodos (5.5).</td></tr></table>
 
 <h1 class="salto">Anexo A. Modelo y datos</h1>
+<div class="anexo">
 <div class="tit-tabla"><b>Tabla A.1.</b> Pronóstico vigente</div>
 <table><tr><th style="width:56mm">Característica</th><th>Valor</th></tr>
 <tr><td>Modelo (24 h)</td><td>{c['modelo24']}</td></tr>
@@ -525,6 +521,7 @@ admite búsqueda, ordenamiento y descarga en CSV.</p>
 {aviso("Nota", "El pronóstico se actualiza todos los días hacia las 15:40 y las 18:40 (hora de Colombia): se descargan los datos nuevos de XM y NOAA, se reentrenan los modelos del mes con todo lo publicado y se pronostica hasta la ventana del día siguiente. Lo ya pronosticado para un día iniciado no se modifica; el precio real se completa a medida que XM lo publica.")}
 {aviso("Advertencia", "El cierre de ofertas es a las 08:00 de D-1 (Resolución CREG 025 de 1995) y el predespacho se publica después. El pronóstico de 24 h aplica a decisiones posteriores a la publicación del predespacho, no a la oferta de los generadores.")}
 {aviso("Nota", "El horizonte de 72 h supone el precio conocido hasta el corte (escenario optimista); su desempeño con fuentes públicas sería menor.") if "optimista" in c["modelo72"] else aviso("Nota", "En el horizonte de 72 h no hay predespacho para los días D+1 y D+2: los pasos 25 a 72 parten del predespacho del día D y su error crece con el horizonte (Tabla A.1).")}
+</div>
 </body></html>"""
 
 
