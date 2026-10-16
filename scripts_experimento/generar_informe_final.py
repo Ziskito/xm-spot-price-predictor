@@ -685,11 +685,11 @@ R_("Funcionamiento del prototipo.", (
     "Sección 7."))
 R_("Vista Operador.", (
     "**Vista Operador.** La Figura 4 muestra la vista Operador el 16 de octubre de 2026 a las 08:00 h para el generador, con el "
-    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 431 COP/kWh, "
+    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 441 COP/kWh, "
     "en el tramo barato (≤ 503) y lejos del caro (≥ 720), con confianza alta (banda de ±42 COP/kWh, más ancha que el 35 % de las "
-    "horas anteriores). El riesgo de desplome a esa hora es de 49 %: el detector anticipa un posible desplome entre las 08:00 y "
+    "horas anteriores). El riesgo de desplome a esa hora es de 56 %: el detector anticipa un posible desplome entre las 08:00 y "
     "las 11:00 y un posible pico entre las 16:00 y las 21:00, que la gráfica del día marca con ▼ y ▲. Ese día el generador tiene "
-    "6 de 24 horas para despachar y vender, y la regla activa, «rodante», tiene una ventaja histórica de +244 COP/kWh y actúa en "
+    "7 de 24 horas para despachar y vender, y la regla activa, «rodante», tiene una ventaja histórica de +244 COP/kWh y actúa en "
     "el 22 % de las horas."))
 imagen("Figura 4.", "dash_operador.png", 6.3)
 R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (16 de octubre de 2026, 08:00 h, rol generador, horizonte "
