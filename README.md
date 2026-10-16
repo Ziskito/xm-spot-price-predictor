@@ -599,6 +599,7 @@ Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron
     - En pantallas de menos de 1200 px, la tarjeta y la gráfica se apilan.
     - La gráfica del backtest ya no desborda su contenedor.
     - El motor, los datos y los modelos no cambian.
+  - *Horizonte de 72 h en operación:* el contrato conserva las ventanas de 3 días (las que se evalúan) y, después de la última, agrega una «cola» con el corte diario más reciente. Antes, entre dos cortes de 3 días, el 72 h no llegaba más lejos que el 24 h; el 15-oct, por ejemplo, se quedaba en el 16-oct y ahora llega al 18-oct.
   - *Descargas de XM:* 6 reintentos con esperas de 15 s a 3 min. El 15-oct la API de XM no respondió desde GitHub (desde Colombia sí): el predespacho se recuperó, la serie de precios no.
   - *Manual (MU-AUG-001 rev. 1.2):* capturas nuevas con recortes y globos medidos sobre la página, nueva sección 3.3 de tema oscuro, y textos al día (medidor, Ampliar, variables, franja con precio y acción, filtro «Mostrar»).
   - *Informe final (34 páginas):* descripción del dashboard rediseñado, y Figuras 4 a 6 y su texto con la vista del 16-oct a las 08:00.

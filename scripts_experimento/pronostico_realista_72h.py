@@ -203,6 +203,12 @@ def main():
     con = todo[todo["cutoff"].isin(cortes)]
     con = con[con.groupby("cutoff")["paso_horas"].transform("size") == 72]
     con = con[["fecha_hora", "cutoff", "paso_horas", "real", "q50", "q10", "q90", "margen"]]
+    if prod and len(con):
+        # cola de operacion (15-oct): despues de la ultima ventana de 3 dias, cada hora con el corte diario mas reciente
+        # (hasta 72 h despues del ultimo predespacho publicado). Sin ella, entre dos cortes de 3 dias el horizonte de 72 h
+        # no llegaba mas lejos que el de 24 h. Las ventanas de 3 dias, que son las que se evaluan, no cambian.
+        cola = todo[todo["fecha_hora"] > con["fecha_hora"].max()].sort_values("cutoff").drop_duplicates("fecha_hora", keep="last")
+        con = pd.concat([con, cola[con.columns]]).sort_values("fecha_hora")
     assert con["fecha_hora"].is_unique
     con.to_csv(RES / "pronostico_realista_bandas_72h_2026.csv", index=False)
     pub = con[con["real"].notna()]
