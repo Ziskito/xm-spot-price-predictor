@@ -584,11 +584,13 @@ ETQ_CORTA = {"vender": "VEN", "comprar": "COM", "retener": "RET", "evitar_compra
 def franja_botones(dia_df, hora_sel, tk):
     """Franja horaria clickeable: cada hora es un boton coloreado segun su senal;
     comparte estado con el deslizador de hora (session_state["hora_operador"])."""
-    color_bg = {"verde": tk["verde_bg"], "rojo": tk["rojo_bg"], "ambar": tk["ambar_bg"]}
-    color_etq = {c: tk["tinta"] for c in color_bg}
+    # la abreviatura (VEN/RET/ESP) va en el color de su senal; en claro, tintes mas fuertes que los de la
+    # tarjeta para que las horas de accion se distingan de un vistazo (Juan, 15-oct)
+    color_etq = {"verde": tk["verde"], "rojo": tk["rojo"], "ambar": tk["gris"]}
     if tk["panel"] == TEMAS["oscuro"]["panel"]:
         color_bg = {"verde": _rgba(tk["verde"], .30), "rojo": _rgba(tk["rojo"], .32), "ambar": _rgba(tk["gris"], .07)}
-        color_etq = {"verde": tk["verde"], "rojo": tk["rojo"], "ambar": tk["gris"]}
+    else:
+        color_bg = {"verde": "#A3F0BE", "rojo": "#FEC98F", "ambar": "#DFE5EE"}
     reglas = []
     for _, r in dia_df.iterrows():
         h = int(r["fecha_hora"].hour)
