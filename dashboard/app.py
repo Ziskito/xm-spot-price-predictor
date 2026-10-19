@@ -1563,7 +1563,7 @@ def vista_operador():
         bloque_d = bloque_dias(dia, "mas_dia")
         fig_dia = encuadrar(
             base_dia(horizonte, rol, metodo, INTRADIA, TEMA, *bloque_d),
-            x=[inicio_dia - pd.Timedelta(minutes=30), inicio_dia + pd.Timedelta(hours=23, minutes=30)],
+            x=[inicio_dia, inicio_dia + pd.Timedelta(hours=23)],     # 00:00 a 23:00 exactas (Juan, 19-oct)
             y=rango_y(dia_df["q10"], dia_df["q90"], dia_df["real"], alto_s.reindex(dia_df.index),
                       bajo_s.reindex(dia_df.index)),
             rev=f"{dia}-{st.session_state.get('rev_dia', 0)}", meta=meta_bloque(df, bloque_d, dia),
