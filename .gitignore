@@ -240,3 +240,6 @@ data/processed/resultados/backups_pre_actualizacion_14oct2026/
 data/processed/resultados/escenario_realista/mejoras/*.pkl
 data/processed/resultados/backups_pre_origenes_oni_15oct2026/
 data/processed/resultados/escenario_realista/mejoras/pre_oni_14oct/
+
+# claves locales de Streamlit (la de produccion va en Settings > Secrets)
+.streamlit/secrets.toml
