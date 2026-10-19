@@ -5,10 +5,16 @@ name: Actualizar pronostico
 
 on:
   schedule:
-    # 15:40 y 18:40 de Colombia (UTC-5): XM publica el predespacho ideal del dia siguiente hacia las 10:30 y el
-    # despacho programado hacia las 14:30. La segunda corrida cubre retrasos de XM o de GitHub.
-    - cron: "40 20 * * *"
-    - cron: "40 23 * * *"
+    # Horas de Colombia (UTC-5). GitHub arranca las corridas programadas con ~2 h de retraso (oct-2026), asi que se
+    # programan 2 h antes de cuando se quieren:
+    #  - 10:00 (corre ~12:00): XM ya publico el predespacho ideal del dia siguiente (10:00-12:00); el pronostico de
+    #    manana sale al mediodia. Si el despacho programado (~14:30) aun no esta, se usa el del dia anterior, igual
+    #    que en el entrenamiento; las corridas de la tarde recalculan manana con el real (solo se congelan los dias
+    #    ya empezados).
+    #  - 13:40 y 16:40 (corren ~15:40 y ~18:40): con el despacho programado; la segunda cubre retrasos de XM o GitHub.
+    - cron: "0 15 * * *"
+    - cron: "40 18 * * *"
+    - cron: "40 21 * * *"
   workflow_dispatch:
 
 permissions:
