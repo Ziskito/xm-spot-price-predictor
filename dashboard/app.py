@@ -74,7 +74,7 @@ from motor_decision import (  # noqa: E402
 )
 
 st.set_page_config(
-    page_title="augur · Motor de decisión",
+    page_title="Augur · Motor de decisión",
     page_icon=str(Path(__file__).parent / "assets" / "augur_icono.png"),
     layout="wide",
 )
@@ -264,7 +264,7 @@ hr { border-color: $linea !important; }
 [data-testid="stTooltipIcon"] svg { stroke: $gris; }
 
 .titulo-app { font-size: 1.55rem; font-weight: 800; color: $tinta; margin-bottom: .1rem; }
-/* marca augur (diseño 08 "Bandada en tendencia", dashboard/mockups/augur.html) */
+/* marca Augur (diseño 08 "Bandada en tendencia", dashboard/mockups/augur.html) */
 .marca { display: flex; align-items: center; gap: 10px; }
 .marca svg { flex: none; }
 .marca-nom { font-family: 'Lexend', 'IBM Plex Sans', sans-serif; font-weight: 700; color: $tinta; line-height: 1; letter-spacing: -.01em; }
@@ -1229,7 +1229,7 @@ def tabla_metodos_html(tabla, metodo_activo, metodo_sugerido):
 # Barra lateral y tema
 # --------------------------------------------------------------------------
 def logo_svg(tk, tam):
-    """Logo de augur: tres aves que suben y crecen (gris, tinta, ambar), el augurio favorable como tendencia."""
+    """Logo de Augur: tres aves que suben y crecen (gris, tinta, ambar), el augurio favorable como tendencia."""
     def ave(x, y, k, color, grosor):
         return (f'<path d="M{x - 6 * k} {y} C{x - 4 * k} {y - 4 * k} {x - 1.5 * k} {y - 4 * k} {x} {y + k} '
                 f'C{x + 1.5 * k} {y - 4 * k} {x + 4 * k} {y - 4 * k} {x + 6 * k} {y}" stroke="{color}" '
@@ -1241,7 +1241,7 @@ def logo_svg(tk, tam):
 
 
 def marca_html(tk, tam, bajada, clase):
-    return (f'<div class="marca {clase}">{logo_svg(tk, tam)}<div><div class="marca-nom">augur</div>'
+    return (f'<div class="marca {clase}">{logo_svg(tk, tam)}<div><div class="marca-nom">Augur</div>'
             f'<div class="marca-sub">{bajada}</div></div></div>')
 
 
@@ -1865,7 +1865,7 @@ def grafico_error_diario(d, tk):
     fig.add_trace(go.Scatter(x=d.index, y=d["pre"], name="Predespacho de XM", mode="lines+markers",
                              line=dict(color=tk["gris"], width=1.5, dash="dash"), marker=dict(size=4),
                              hovertemplate="%{y:,.0f} COP/kWh"))
-    fig.add_trace(go.Scatter(x=d.index, y=d["modelo"], name="augur", mode="lines+markers",
+    fig.add_trace(go.Scatter(x=d.index, y=d["modelo"], name="Augur", mode="lines+markers",
                              line=dict(color=tk["q50"], width=2.2), marker=dict(size=5),
                              hovertemplate="%{y:,.0f} COP/kWh"))
     fig = estilo_figura(fig, tk, 320, "", margen_leyenda=56, fechas=False)
@@ -1907,14 +1907,14 @@ def vista_metodologia():
          mini_linea(diario["modelo"].tail(30), tk["q50"], tk["linea"]),
          f"MAPE {es((e_m / df['real']).mean() * 100, 1)} %; el predespacho de XM: {es(e_p.mean(), 1)} COP/kWh"),
         ("Frente al predespacho de XM", f"{es(mejora, 1, True)} %", "",
-         f"menos error; augur estuvo más cerca del precio real en el {(e_m < e_p).mean() * 100:.0f} % de las horas"),
+         f"menos error; Augur estuvo más cerca del precio real en el {(e_m < e_p).mean() * 100:.0f} % de las horas"),
         ("Precio real dentro de la banda", f"{cob:.0f} %", "",
          "objetivo 80 %: la banda [q10, q90] debería contener el precio real 8 de cada 10 horas"),
         (f"Acierto de las recomendaciones", f"{pct(ok_f)} · {pct(ok_c)}", "",
          f"{favor.replace('_', ' ')} ({len(ok_f)} h) · {SIGNIFICADO[contra][0].lower()} ({len(ok_c)} h): el precio real "
          f"quedó del lado correcto de la mediana del día; al azar sería cerca de 50 %"),
     ]), unsafe_allow_html=True)
-    sec.markdown('<div class="sec-tit" style="font-size:.95rem;margin-top:10px">Error de cada día: augur frente al '
+    sec.markdown('<div class="sec-tit" style="font-size:.95rem;margin-top:10px">Error de cada día: Augur frente al '
                  'predespacho de XM</div>', unsafe_allow_html=True)
     pista_variables(sec)
     sec.plotly_chart(grafico_error_diario(diario, tk), width="stretch", theme=None,
@@ -2018,7 +2018,7 @@ def vista_metodologia():
     val.latex(r"\mathrm{MAE} = \frac{1}{N}\sum_{t} |y_t - \hat{y}_t| \qquad "
               r"\mathrm{MAPE} = \frac{100}{N}\sum_{t} \frac{|y_t - \hat{y}_t|}{y_t}")
     val.latex(r"\text{Cobertura} = \frac{1}{N}\sum_{t} \mathbb{1}\left[q_{10,t} \le y_t \le q_{90,t}\right]")
-    val.latex(r"d_t = |e^{\,\mathrm{pre}}_t| - |e^{\,\mathrm{augur}}_t| \qquad "
+    val.latex(r"d_t = |e^{\,\mathrm{pre}}_t| - |e^{\,\mathrm{Augur}}_t| \qquad "
               r"\mathrm{DM} = \frac{\bar{d}}{\sqrt{\hat{\sigma}^2_{\mathrm{HAC}}/N}} \sim \mathcal{N}(0,1)")
     val.markdown("La prueba de Diebold-Mariano dice si la diferencia de error frente al predespacho es real o "
                  "suerte; la varianza HAC corrige que los errores de horas seguidas están correlacionados.")

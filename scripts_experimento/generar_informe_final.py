@@ -663,20 +663,24 @@ imagen("Figura 3.", "motor_operacion.png")
 R_("Figura 3.", "**Figura 3.** Motor de decisión en operación, método «rodante» con filtro intradía para el generador (13 al 19 "
                 "de julio de 2026): pronóstico mediano, banda [q10, q90], umbrales rodantes y acción recomendada en cada hora.")
 R_("Dashboard.", (
-    "**Dashboard.** Se publicó en Streamlit Community Cloud (augurpredictor.streamlit.app) con la marca augur. La vista Operador "
+    "**Dashboard.** Se publicó en Streamlit Community Cloud (augurpredictor.streamlit.app) con la marca Augur. La vista Operador "
     "aplica el método que elige el criterio de estabilidad y muestra, para el día y la hora elegidos, la acción recomendada con "
     "una insignia (favorable, desfavorable o neutral), un medidor que ubica el precio esperado entre los tramos barato, normal y "
     "caro, un nivel de confianza según el ancho relativo de la banda y la probabilidad de pico o desplome; la acompañan la "
     "gráfica del día (con un botón para ampliarla y variables que se ocultan o muestran desde la leyenda), la franja de 24 horas "
     "con el precio y la acción de cada hora, el mapa de calor día-hora, tres indicadores del backtest y la semana de referencia, "
     "cada imagen con sus metadatos (unidad, periodo, confianza y versión del modelo). La vista Analista permite fijar el método, "
-    "los percentiles, el rango de fechas y el filtro intradía. La presentación se rediseñó el 15 de octubre con la "
-    "retroalimentación del equipo (tarjetas, tema oscuro de alto contraste y diseño adaptable a pantallas angostas) sin cambiar "
-    "el motor ni los datos. La interfaz se verificó con pruebas automatizadas de Streamlit en las 16 combinaciones de tema, "
-    "vista, rol y horizonte, y en un navegador a varios anchos de pantalla."))
+    "los percentiles, el rango de fechas y el filtro intradía, y la vista Metodología muestra el desempeño en vivo del "
+    "pronóstico frente al predespacho de XM y explica el flujo, las fórmulas y la validación. La presentación se rediseñó el 15 "
+    "de octubre con la retroalimentación del equipo (tarjetas, tema oscuro y diseño adaptable a pantallas angostas) y el 19 de "
+    "octubre tras una auditoría de diseño y accesibilidad (contraste WCAG de al menos 4,5:1, números y fechas en formato "
+    "colombiano, gráficas que se acercan con Ctrl + rueda o pellizco y se recorren con dos dedos), sin cambiar el motor ni los "
+    "datos: las recomendaciones, precios, umbrales y tablas se verificaron idénticos a la versión anterior. La interfaz se "
+    "verificó con pruebas automatizadas de Streamlit en las combinaciones de tema, vista, rol y horizonte, y en un navegador a "
+    "varios anchos de pantalla."))
 R_("Funcionamiento del prototipo.", (
     "**Funcionamiento del prototipo y operación diaria.** El sistema funciona de principio a fin sin intervención manual. Todos "
-    "los días a las 15:40 y a las 18:40, un flujo de GitHub Actions descarga los datos nuevos de XM y NOAA, reentrena los "
+    "los días hacia las 12:00, las 15:40 y las 18:40, un flujo de GitHub Actions descarga los datos nuevos de XM y NOAA, reentrena los "
     "CatBoost del mes, pronostica la ventana del día siguiente con el predespacho recién publicado y sube los resultados al "
     "repositorio, con lo que el dashboard se actualiza; en el servidor de GitHub la corrida completa tarda unos 9 minutos. Lo ya "
     "pronosticado no se reescribe y el precio real se completa a medida que XM lo publica. El dataset oficial del proyecto (enero "
@@ -684,31 +688,32 @@ R_("Funcionamiento del prototipo.", (
     "en el Anexo 3, el manual de usuario en el Anexo 4 y los resultados que demuestran el funcionamiento de cada bloque, en la "
     "Sección 7."))
 R_("Vista Operador.", (
-    "**Vista Operador.** La Figura 4 muestra la vista Operador el 16 de octubre de 2026 a las 08:00 h para el generador, con el "
-    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 441 COP/kWh, "
-    "en el tramo barato (≤ 503) y lejos del caro (≥ 720), con confianza alta (banda de ±42 COP/kWh, más ancha que el 35 % de las "
-    "horas anteriores). El riesgo de desplome a esa hora es de 56 %: el detector anticipa un posible desplome entre las 08:00 y "
-    "las 11:00 y un posible pico entre las 16:00 y las 21:00, que la gráfica del día marca con ▼ y ▲. Ese día el generador tiene "
-    "7 de 24 horas para despachar y vender, y la regla activa, «rodante», tiene una ventaja histórica de +244 COP/kWh y actúa en "
-    "el 22 % de las horas."))
+    "**Vista Operador.** La Figura 4 muestra la vista Operador el 19 de octubre de 2026 a las 08:00 h para el generador, con el "
+    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 410,5 COP/kWh, "
+    "en el tramo barato (≤ 503) y lejos del caro (≥ 706), con confianza alta (banda de ±40 COP/kWh, más ancha que el 35 % de las "
+    "horas anteriores). El riesgo de salto a esa hora es bajo (desplome 5 %, pico 0 %), pero el detector anticipa un posible pico "
+    "a las 00:00 y entre las 16:00 y las 22:00, que la gráfica del día marca con ▲. Ese día el generador tiene 3 de 24 horas para "
+    "despachar y vender (18:00 a 20:00), y la regla activa, «rodante», tiene una ventaja histórica de +243 COP/kWh y actúa en el "
+    "22 % de las horas."))
 imagen("Figura 4.", "dash_operador.png", 6.3)
-R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (16 de octubre de 2026, 08:00 h, rol generador, horizonte "
+R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (19 de octubre de 2026, 08:00 h, rol generador, horizonte "
                 "24 h).")
 R_("Rol generador.", (
     "**Mapa de calor día-hora.** El mapa de calor (Figura 5) resume la señal de los 14 días anteriores hora por hora: en la "
-    "primera semana de octubre el motor recomendó vender en las horas de la tarde y de la noche y retener al mediodía, y "
-    "desde el 11 de octubre, con precios más bajos, retener en buena parte de la mañana y del mediodía. Las fechas de los extremos se escriben o se eligen en un "
+    "primera semana del periodo el motor recomendó vender en las horas de la tarde y de la noche y retener en la mañana, y "
+    "desde el 11 de octubre, con precios más bajos, retener en buena parte de la mañana y del mediodía, dejando la venta para "
+    "las horas de mayor demanda (18:00 a 21:00). Una leyenda bajo el mapa indica el color de cada acción. Las fechas de los extremos se escriben o se eligen en un "
     "calendario, y el modo «Precio esperado» colorea las celdas con la escala de color del precio de bolsa que usa XM."))
 imagen("Figura 5.", "dash_calor.png", 6.0)
-R_("Figura 5.", "**Figura 5.** Mapa de calor día-hora de la señal del motor (3 al 16 de octubre de 2026, rol generador).")
+R_("Figura 5.", "**Figura 5.** Mapa de calor día-hora de la señal del motor (6 al 19 de octubre de 2026, rol generador).")
 R_("Vista Analista.", (
     "**Vista Analista.** La Figura 6 muestra la vista Analista para el generador a 24 h con todo el periodo publicado (1 de enero "
-    "al 17 de octubre de 2026). La tabla compara los cuatro métodos por ventaja y frecuencia de acción en el rango elegido: "
-    "«banda» queda sugerido por ventaja (+323 COP/kWh en el 18 % de las horas), pero la vista Operador usa el criterio de "
+    "al 20 de octubre de 2026). La tabla compara los cuatro métodos por ventaja y frecuencia de acción en el rango elegido: "
+    "«banda» queda sugerido por ventaja (+316 COP/kWh en el 18 % de las horas), pero la vista Operador usa el criterio de "
     "estabilidad, que elige «rodante» porque «banda» y «fijo» casi no actúan en la primera mitad del año (Tabla 20). Debajo, la "
     "tabla «Ver datos filtrados» permite auditar cada recomendación hora a hora y descargarla."))
 imagen("Figura 6.", "dash_analista.png", 4.3)
-R_("Figura 6.", "**Figura 6.** Dashboard publicado, vista Analista (rol generador, horizonte 24 h, 1 de enero al 17 de octubre de "
+R_("Figura 6.", "**Figura 6.** Dashboard publicado, vista Analista (rol generador, horizonte 24 h, 1 de enero al 20 de octubre de "
                 "2026).")
 eliminar(P("Rol generador en la vista Analista."))
 

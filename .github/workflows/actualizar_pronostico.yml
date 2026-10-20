@@ -1,4 +1,4 @@
-# Actualizacion diaria del dashboard augur: baja lo nuevo de XM y NOAA, reentrena los CatBoost del mes, pronostica
+# Actualizacion diaria del dashboard Augur: baja lo nuevo de XM y NOAA, reentrena los CatBoost del mes, pronostica
 # hasta la ventana de manana y sube los resultados al repositorio (Streamlit Community Cloud se redespliega solo).
 # Detalle en scripts_experimento/actualizar_produccion.py. Tambien se puede lanzar a mano desde la pestana Actions.
 name: Actualizar pronostico

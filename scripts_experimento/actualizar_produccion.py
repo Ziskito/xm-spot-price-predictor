@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Actualizacion diaria del dashboard augur (desde el 14-oct-2026). La corre GitHub Actions cada dia
+Actualizacion diaria del dashboard Augur (desde el 14-oct-2026). La corre GitHub Actions cada dia
 (.github/workflows/actualizar_pronostico.yml) despues de que XM publica el predespacho ideal (~10:30) y el despacho
 programado (~14:30) del dia siguiente; tambien se puede correr a mano: python scripts_experimento/actualizar_produccion.py
   1) produccion_datos.py: datos nuevos de XM (precio, demanda, generacion, embalses, aportes, predespacho, dMAR/dDEM) y
