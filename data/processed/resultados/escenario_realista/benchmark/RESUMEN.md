@@ -91,4 +91,18 @@ BSS frente a la climatologia por hora (* = Brier significativamente mejor, DM HA
 
 MAE 15-ene a 15-oct (6.576 h): base 38,43; curva50 38,17 (DM t = -2,65); curva82 38,34; rec365 38,70; rec120 38,93
 (t = +2,98, peor). Desde el 9-sep: base 65,35; curva50 64,76 (t = -2,08). Ponderar por recencia no ayuda ni despues
-del cambio de reglas. curva50 es el unico candidato; falta su validacion historica antes de proponerlo.
+del cambio de reglas. curva50 es el unico candidato.
+
+Validacion historica de curva50 (realista_validacion_historica_curva.py, 20-oct, mismo protocolo que la v2):
+
+| Periodo | base | curva50 | DM t (curva50 vs base) |
+|---|---|---|---|
+| O1 2020-21 | 9,23 | 9,19 | -2,04 (mejor, p = 0,04) |
+| O2 2021-22 | 11,60 | 11,61 | 0,30 (empate) |
+| O3 2022-23 | 21,11 | 20,97 | -2,28 (mejor, p = 0,02) |
+| O4 2023-24 | 36,21 | 36,28 | 1,34 (empate) |
+| O5 2024-25 | 56,58 | 57,02 | 2,28 (peor, p = 0,02) |
+
+Decision: NO se adopta. Gana en 3 de 6 periodos (con 2026), empata en 2 y pierde con significancia en 2024-25; la
+media historica queda igual (27,01 frente a 26,95). El cambio de reglas de la CREG 101 127 no se puede anticipar de
+forma robusta con esta aproximacion de la curva (embalse agregado, X % supuesto, CERE como OCV).
