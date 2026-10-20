@@ -52,6 +52,7 @@ jobs:
             data/processed/resultados/ensamble_24h_realista_2026.csv \
             data/processed/resultados/pronostico_realista_bandas_24h_2026.csv \
             data/processed/resultados/probabilidades_eventos_24h_realista_2026.csv \
+            data/processed/resultados/probabilidades_eventos_72h_realista_2026.csv \
             data/processed/resultados/pronostico_realista_72h_diario_2026.csv \
             data/processed/resultados/pronostico_realista_bandas_72h_2026.csv
           if git diff --cached --quiet; then

@@ -504,6 +504,21 @@ MESES = ["", "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct
 # --------------------------------------------------------------------------
 # Carga de datos (cacheada)
 # --------------------------------------------------------------------------
+# st.cache_data solo se invalida cuando cambia el codigo de la funcion cacheada, no las constantes que usa (el 20-oct
+# la pagina publicada seguia mostrando "Pico" en la leyenda tras cambiar NOMBRE_CORTO). Cambiar esta version al tocar
+# textos, nombres o estilos que quedan dentro de datos o figuras en cache: el primer usuario tras el despliegue las limpia.
+VERSION_CACHE = "2026-10-20"
+
+
+@st.cache_resource
+def _limpiar_cache_al_cambiar_version(version):
+    st.cache_data.clear()
+    return version
+
+
+_limpiar_cache_al_cambiar_version(VERSION_CACHE)
+
+
 @st.cache_data
 def cargar_bandas(horizonte):
     try:
@@ -586,14 +601,31 @@ def serie_con_senal(horizonte, rol, metodo, p_bajo=25, p_alto=75, intradia=True)
     out = bandas.assign(senal=senal, sin_umbral=horas_sin_umbral(bandas, metodo, precio_previo=previo))
     prob = cargar_probabilidades_eventos()
     out["p_desplome"], out["p_pico"] = np.nan, np.nan
+    validas = np.ones(len(out), dtype=bool) if horizonte == "24h" else pasos_1_24(horizonte, out["fecha_hora"])
     if prob is not None:
-        # El detector de eventos se entreno y valido con la ventana de 24 h (corte a las 00:00 del dia). En 72 h
-        # (Juan, 19-oct: no salian los picos ni los desplomes) solo vale en los pasos 1-24, que son el mismo
-        # pronostico de 24 h con el mismo corte; los pasos 25-72 aun no tienen detector propio.
-        validas = np.ones(len(out), dtype=bool) if horizonte == "24h" else pasos_1_24(horizonte, out["fecha_hora"])
+        # En 72 h (Juan, 19-oct: no salian los picos ni los desplomes) el detector de 24 h solo vale en los pasos
+        # 1-24, que son el mismo pronostico de 24 h con el mismo corte.
         for col in ("p_desplome", "p_pico"):
             out.loc[validas, col] = prob[col].reindex(out.loc[validas, "fecha_hora"]).to_numpy()
+    # Pasos 25-72: detector por horizonte (realista_eventos_72h.py). Validado contra la climatologia (20-oct-2026), solo
+    # el de pico se publica; el de desplome no la supera de forma consistente en los años historicos.
+    out["solo_pico"] = False
+    if horizonte == "72h":
+        p72 = cargar_probabilidades_eventos_72h()
+        if p72 is not None:
+            resto = ~validas
+            out.loc[resto, "p_pico"] = p72["p_pico"].reindex(out.loc[resto, "fecha_hora"]).to_numpy()
+            out.loc[resto, "solo_pico"] = True
     return out
+
+
+@st.cache_data
+def cargar_probabilidades_eventos_72h():
+    """P(pico) de los pasos 25-72 del contrato de 72 h (realista_eventos_72h.py --operacion). None si no existe."""
+    ruta = RAIZ / "data" / "processed" / "resultados" / "probabilidades_eventos_72h_realista_2026.csv"
+    if not ruta.exists():
+        return None
+    return pd.read_csv(ruta, parse_dates=["fecha_hora"]).drop_duplicates("fecha_hora").set_index("fecha_hora")
 
 
 @st.cache_data
@@ -1493,8 +1525,8 @@ def vista_operador():
 
     # riesgo de salto de la hora (desplome / pico) segun el detector de eventos
     riesgo_html = ""
-    if not np.isnan(fila.get("p_desplome", np.nan)):
-        p_d, p_p = float(fila["p_desplome"]), float(fila["p_pico"])
+    p_d, p_p = float(fila.get("p_desplome", np.nan)), float(fila.get("p_pico", np.nan))
+    if not (np.isnan(p_d) and np.isnan(p_p)):
         def chip_riesgo(nombre, p, clase):
             estilo = f"chip {clase}" if p >= UMBRAL_ALERTA else "chip"
             fondo = "" if p >= UMBRAL_ALERTA else f' style="background:{tk["neutro_bg"]};color:{tk["texto"]}"'
@@ -1506,12 +1538,14 @@ def vista_operador():
             resumen.append(f"posibilidad de desplome a las {', '.join(f'{h:02d}' for h in horas_d)} h")
         if horas_p:
             resumen.append(f"posibilidad de pico a las {', '.join(f'{h:02d}' for h in horas_p)} h")
-        riesgo_html = (f'<div class="sub-card"><div class="t">Posibilidad de salto en esta hora</div>'
-                       f'{chip_riesgo("&#9660; Posibilidad de desplome", p_d, "chip-baja")} '
-                       f'{chip_riesgo("&#9650; Posibilidad de pico", p_p, "chip-alta")}'
-                       f'<div style="margin-top:6px">{"Hoy: " + "; ".join(resumen) if resumen else "Sin alertas hoy."}</div>'
-                       f'<div style="margin-top:4px;opacity:.75;font-size:.8rem">Es una probabilidad estimada, no una '
-                       f'certeza: puede no ocurrir.</div></div>')
+        chips = ("" if np.isnan(p_d) else chip_riesgo("&#9660; Posibilidad de desplome", p_d, "chip-baja") + " ") + \
+            ("" if np.isnan(p_p) else chip_riesgo("&#9650; Posibilidad de pico", p_p, "chip-alta"))
+        nota = ("Es una probabilidad estimada, no una certeza: puede no ocurrir."
+                + (" Para el segundo y el tercer día del pronóstico solo se estima la de pico, y es menos confiable "
+                   "que la del primer día." if bool(fila.get("solo_pico", False)) else ""))
+        riesgo_html = (f'<div class="sub-card"><div class="t">Posibilidad de salto en esta hora</div>{chips}'
+                       f'<div style="margin-top:6px">{"Este día: " + "; ".join(resumen) if resumen else "Sin alertas este día."}</div>'
+                       f'<div style="margin-top:4px;opacity:.75;font-size:.8rem">{nota}</div></div>')
 
     # si ninguna regla fue estable en el backtest, se avisa en la tarjeta (no solo al final de la pagina)
     aviso_estable = ("" if es_valido else
@@ -1612,12 +1646,18 @@ def vista_operador():
                    "<b>naranja</b> = hora para retener generación &nbsp;&middot;&nbsp; "
                    "<b>gris</b> = esperar. Recuadro con borde = la hora seleccionada &mdash; "
                    "haz clic en cualquier hora para elegirla directamente.")
-    if dia_df["p_desplome"].notna().any():
+    # la hora 00:00 del dia es la ultima de la ventana anterior: se decide con la mayoria de horas, no con cualquiera
+    solo_pico = dia_df["solo_pico"].mean() > 0.5
+    if dia_df["p_desplome"].notna().any() and not solo_pico:
         leyenda += (f" &#9660; / &#9650; sobre una hora = posibilidad de desplome / pico de {UMBRAL_ALERTA * 100:.0f} % o más "
                     "(precio 30 % por debajo / por encima de la mediana del día).")
+    elif dia_df["p_pico"].notna().any():
+        leyenda += (f" &#9650; sobre una hora = posibilidad de pico de {UMBRAL_ALERTA * 100:.0f} % o más (precio 30 % por "
+                    "encima de la mediana del día). Para el segundo y el tercer día del pronóstico de 72 h solo se estima "
+                    "la posibilidad de pico, menos confiable que la del primer día; la de desplome no superó a la "
+                    "frecuencia histórica en la validación.")
     elif horizonte == "72h":
-        leyenda += (" La posibilidad de pico o desplome solo se calcula para el primer día de cada pronóstico de 72 h; "
-                    "para el segundo y el tercer día todavía no hay un detector validado.")
+        leyenda += " Para este día no hay estimación de pico ni de desplome."
     sec.markdown(f'<div class="leyenda" style="margin-bottom:10px">{leyenda}</div>', unsafe_allow_html=True)
 
     # ---- Mapa de calor dia-hora: rango de dias (de 1 dia al ultimo disponible) y de horas a eleccion ----

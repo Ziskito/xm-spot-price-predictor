@@ -9,9 +9,10 @@ programado (~14:30) del dia siguiente; tambien se puede correr a mano: python sc
      pronostico hasta la ventana de manana (si ya salio su predespacho), combinador y bandas
   3) realista_eventos.py --produccion --operacion: probabilidades de desplome y pico
   4) pronostico_realista_72h.py --produccion --activar: pasos 25-72 y contrato de 72 h
-  5) resultados/produccion/estado.json: hora de la corrida y hasta donde llegan los datos y los pronosticos
+  5) realista_eventos_72h.py --operacion: probabilidad de pico de los pasos 25-72 (desde el 20-oct-2026)
+  6) resultados/produccion/estado.json: hora de la corrida y hasta donde llegan los datos y los pronosticos
 Lo ya publicado (ventanas y cortes de hoy o antes) no se reescribe; el precio real si se completa a medida que XM lo
-publica. Si un paso 2-4 falla, la corrida termina con error y el workflow no publica nada.
+publica. Si un paso 2-5 falla, la corrida termina con error y el workflow no publica nada.
 """
 import json
 import subprocess
@@ -44,6 +45,7 @@ if __name__ == "__main__":
     correr("pronostico_realista_24h.py", "--produccion", "--activar")
     correr("realista_eventos.py", "--produccion", "--operacion")
     correr("pronostico_realista_72h.py", "--produccion", "--activar")
+    correr("realista_eventos_72h.py", "--operacion")
     c24 = pd.read_csv(RES / "pronostico_realista_bandas_24h_2026.csv", parse_dates=["fecha_hora"])
     c72 = pd.read_csv(RES / "pronostico_realista_bandas_72h_2026.csv", parse_dates=["fecha_hora", "cutoff"])
     estado = {"actualizado": inicio.strftime("%Y-%m-%d %H:%M"),
