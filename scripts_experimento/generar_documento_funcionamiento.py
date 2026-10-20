@@ -495,14 +495,19 @@ def s5_modelos():
     P("Un clasificador de árboles potenciados (HistGradientBoosting de scikit-learn, reentrenado cada semana) estima, para cada hora, la probabilidad de dos eventos definidos respecto a la mediana del "
       "precio de la ventana: **desplome** si el precio real queda en 0,7 veces la mediana o menos, y **pico** si queda en "
       "1,3 veces o más. Usa las mismas variables públicas al corte, incluido el predespacho. Sus probabilidades se muestran "
-      "en el dashboard como alerta; no modifican el pronóstico central.")
+      "en el dashboard como alerta (una posibilidad, no una certeza); no modifican el pronóstico central.")
+    P("Para el segundo y el tercer día del horizonte de 72 h hay un detector por día de anticipación, con lo publicado al "
+      "corte (el predespacho del día del corte, no el del día pronosticado). Se validó en los cinco años históricos y en 2026 "
+      "frente a la climatología (sección 9.7): el de **pico** se publica, marcado como menos confiable que el del primer día; "
+      "el de **desplome** no, porque no supera a la climatología de forma consistente.")
     H("5.4 Modelos que se probaron y no quedaron", 2)
     P("El camino hasta el diseño final comparó persistencia, Prophet, XGBoost, ARX+GARCH, GARCH-ged (diseño LEAR), "
       "N-BEATSx y N-HiTS, y un ensamble de seis de ellos (el diseño del informe de avance). También se descartaron, por no "
       "mejorar o por usar información no disponible: XGBoost y LEAR sobre la razón con el predespacho, redes neuronales con "
       "predespacho, corrección de sesgo, ponderación por recencia, combinador por hora, las ofertas OFEI (fuga) y estirar "
       "la amplitud de los picos (DILATE). Las redes neuronales además resultaron muy sensibles a cambios pequeños en los "
-      "datos.")
+      "datos. La sección 9.7 muestra la comparación completa, con validación en cinco años históricos, que justifica el "
+      "diseño final.")
 
 
 def s6_motor():
@@ -656,8 +661,9 @@ def s9_resultados():
       f"{n(om['2026-08'])}, septiembre {n(om['2026-09'])} y octubre {n(om['2026-10'])}.")
     P("El salto de septiembre coincide con la activación de la Resolución CREG 101 127 (9 de septiembre): el error del "
       "predespacho de XM se duplicó en las mismas fechas, lo que indica un cambio en cómo se forma el precio y no una falla "
-      "del modelo. Se está probando un reentrenamiento que incorpora la curva de referencia de la resolución; solo pasará "
-      "a producción si se valida en los años históricos.")
+      "del modelo. Se probaron dos adaptaciones: dar más peso a los datos recientes (empeora) y agregar como variable una "
+      "aproximación de la curva de referencia de las ofertas hidráulicas de la resolución. Esta última mejora en 2026, pero "
+      "en los años históricos gana en 2 de 5, empata en 2 y pierde en 2024-25, así que no se adoptó.")
     H("9.6 Detector de eventos y motor", 2)
     ev = C["eventos"]
     tabla(["Evento", "Método", "Brier", "BSS", "AUC", "Detectados", "Falsas alarmas"], [
@@ -674,6 +680,62 @@ def s9_resultados():
         anchos=[3.4, 2.4, 2.4, 2.4], titulo="Tabla 20. Motor de decisión en 2026 (ventaja en COP/kWh)",
         fuente=f"Precio medio del periodo: {n(m24['precio_medio'])} COP/kWh. Las mitades se dividen el "
                f"{m24['corte_mitades']}. La ventaja no es una simulación de portafolio (sección 12).")
+    s9_justificacion()
+
+
+def s9_justificacion():
+    """Benchmark de correctores, walk-forward de modelos desde cero y detector por horizonte (19 y 20-oct-2026)."""
+    import pandas as pd
+    base = RAIZ / "data/processed/resultados/escenario_realista"
+    per = ["Origen 1 (2020-21)", "Origen 2 (2021-22)", "Origen 3 (2022-23)", "Origen 4 (2023-24)", "Origen 5 (2024-25)", "2026"]
+    cab = ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2026"]
+    H("9.7 Justificación del diseño: benchmark y walk-forward con información realista", 2)
+    P("Cada componente se eligió con el mismo protocolo: comparar todos los candidatos razonables en las mismas horas, "
+      "en cinco años históricos (15 de julio a 30 de junio, de 2020-21 a 2024-25) y en 2026, solo con la información "
+      "pública al corte, y aceptar una diferencia solo si es significativa en la prueba de Diebold-Mariano.")
+    b = pd.read_csv(base / "benchmark/metricas.csv")
+    piv = b.pivot(index="modelo", columns="periodo", values="MAE")[per]
+    orden = [("Persistencia", "Persistencia"), ("Predespacho", "Predespacho de XM solo"), ("Pre + CatBoost", "Predespacho + CatBoost (Augur)"),
+             ("Pre + LightGBM", "Predespacho + LightGBM"), ("Pre + RandomForest", "Predespacho + Random Forest"),
+             ("Pre + XGBoost", "Predespacho + XGBoost"), ("Pre + Lasso", "Predespacho + Lasso (lineal, tipo LEAR)")]
+    tabla(["Modelo"] + cab + ["Media"], [[nom] + [n(piv.loc[k, c], 1) for c in per] + [n(piv.loc[k].mean(), 2)] for k, nom in orden],
+          anchos=[4.2] + [1.1] * 6 + [1.1], tam=8.5,
+          titulo="Tabla 21. MAE (COP/kWh) de los modelos que corrigen el predespacho",
+          fuente="Mismas variables, objetivo, reentrenamiento mensual y presupuesto (1.500 árboles, profundidad 6), sin afinar "
+                 "ningún modelo. Los cuatro de árboles no tienen diferencias significativas consistentes entre sí; el lineal es "
+                 "significativamente peor en 3 de 6 periodos. CatBoost tiene la mejor media.")
+    w = pd.read_csv(base / "walkforward/metricas.csv")
+    pw = w.pivot(index="modelo", columns="periodo", values="MAE")[per]
+    dm = w.pivot(index="modelo", columns="periodo", values="DM_t_vs_persistencia")[per]
+    filas = []
+    for k in ["Persistencia", "XGBoost", "ARX+GARCH", "GARCH-ged", "N-BEATSx", "N-HiTS", "Predespacho", "Pre + CatBoost"]:
+        mejor = int(((dm.loc[k] < -1.96)).sum()) if k != "Persistencia" else None
+        peor = int(((dm.loc[k] > 1.96)).sum()) if k != "Persistencia" else None
+        nom = {"Predespacho": "Predespacho de XM solo", "Pre + CatBoost": "Predespacho + CatBoost (Augur)"}.get(k, k)
+        filas.append([nom] + [n(pw.loc[k, c], 1) for c in per] + ["—" if mejor is None else f"{mejor} / {peor}"])
+    tabla(["Modelo"] + cab + ["Mejor / peor"], filas, anchos=[3.6] + [1.05] * 6 + [1.5], tam=8.5,
+          titulo="Tabla 22. Walk-forward con información realista: MAE (COP/kWh) y periodos en que cada modelo es "
+                 "significativamente mejor o peor que la persistencia",
+          fuente="2026 = 15 de enero a 5 de agosto. Sin el precio de ayer, ningún modelo que pronostica el precio desde cero "
+                 "supera de forma consistente a la persistencia; el predespacho solo los supera a todos, y corregirlo lo mejora "
+                 "en 5 de 6 periodos. En 2020-21, ARX+GARCH y las redes se entrenan con solo 17 meses y quedan fijos todo el "
+                 "año, por eso su error es tan alto.")
+    e = pd.read_csv(base / "eventos_72h/metricas.csv")
+    e = e[e["metodo"] == "clasificador"]
+    filas = []
+    for ev in ("pico", "desplome"):
+        for pasos, dia in (("1-24", "Día 1"), ("25-48", "Día 2"), ("49-72", "Día 3")):
+            fila = [f"{ev.capitalize()} · {dia}"]
+            for c in per:
+                r = e[(e["evento"] == ev) & (e["pasos"] == pasos) & (e["periodo"] == c)].iloc[0]
+                marca = "*" if (r["DM_p"] < 0.05 and r["DM_t_Brier_vs_clim"] < 0) else ("†" if r["DM_p"] < 0.05 else "")
+                fila.append(f"{n(r['BSS_vs_climatologia'], 2)}{marca}")
+            filas.append(fila)
+    tabla(["Evento y día"] + cab, filas, anchos=[3.2] + [1.4] * 6, tam=8.5,
+          titulo="Tabla 23. Detector de eventos por día del horizonte: mejora sobre la climatología (BSS)",
+          fuente="BSS positivo = mejor que la frecuencia histórica de esa hora. * = significativamente mejor; † = "
+                 "significativamente peor (Diebold-Mariano sobre el puntaje de Brier, p < 0,05). Se publican el día 1 "
+                 "(pico y desplome) y el pico de los días 2 y 3.")
 
 
 def s10_comparacion():
@@ -696,7 +758,7 @@ def s10_comparacion():
          "Augur supera a su referencia ingenua en todos los años evaluados"],
         ["Predespacho ideal de XM", "Despacho del operador con la demanda pronosticada", f"MAE {n(K['MAE_pre'])} (2026)",
          f"Augur lo mejora en {pc(mejora_pre, 0)} en 2026 y en los cinco años históricos"],
-    ], anchos=[3, 3.4, 2.2, 4.8], tam=8.5, titulo="Tabla 21. Antecedentes y comparación")
+    ], anchos=[3, 3.4, 2.2, 4.8], tam=8.5, titulo="Tabla 24. Antecedentes y comparación")
     nota("Varios antecedentes usan el precio de ayer como entrada, lo que hace sus errores más bajos en el papel pero "
          "irrealizables con datos públicos. Augur se evaluó con lo que de verdad existe a la hora de pronosticar.",
          "Lectura correcta")
@@ -715,7 +777,7 @@ def s11_operacion():
     P("La corrida del mediodía ya tiene el predespacho del día siguiente; las de la tarde lo recalculan con el despacho "
       "programado. Solo se congelan los días que ya empezaron.")
     P("**Dashboard (augurpredictor.streamlit.app).** Tiene tres vistas: **Operador** (recomendación de la hora elegida, "
-      "pronóstico del día con banda, horas para actuar y alertas de pico o desplome), **Analista** (semana, mapa de calor, "
+      "pronóstico del día con banda, horas para actuar y posibilidad de pico o desplome), **Analista** (semana, mapa de calor, "
       "backtest del motor y comparación de métodos) y **Metodología** (cómo funciona, fórmulas y validación). Las gráficas "
       "admiten zoom con Ctrl + rueda o el touchpad, desplazamiento, clic en una hora para analizarla y botón para centrar.")
     if (FIG_INF / "dash_operador.png").exists():
@@ -729,13 +791,16 @@ def s12_limitaciones():
         "**Dependencia del predespacho.** Los desfases de nivel de días completos que comete el predespacho (por ejemplo, del 11 al "
         "18 de junio de 2026) no se pueden anticipar con información pública, y Augur hereda la amplitud de los picos que el "
         "predespacho anticipa y no ocurren.",
-        "**Cambios regulatorios.** La Resolución CREG 101 127 de 2026 cambió las reglas dentro del periodo de operación; un modelo "
-        "entrenado con el pasado necesita tiempo o variables nuevas para adaptarse.",
+        "**Cambios regulatorios.** La Resolución CREG 101 127 de 2026 cambió las reglas dentro del periodo de operación y duplicó "
+        "el error de todos los pronósticos, incluido el del predespacho de XM. Las dos adaptaciones probadas (más peso a lo "
+        "reciente y una aproximación de la curva de ofertas de la resolución) no pasaron la validación histórica.",
         "**PBN y PTB.** Augur pronostica el PBN; en horas de escasez el precio de liquidación (PTB) puede ser menor.",
         "**El motor no es una simulación de portafolio.** La ventaja compara precios promedio; no modela contratos firmados, "
         "capacidad de almacenamiento, costos de transacción ni la secuencia real de decisiones.",
         "**Rampas.** El modelo acierta la dirección de los cambios intradía mejor que su magnitud; el error se concentra en las "
         "horas de rampa (MAE ~117 COP/kWh en esas horas).",
+        "**Picos y desplomes a 2 y 3 días.** Solo el detector de pico supera a la climatología en esos días, y no en todos los "
+        "años; el de desplome no se publica.",
     ]:
         V(t)
 
@@ -759,7 +824,7 @@ def s13_glosario():
         ["Walk-forward", "Validación que entrena con el pasado y prueba con el periodo siguiente, avanzando en el tiempo"],
         ["SIN", "Sistema Interconectado Nacional"],
         ["CREG", "Comisión de Regulación de Energía y Gas"],
-    ], anchos=[3.2, 9.3], tam=9, titulo="Tabla 22. Términos usados en el documento")
+    ], anchos=[3.2, 9.3], tam=9, titulo="Tabla 25. Términos usados en el documento")
 
 
 SECCIONES = [s0_portada, s1_resumen, s2_mercado, s3_datos, s4_variables, s5_modelos, s6_motor, s7_metricas,
