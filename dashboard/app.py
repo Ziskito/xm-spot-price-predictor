@@ -1018,12 +1018,23 @@ NOMBRE_CORTO = {"Banda [q10, q90]": "Banda", "Pronóstico (q50)": "Pronóstico",
                 "Posibilidad de desplome": "Pos. desplome", "Posibilidad de pico": "Pos. pico"}
 
 
+def valores_y(tr):
+    """y de una traza como arreglo de numeros. Al copiar una figura (go.Figure(fig), p. ej. la grafica ampliada) Plotly
+    guarda los arreglos en su formato binario {"dtype": "f4", "bdata": base64}; sin decodificarlo, pandas fallaba con
+    "could not convert string to float: 'f4'" (20-oct-2026)."""
+    y = tr.y
+    if isinstance(y, dict) and "bdata" in y:
+        import base64
+        y = np.frombuffer(base64.b64decode(y["bdata"]), dtype=np.dtype(y["dtype"]))
+    return pd.to_numeric(pd.Series(y), errors="coerce")
+
+
 def leyenda_en_columnas(fig, ancho=72, columnas_min=2):
     """Entradas de la leyenda de igual ancho en pixeles, asi quedan en columnas alineadas aunque ocupen varias filas.
     Las series vacias (p. ej. el precio real de un dia que XM aun no publica) salen de la leyenda."""
     for tr in fig.data:
         tr.name = NOMBRE_CORTO.get(tr.name, tr.name)
-        if tr.name and tr.y is not None and pd.isna(pd.Series(tr.y, dtype="float64")).all():
+        if tr.name and tr.y is not None and valores_y(tr).isna().all():
             tr.showlegend = False
     n = sum(1 for tr in fig.data if tr.showlegend is not False and tr.name)
     filas = -(-n // columnas_min)
