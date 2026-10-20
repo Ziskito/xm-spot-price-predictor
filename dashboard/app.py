@@ -585,12 +585,28 @@ def serie_con_senal(horizonte, rol, metodo, p_bajo=25, p_alto=75, intradia=True)
     # horas en que el metodo aun no tiene umbral: su "esperar" es por falta de datos, no una decision
     out = bandas.assign(senal=senal, sin_umbral=horas_sin_umbral(bandas, metodo, precio_previo=previo))
     prob = cargar_probabilidades_eventos()
-    if horizonte == "24h" and prob is not None:   # el detector de eventos se entreno con la ventana de 24 h
-        out["p_desplome"] = prob["p_desplome"].reindex(out["fecha_hora"]).to_numpy()
-        out["p_pico"] = prob["p_pico"].reindex(out["fecha_hora"]).to_numpy()
-    else:
-        out["p_desplome"], out["p_pico"] = np.nan, np.nan
+    out["p_desplome"], out["p_pico"] = np.nan, np.nan
+    if prob is not None:
+        # El detector de eventos se entreno y valido con la ventana de 24 h (corte a las 00:00 del dia). En 72 h
+        # (Juan, 19-oct: no salian los picos ni los desplomes) solo vale en los pasos 1-24, que son el mismo
+        # pronostico de 24 h con el mismo corte; los pasos 25-72 aun no tienen detector propio.
+        validas = np.ones(len(out), dtype=bool) if horizonte == "24h" else pasos_1_24(horizonte, out["fecha_hora"])
+        for col in ("p_desplome", "p_pico"):
+            out.loc[validas, col] = prob[col].reindex(out.loc[validas, "fecha_hora"]).to_numpy()
     return out
+
+
+@st.cache_data
+def pasos_1_24(horizonte, fechas):
+    """True en las horas del horizonte de 72 h que son los pasos 1-24 de su corte (mismo pronostico y corte que 24 h)."""
+    try:
+        res = RAIZ / "data" / "processed" / "resultados"
+        nombre = json.loads((res / "fuentes_pronostico.json").read_text(encoding="utf-8"))[horizonte]["archivo"]
+        paso = pd.read_csv(res / nombre, usecols=["fecha_hora", "paso_horas"], parse_dates=["fecha_hora"]
+                           ).drop_duplicates("fecha_hora").set_index("fecha_hora")["paso_horas"]
+        return (paso.reindex(fechas) <= 24).fillna(False).to_numpy()
+    except (FileNotFoundError, KeyError, ValueError):
+        return np.zeros(len(fechas), dtype=bool)
 
 
 @st.cache_data
@@ -967,7 +983,7 @@ def vista_reciente(fig, df, tk, dias=30):
 
 
 NOMBRE_CORTO = {"Banda [q10, q90]": "Banda", "Pronóstico (q50)": "Pronóstico",
-                "Riesgo de desplome": "Desplome", "Riesgo de pico": "Pico"}
+                "Posibilidad de desplome": "Pos. desplome", "Posibilidad de pico": "Pos. pico"}
 
 
 def leyenda_en_columnas(fig, ancho=72, columnas_min=2):
@@ -1039,8 +1055,8 @@ def grafico_dia(v, bajo_s, alto_s, tk):
     fig.add_trace(go.Scatter(x=v["fecha_hora"], y=bajo_s.reindex(v.index), name="Umbral barato",
                              line=dict(color=tk["verde"], width=1, dash="dash"),
                              hovertemplate="%{y:,.0f} COP/kWh"))
-    for col, simbolo, color, nombre in (("p_desplome", "triangle-down", tk["rojo"], "Riesgo de desplome"),
-                                        ("p_pico", "triangle-up", tk["verde"], "Riesgo de pico")):
+    for col, simbolo, color, nombre in (("p_desplome", "triangle-down", tk["rojo"], "Posibilidad de desplome"),
+                                        ("p_pico", "triangle-up", tk["verde"], "Posibilidad de pico")):
         if col in v and (v[col] >= UMBRAL_ALERTA).any():
             m = v[v[col] >= UMBRAL_ALERTA]
             fig.add_trace(go.Scatter(x=m["fecha_hora"], y=m["q50"], mode="markers", name=nombre,
@@ -1487,12 +1503,15 @@ def vista_operador():
         horas_p = dia_df.loc[dia_df["p_pico"] >= UMBRAL_ALERTA, "fecha_hora"].dt.hour.tolist()
         resumen = []
         if horas_d:
-            resumen.append(f"posible desplome a las {', '.join(f'{h:02d}' for h in horas_d)} h")
+            resumen.append(f"posibilidad de desplome a las {', '.join(f'{h:02d}' for h in horas_d)} h")
         if horas_p:
-            resumen.append(f"posible pico a las {', '.join(f'{h:02d}' for h in horas_p)} h")
-        riesgo_html = (f'<div class="sub-card"><div class="t">Riesgo de salto en esta hora</div>'
-                       f'{chip_riesgo("&#9660; Desplome", p_d, "chip-baja")} {chip_riesgo("&#9650; Pico", p_p, "chip-alta")}'
-                       f'<div style="margin-top:6px">{"Hoy: " + "; ".join(resumen) if resumen else "Sin alertas hoy."}</div></div>')
+            resumen.append(f"posibilidad de pico a las {', '.join(f'{h:02d}' for h in horas_p)} h")
+        riesgo_html = (f'<div class="sub-card"><div class="t">Posibilidad de salto en esta hora</div>'
+                       f'{chip_riesgo("&#9660; Posibilidad de desplome", p_d, "chip-baja")} '
+                       f'{chip_riesgo("&#9650; Posibilidad de pico", p_p, "chip-alta")}'
+                       f'<div style="margin-top:6px">{"Hoy: " + "; ".join(resumen) if resumen else "Sin alertas hoy."}</div>'
+                       f'<div style="margin-top:4px;opacity:.75;font-size:.8rem">Es una probabilidad estimada, no una '
+                       f'certeza: puede no ocurrir.</div></div>')
 
     # si ninguna regla fue estable en el backtest, se avisa en la tarjeta (no solo al final de la pagina)
     aviso_estable = ("" if es_valido else
@@ -1594,8 +1613,11 @@ def vista_operador():
                    "<b>gris</b> = esperar. Recuadro con borde = la hora seleccionada &mdash; "
                    "haz clic en cualquier hora para elegirla directamente.")
     if dia_df["p_desplome"].notna().any():
-        leyenda += (f" &#9660; / &#9650; sobre una hora = riesgo de desplome / pico de {UMBRAL_ALERTA * 100:.0f} % o más "
+        leyenda += (f" &#9660; / &#9650; sobre una hora = posibilidad de desplome / pico de {UMBRAL_ALERTA * 100:.0f} % o más "
                     "(precio 30 % por debajo / por encima de la mediana del día).")
+    elif horizonte == "72h":
+        leyenda += (" La posibilidad de pico o desplome solo se calcula para el primer día de cada pronóstico de 72 h; "
+                    "para el segundo y el tercer día todavía no hay un detector validado.")
     sec.markdown(f'<div class="leyenda" style="margin-bottom:10px">{leyenda}</div>', unsafe_allow_html=True)
 
     # ---- Mapa de calor dia-hora: rango de dias (de 1 dia al ultimo disponible) y de horas a eleccion ----
