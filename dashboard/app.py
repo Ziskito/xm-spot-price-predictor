@@ -22,8 +22,10 @@ es decir segun data/processed/resultados/fuentes_pronostico.json -- si ese
 archivo cambia (ej. 72h pasa a otro modelo), este dashboard lo refleja sin
 tocar una sola linea aqui. Ver docs/motor_decision_guia.md.
 """
+import base64
 import copy
 import hmac
+import html
 import json
 import sys
 from pathlib import Path
@@ -300,7 +302,7 @@ hr { border-color: $linea !important; }
 .chip-alta  { background: $verde_bg; color: $verde; }
 .chip-media { background: $ambar_bg; color: $ambar; }
 .chip-baja  { background: $rojo_bg; color: $rojo; }
-.chip-nota { color: $gris; font-size: .8rem; margin-left: 8px; }
+.chip-nota { color: $texto; font-size: .86rem; margin-left: 8px; }
 
 .tarjetas { display: flex; gap: 12px; margin: 6px 0 12px; flex-wrap: wrap; }
 .stat { flex: 1 1 220px; background: $panel; border: 1px solid $linea;
@@ -310,9 +312,9 @@ hr { border-color: $linea !important; }
 .stat-v { font-size: 1.5rem; font-weight: 750; color: $tinta; margin: 2px 0; white-space: nowrap; }
 .stat-s { font-size: .78rem; color: $gris; }
 
-.leyenda { font-size: .82rem; color: $gris; margin-top: 4px; }
+.leyenda { font-size: .88rem; color: $texto; margin-top: 4px; line-height: 1.5; }
 .leyenda b { color: $tinta; }
-.meta { font-size: .74rem; color: $gris; margin: -2px 0 18px; line-height: 1.45; }
+.meta { font-size: .84rem; color: $texto; margin: -2px 0 18px; line-height: 1.5; }
 .meta b { color: $texto; font-weight: 600; }
 [data-testid="stRadio"] label p { color: $texto; }
 
@@ -376,8 +378,8 @@ hr { border-color: $linea !important; }
 [data-testid="stPlotlyChart"] { border: none !important; box-shadow: none !important; padding: 0 !important;
   border-radius: 0 !important; background: transparent !important; }
 .sec-tit { font-size: 1.05rem; font-weight: 700; color: $tinta; }
-.sec-sub { font-size: .82rem; color: $gris; margin: 2px 0 8px; }
-.meta { background: $fondo; border: 1px solid $linea; border-radius: 8px; padding: 8px 12px; margin: 4px 0 16px; }
+.sec-sub { font-size: .88rem; color: $texto; margin: 2px 0 8px; }
+.meta { background: $fondo; border: 1px solid $linea; border-left: 4px solid $acento; border-radius: 8px; padding: 9px 14px; margin: 4px 0 16px; }
 .hero { border-radius: 12px; min-height: 0; }
 .badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: .7rem; font-weight: 700;
          letter-spacing: .07em; text-transform: uppercase; vertical-align: middle; }
@@ -393,7 +395,7 @@ hr { border-color: $linea !important; }
 .gauge-marker { top: -7px; height: 26px; width: 3px; }
 .gauge-bocadillo { position: absolute; top: -26px; transform: translateX(-50%); background: $tinta; color: $panel;
                    font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
-.escala3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: .72rem; color: $gris; line-height: 1.35; }
+.escala3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: .78rem; color: $texto; line-height: 1.35; }
 .escala3 div:nth-child(2) { text-align: center; }
 .escala3 div:nth-child(3) { text-align: right; }
 .escala3 b { color: $tinta; }
@@ -415,7 +417,25 @@ hr { border-color: $linea !important; }
 [class*="st-key-sec_dia_"] [data-testid="stPlotlyChart"], .st-key-sec_semana [data-testid="stPlotlyChart"] {
   border: none; box-shadow: none; padding: 0; }
 [class*="st-key-sec_dia_"] [data-testid="stVerticalBlock"], .st-key-sec_semana [data-testid="stVerticalBlock"] { gap: .45rem; }
-.pista-ley { font-size: .74rem; color: $gris; }
+.pista-ley { font-size: .82rem; color: $texto; }
+/* exportar (encuesta 20-oct): botones discretos, objetivo >= 28 px, 8 px entre ellos, foco visible y estado ocupado */
+.exp-bar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; font-size: .8rem; color: $texto; margin: 0 0 4px; }
+.exp-bar button, .augur-rep { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; font: inherit; font-weight: 600;
+  color: $tinta; background: $panel; border: 1px solid $control_borde; border-radius: 6px; padding: 3px 11px; cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease; }
+.exp-bar button:hover, .augur-rep:hover { border-color: $acento; background: $neutro_bg; }
+.exp-bar button:focus-visible, .augur-rep:focus-visible { outline: 2px solid $acento; outline-offset: 2px; }
+.exp-bar button:disabled, .augur-rep:disabled { opacity: .6; cursor: progress; }
+.augur-rep svg { width: 16px; height: 16px; flex: none; }
+.augur-rep { font-size: .88rem; min-height: 38px; padding: 6px 16px; }
+.augur-rep.principal { background: $tinta; color: $panel; border-color: $tinta; }
+.augur-rep.principal:hover { background: $tinta; border-color: $acento; box-shadow: 0 0 0 1px $acento; }
+.rep-fila { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: -8px 0 14px; }
+.rep-completo { margin: 22px 0 8px; padding-top: 16px; border-top: 1px solid $linea; }
+.rep-ayuda { font-size: .84rem; color: $texto; }
+@media (max-width: 640px) { .rep-fila { flex-direction: column; align-items: stretch; } .augur-rep { justify-content: center; } }
+@media (prefers-reduced-motion: reduce) { .exp-bar button, .augur-rep { transition: none; } }
+.nota-prob { margin-top: 8px; font-size: .84rem; color: $texto; border-left: 3px solid $acento; padding: 2px 0 2px 9px; }
 /* pantalla completa de Streamlit y ventana Ampliar: sin el borde ni el relleno de tarjeta, que la hacian desbordar */
 [data-testid="stPlotlyChart"]:has(button[aria-label="Close fullscreen"]), .st-key-graf_ampliada [data-testid="stPlotlyChart"] {
   padding: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
@@ -471,7 +491,7 @@ hr { border-color: $linea !important; }
 .hd-et { font-size: 16px; font-weight: 700; fill: $texto; }
 .hd-v { text-align: center; font-size: 1.6rem; font-weight: 800; color: $tinta; margin-top: -2px; line-height: 1.1; }
 .hd-u { text-align: center; font-size: .7rem; color: $gris; }
-.hd-ley { font-size: .78rem; color: $gris; margin-top: 8px; line-height: 1.65; }
+.hd-ley { font-size: .84rem; color: $texto; margin-top: 8px; line-height: 1.65; }
 .hd-ley i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
 .hd-ley b { color: $tinta; }
 """)
@@ -946,6 +966,464 @@ def zoom_con_ctrl():
     </script>""", unsafe_allow_javascript=True, width="content")
 
 
+def exportar_js():
+    """Exportar (encuesta del 20-oct; formato revisado el 23-oct). Todo en el navegador con Plotly.toImage + jsPDF
+    (cdnjs, se carga al primer uso):
+    - barra «Exportar: JPG · PDF» sobre cada grafica y sobre la franja del dia. La grafica se vuelve a dibujar para
+      el archivo: fondo blanco y colores del tema claro (tambien desde el modo oscuro), la grafica manda y la leyenda
+      va pequena arriba a la derecha, y el eje X marca cada hora cuando se ve un dia;
+    - reportes en PDF con la identidad de Augur (encabezado con logo, secciones numeradas, figuras y tablas con
+      leyenda, notas metodologicas, pie con paginacion): «Reporte del dia» y «Reporte completo» (.augur-rep), con
+      los datos de #augur-datos que deja vista_operador()."""
+    oscuro, claro = TEMAS["oscuro"], TEMAS["claro"]
+    mapa = {}
+    for k, v in oscuro.items():      # colores del tema oscuro -> su equivalente claro
+        if isinstance(v, str) and v.startswith(("#", "rgb")) and claro.get(k, v) != v:
+            mapa.setdefault(v.lower().replace(" ", ""), claro[k])
+    paleta = {k: claro[k] for k in ("tinta", "texto", "gris", "linea", "fondo", "acento", "verde", "rojo", "ambar",
+                                    "franja_verde", "franja_rojo", "franja_gris", "franja_txt_verde", "franja_txt_rojo",
+                                    "franja_txt_gris", "ultimo_bg", "calor_verde", "calor_rojo", "calor_ambar")}
+    logo = base64.b64encode(logo_svg(claro, 96).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ', 1).encode()).decode()
+    script = r"""<script>
+    (() => {      // en su propia funcion: el script del zoom ya declara `w` en el ambito global
+    const w = window, d = w.document;
+    if (w.__augurExport) return;
+    w.__augurExport = true;
+    // sin etiquetas literales en el texto del script: el sanitizador de st.html descartaba el bloque entero
+    const BR = "\x3cbr\x3e", MAPA = __MAPA__, P = __PALETA__, LOGO_SVG = "data:image/svg+xml;base64,__LOGO__";
+    const FUENTE = "'IBM Plex Sans', 'Segoe UI', Helvetica, Arial, sans-serif";
+    const PDF_JS = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    const cargarPdf = () => w.jspdf ? Promise.resolve(w.jspdf) : new Promise((ok, mal) => {
+      const s = d.createElement("script"); s.src = PDF_JS; s.onload = () => ok(w.jspdf); s.onerror = mal;
+      d.head.appendChild(s);
+    });
+    // las fuentes base de jsPDF solo traen Latin-1: se cambian los simbolos que no tiene
+    const limpio = t => String(t || "").replace(/≤/g, "hasta").replace(/≥/g, "desde").replace(/[▲▴▼▾]\s*/g, "")
+      .replace(/[–—]/g, "-").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, "...")
+      .replace(/[^\x00-\xff]/g, "").replace(/[ \t]+/g, " ").trim();
+    const pad = n => String(n).padStart(2, "0");
+    const fmt = (v, dec = 0) => v == null || isNaN(v) ? "n/d"
+      : Number(v).toLocaleString("es-CO", {minimumFractionDigits: dec, maximumFractionDigits: dec});
+    const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const luz = c => { const m = String(c).match(/[\d.]+/g); if (!m || m.length < 3) return 1;
+      return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255; };
+    const fondo = el => {
+      for (let e = el; e; e = e.parentElement) {
+        const c = getComputedStyle(e).backgroundColor;
+        if (c && c !== "transparent" && !/rgba\(.*,\s*0\)$/.test(c)) return c;
+      }
+      return "#ffffff";
+    };
+    const emitido = () => new Date().toLocaleString("es-CO", {day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit"});
+    const sello = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+    const slug = t => limpio(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40) || "grafica";
+    const isoLocal = ms => { const t = new Date(ms);
+      return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}:00`; };
+    const fechaDe = ms => { const t = new Date(ms); return `${pad(t.getDate())}/${pad(t.getMonth() + 1)}/${t.getFullYear()}`; };
+    const datos = () => { const e = d.getElementById("augur-datos"); try { return e ? JSON.parse(e.dataset.r) : null; } catch (x) { return null; } };
+    const cargarImg = src => new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = src; });
+    const lienzo = (an, al) => { const cv = d.createElement("canvas"); cv.width = an; cv.height = al;
+      const c = cv.getContext("2d"); c.fillStyle = "#FFFFFF"; c.fillRect(0, 0, an, al); return [cv, c]; };
+    let logoPng = null;
+    const logo = async () => { if (logoPng) return logoPng; const im = await cargarImg(LOGO_SVG);
+      const [cv, c] = lienzo(192, 192); c.drawImage(im, 0, 0, 192, 192); return (logoPng = cv.toDataURL("image/png")); };
+    const aJpg = async png => { const im = await cargarImg(png); const [cv, c] = lienzo(im.width, im.height);
+      c.drawImage(im, 0, 0); return {url: cv.toDataURL("image/jpeg", 0.93), w: im.width, h: im.height}; };
+
+    // ---------- la grafica, redibujada para el archivo ----------
+    const recolor = o => {
+      if (typeof o === "string") return MAPA[o.toLowerCase().replace(/\s+/g, "")] || o;
+      if (!o || typeof o !== "object" || ArrayBuffer.isView(o)) return o;
+      if (Array.isArray(o)) return o.length > 60 && typeof o[0] !== "object" ? o : o.map(recolor);   // series: no se tocan
+      const r = {}; for (const k in o) if (k[0] !== "_") r[k] = recolor(o[k]); return r;
+    };
+    const figura = async (gd, ancho, alto, rango) => {
+      const oscuro = luz(fondo(gd)) < 0.5, fl = gd._fullLayout;
+      const data = oscuro ? gd.data.map(recolor) : gd.data;
+      const L0 = JSON.parse(JSON.stringify(gd.layout)), L = oscuro ? recolor(L0) : L0;
+      Object.assign(L, {width: ancho, height: alto, title: {text: ""}, paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+        font: {family: FUENTE, size: 13, color: P.texto}, hovermode: false, dragmode: false,
+        margin: {t: 46, l: 78, r: 30, b: 64, pad: 4},
+        legend: {orientation: "h", x: 1, xanchor: "right", y: 1.012, yanchor: "bottom", xref: "paper", yref: "paper",
+                 font: {size: 11, color: P.texto}, bgcolor: "rgba(0,0,0,0)", itemwidth: 30}});
+      for (const k of Object.keys(L)) {
+        if (!/^[xy]axis\d*$/.test(k)) continue;
+        const a = L[k], t = a.title && (typeof a.title === "string" ? a.title : a.title.text);
+        Object.assign(a, {gridcolor: "#E6EAF0", zeroline: false, showline: true, linecolor: "#9AA5B4", linewidth: 1,
+          ticks: "outside", ticklen: 4, tickcolor: "#9AA5B4", tickfont: {size: 12, color: P.texto}, automargin: true});
+        if (k[0] === "x") Object.assign(a, {rangeselector: {visible: false}, rangeslider: {visible: false}});
+        if (t) a.title = {text: t, font: {size: 12, color: P.gris}, standoff: 12};
+      }
+      const xa = fl.xaxis, a = L.xaxis;
+      if (xa && a && xa.type === "date") {
+        let [r0, r1] = (rango || xa.range).map(v => new Date(String(v).replace(" ", "T")).getTime());
+        const h = (r1 - r0) / 36e5, holgura = h <= 30 ? 18e5 : 0;
+        Object.assign(a, {tickformatstops: [], tick0: "2000-01-01 00:00", autorange: false,
+                          range: [isoLocal(r0 - holgura), isoLocal(r1 + holgura)]});
+        if (h <= 30) Object.assign(a, {dtick: 36e5, tickformat: "%H",
+          title: {text: "Hora del día · " + fechaDe((r0 + r1) / 2), font: {size: 12, color: P.gris}, standoff: 10}});
+        else if (h <= 80) Object.assign(a, {dtick: 3 * 36e5, tickformat: "%H h" + BR + "%d/%m",
+          minor: {dtick: 36e5, ticks: "outside", ticklen: 2, tickcolor: "#C3CAD5", showgrid: false}});
+        else if (h <= 240) Object.assign(a, {dtick: 864e5, tickformat: "%d/%m",
+          minor: {dtick: 6 * 36e5, ticks: "outside", ticklen: 2, tickcolor: "#C3CAD5", showgrid: true, gridcolor: "#F1F3F7"}});
+        else a.tickformat = "%d/%m";
+      } else if (xa && a && xa.type === "linear" && Math.abs(xa.range[1] - xa.range[0]) <= 30) a.dtick = 1;
+      if (fl.yaxis && L.yaxis && fl.yaxis.type === "category" && (fl.yaxis._categories || []).length <= 31) L.yaxis.dtick = 1;
+      return w.Plotly.toImage({data, layout: L, config: {staticPlot: true}}, {format: "png", width: ancho, height: alto, scale: 2});
+    };
+
+    // ---------- la franja del dia (no es Plotly): se dibuja desde #augur-datos ----------
+    const corto = (D, color) => color === "verde" ? D.indicadores.favor : color === "rojo" ? D.indicadores.contra : "Esperar";
+    const partir = (c, t, max) => { const out = []; let l = "";
+      for (const p of t.split(" ")) { const n = l ? l + " " + p : p; if (c.measureText(n).width > max && l) { out.push(l); l = p; } else l = n; }
+      if (l) out.push(l); return out; };
+    const franja = D => {
+      const s = 2, AN = 1600, cols = 12, gap = 8, mx = 40, cw = (AN - 2 * mx - gap * (cols - 1)) / cols, ch = 112;
+      const AL = 2 * ch + gap + 64, [cv, c] = lienzo(AN * s, AL * s);
+      c.scale(s, s); c.textAlign = "center";
+      D.horas.forEach(([h, , q50, , , , color], i) => {
+        const x = mx + (i % cols) * (cw + gap), y = Math.floor(i / cols) * (ch + gap);
+        const bg = {verde: P.franja_verde, rojo: P.franja_rojo}[color] || P.franja_gris;
+        const tx = {verde: P.franja_txt_verde, rojo: P.franja_txt_rojo}[color] || P.franja_txt_gris;
+        c.fillStyle = bg; c.beginPath(); c.roundRect(x, y, cw, ch, 6); c.fill();
+        if (h === D.hora) { c.strokeStyle = P.tinta; c.lineWidth = 3; c.beginPath(); c.roundRect(x + 1.5, y + 1.5, cw - 3, ch - 3, 6); c.stroke(); }
+        c.fillStyle = tx; c.font = `600 15px ${FUENTE}`; c.fillText(pad(h) + ":00", x + cw / 2, y + 24);
+        c.font = `700 25px ${FUENTE}`; c.fillText(fmt(q50), x + cw / 2, y + 57);
+        c.font = `500 12.5px ${FUENTE}`;
+        partir(c, corto(D, color), cw - 12).slice(0, 2).forEach((l, k) => c.fillText(l, x + cw / 2, y + 80 + k * 15));
+      });
+      // leyenda
+      c.textAlign = "left"; c.font = `500 14px ${FUENTE}`;
+      let x = mx; const y = 2 * ch + gap + 36;
+      for (const [col, t] of [[P.franja_verde, D.indicadores.favor], [P.franja_rojo, D.indicadores.contra], [P.franja_gris, "Esperar"]]) {
+        c.fillStyle = col; c.fillRect(x, y - 12, 16, 16); c.fillStyle = P.texto; c.fillText(t, x + 24, y + 1);
+        x += 40 + c.measureText(t).width;
+      }
+      c.strokeStyle = P.tinta; c.lineWidth = 2.5; c.strokeRect(x + 1, y - 11, 16, 14);
+      c.fillStyle = P.texto; c.fillText("Hora seleccionada", x + 26, y + 1);
+      c.textAlign = "right"; c.fillStyle = P.gris; c.fillText("Precio esperado (q50) en COP/kWh", AN - mx, y + 1);
+      return {url: cv.toDataURL("image/png"), w: AN * s, h: AL * s};
+    };
+
+    // ---------- JPG con marca: encabezado (logo, titulo, fecha) y pie con los metadatos ----------
+    const jpgMarca = async (png, titulo, nota) => {
+      const im = await cargarImg(png), lg = await cargarImg(await logo()), s = im.width / 1600;
+      const cab = 100, pie = 70, mx = 40, W = 1600, H = im.height / s + cab + pie;
+      const [cv, c] = lienzo(W * s, H * s); c.scale(s, s);
+      c.drawImage(lg, mx, 22, 54, 54);
+      c.fillStyle = P.tinta; c.font = `700 28px ${FUENTE}`; c.fillText("Augur", mx + 66, 50);
+      c.fillStyle = P.gris; c.font = `400 14px ${FUENTE}`; c.fillText("Motor de decisión · precio de bolsa de energía en Colombia", mx + 66, 71);
+      c.textAlign = "right"; c.fillStyle = P.tinta; c.font = `600 19px ${FUENTE}`; c.fillText(titulo, W - mx, 50);
+      c.fillStyle = P.gris; c.font = `400 13px ${FUENTE}`; c.fillText("Exportado el " + emitido(), W - mx, 71);
+      c.textAlign = "left"; c.fillStyle = P.acento; c.fillRect(mx, 88, W - 2 * mx, 3);
+      c.drawImage(im, 0, cab, W, im.height / s);
+      const y0 = cab + im.height / s + 10;
+      c.fillStyle = P.linea; c.fillRect(mx, y0, W - 2 * mx, 1);
+      c.fillStyle = P.gris; c.font = `400 13px ${FUENTE}`;
+      partir(c, nota || "", W - 2 * mx - 260).slice(0, 2).forEach((l, k) => c.fillText(l, mx, y0 + 24 + k * 18));
+      c.textAlign = "right"; c.fillText("augurpredictor.streamlit.app", W - mx, y0 + 24);
+      return cv.toDataURL("image/jpeg", 0.93);
+    };
+
+    // ---------- PDF: piezas comunes ----------
+    const M = 16;
+    const tc = (doc, h) => doc.setTextColor(...rgb(h));
+    const encabezado = (doc, lg, etiqueta, codigo) => {
+      const W = doc.internal.pageSize.getWidth();
+      doc.addImage(lg, "PNG", M, 9.5, 11, 11);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(15); tc(doc, P.tinta); doc.text("Augur", M + 14, 15.6);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); tc(doc, P.gris);
+      doc.text("Motor de decisión · precio de bolsa de energía en Colombia", M + 14, 19.6);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8); tc(doc, P.tinta); doc.text(etiqueta.toUpperCase(), W - M, 14.6, {align: "right"});
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); tc(doc, P.gris);
+      doc.text(codigo + "  ·  Emitido el " + emitido(), W - M, 19.2, {align: "right"});
+      doc.setDrawColor(...rgb(P.acento)); doc.setLineWidth(0.7); doc.line(M, 24, W - M, 24);
+    };
+    const pies = doc => {
+      const n = doc.getNumberOfPages(), W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+      for (let i = 1; i <= n; i++) {
+        doc.setPage(i); doc.setDrawColor(...rgb(P.linea)); doc.setLineWidth(0.3); doc.line(M, H - 15, W - M, H - 15);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(7); tc(doc, P.gris);
+        doc.text("Augur · augurpredictor.streamlit.app · Proyecto final de Ingeniería Electrónica, Universidad del Norte", M, H - 10.5);
+        doc.text("Herramienta de apoyo a la decisión; no constituye asesoría financiera.", M, H - 7);
+        doc.setFont("helvetica", "bold"); tc(doc, P.tinta); doc.text(`Página ${i} de ${n}`, W - M, H - 10.5, {align: "right"});
+      }
+    };
+    const hoja = (doc, lg, etiqueta, codigo) => {
+      const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+      const st = {doc, W, H, y: 34, ancho: W - 2 * M};
+      st.nueva = () => { doc.addPage(); encabezado(doc, lg, etiqueta, codigo); st.y = 34; };
+      st.cabe = alto => { if (st.y + alto > H - 22) st.nueva(); };
+      encabezado(doc, lg, etiqueta, codigo);
+      return st;
+    };
+    const parrafo = (st, t, {tam = 9.5, color = P.texto, estilo = "normal", x = M, ancho = null, despues = 2} = {}) => {
+      if (!t) return; const {doc} = st, lh = tam * 0.3528 * 1.4;
+      doc.setFont("helvetica", estilo); doc.setFontSize(tam); tc(doc, color);
+      const l = doc.splitTextToSize(limpio(t), ancho || st.ancho - (x - M));
+      st.cabe(l.length * lh); doc.text(l, x, st.y + tam * 0.3528); st.y += l.length * lh + despues;
+    };
+    let nSec = 0, nFig = 0, nTab = 0;
+    const seccion = (st, t, reserva = 30) => {
+      st.cabe(11 + reserva); const {doc} = st; nSec += 1; st.y += 3;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11.5); tc(doc, P.acento); doc.text(String(nSec) + ".", M, st.y + 4);
+      tc(doc, P.tinta); doc.text(t, M + 7, st.y + 4);
+      doc.setDrawColor(...rgb(P.linea)); doc.setLineWidth(0.3); doc.line(M, st.y + 6.5, st.W - M, st.y + 6.5); st.y += 11;
+    };
+    const figuraPdf = async (st, png, leyenda, altoMax = 95) => {
+      const im = await aJpg(png); let an = st.ancho, al = an * im.h / im.w;
+      if (al > altoMax) { al = altoMax; an = al * im.w / im.h; }
+      st.cabe(al + 12); const {doc} = st;
+      doc.setDrawColor(...rgb(P.linea)); doc.setLineWidth(0.2); doc.rect(M, st.y, st.ancho, al + 2);
+      doc.addImage(im.url, "JPEG", M + (st.ancho - an) / 2, st.y + 1, an, al); st.y += al + 5;
+      nFig += 1; const {doc: dd} = st; dd.setFont("helvetica", "bold"); dd.setFontSize(8.5); tc(dd, P.tinta);
+      const et = `Figura ${nFig}. `; dd.text(et, M, st.y + 3); const ew = dd.getTextWidth(et);
+      parrafo(st, leyenda, {tam: 8.5, color: P.gris, estilo: "italic", x: M + ew, despues: 4});
+    };
+    const tablaTitulo = (st, t) => { nTab += 1; st.cabe(30); const {doc} = st;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); tc(doc, P.tinta); const et = `Tabla ${nTab}. `;
+      doc.text(et, M, st.y + 3); parrafo(st, t, {tam: 8.5, color: P.gris, estilo: "italic", x: M + doc.getTextWidth(et), despues: 2}); };
+    // tabla: cols = [[titulo, ancho, alineacion]], filas = [[texto...]], marcar(i) resalta la fila, punto(i) = color de la ultima columna
+    const tabla = (st, cols, filas, {marcar = () => false, punto = null, alto = 6} = {}) => {
+      const {doc} = st;
+      const cab = () => {
+        doc.setFillColor(...rgb(P.tinta)); doc.rect(M, st.y, st.ancho, 7, "F");
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+        let x = M; cols.forEach(([t, an, al]) => { doc.text(t, al === "right" ? x + an - 2.5 : x + 2.5, st.y + 4.8, {align: al || "left"}); x += an; });
+        st.y += 7;
+      };
+      st.cabe(7 + alto * 3); cab();
+      filas.forEach((f, i) => {
+        if (st.y + alto > st.H - 22) { st.nueva(); cab(); }
+        if (marcar(i)) { doc.setFillColor(...rgb(P.ultimo_bg)); doc.rect(M, st.y, st.ancho, alto, "F"); }
+        else if (i % 2) { doc.setFillColor(...rgb(P.fondo)); doc.rect(M, st.y, st.ancho, alto, "F"); }
+        doc.setFont("helvetica", marcar(i) ? "bold" : "normal"); doc.setFontSize(8.3); tc(doc, P.texto);
+        let x = M;
+        cols.forEach(([, an, al], j) => {
+          let tx = x + 2.5;
+          if (punto && j === cols.length - 1) { doc.setFillColor(...rgb(punto(i))); doc.circle(x + 4, st.y + alto / 2, 1.3, "F"); tx = x + 7; }
+          doc.text(limpio(f[j]), al === "right" ? x + an - 2.5 : tx, st.y + alto / 2 + 1.1, {align: al || "left"}); x += an;
+        });
+        doc.setDrawColor(...rgb(P.linea)); doc.setLineWidth(0.15); doc.line(M, st.y + alto, st.W - M, st.y + alto);
+        st.y += alto;
+      });
+      st.y += 5;
+    };
+    const claveValor = (st, filas, col1 = 58) => {
+      const {doc} = st;
+      filas.forEach(([k, v], i) => {
+        doc.setFontSize(8.8); const l = doc.splitTextToSize(limpio(v), st.ancho - col1 - 5), al = Math.max(7, l.length * 4.4 + 2.8);
+        st.cabe(al);
+        if (i % 2 === 0) { doc.setFillColor(...rgb(P.fondo)); doc.rect(M, st.y, st.ancho, al, "F"); }
+        doc.setFont("helvetica", "bold"); tc(doc, P.tinta); doc.text(limpio(k), M + 2.5, st.y + 4.6);
+        doc.setFont("helvetica", "normal"); tc(doc, P.texto); doc.text(l, M + col1, st.y + 4.6);
+        st.y += al;
+      });
+      st.y += 4;
+    };
+    const colorAccion = c => ({verde: P.verde, rojo: P.rojo}[c] || P.gris);
+
+    // ---------- PDF de una grafica o de la franja (A4 horizontal) ----------
+    const unaPdf = async (png, titulo, nota) => {
+      const {jsPDF} = await cargarPdf(), lg = await logo();
+      const doc = new jsPDF({orientation: "landscape", unit: "mm", format: "a4"});
+      nSec = nFig = nTab = 0;
+      const st = hoja(doc, lg, "Gráfica exportada", "AUG-GR-" + sello().slice(0, 10).replace(/-/g, ""));
+      parrafo(st, titulo, {tam: 15, color: P.tinta, estilo: "bold", despues: 4});
+      await figuraPdf(st, png, nota || titulo, 122);
+      pies(doc);
+      doc.save("augur_" + slug(titulo) + "_" + sello() + ".pdf");
+    };
+    const titulo = gd => {
+      const sec = gd.closest('[class*="st-key-sec_"]') || gd.closest('[role="dialog"]');
+      const t = sec && (sec.querySelector(".sec-tit") || sec.querySelector("h2, h3"));
+      return limpio(t ? t.innerText : "Gráfica");
+    };
+    // tira de metadatos (unidad, periodo, confianza, modelo) que sigue a la grafica en la pagina
+    const metadatos = gd => {
+      for (const m of d.querySelectorAll(".meta")) {
+        if (gd.compareDocumentPosition(m) & Node.DOCUMENT_POSITION_FOLLOWING) return limpio(m.innerText);
+      }
+      return "";
+    };
+    const bajar = (url, nombre) => { const a = d.createElement("a"); a.href = url; a.download = nombre; d.body.appendChild(a); a.click(); a.remove(); };
+
+    // ---------- reporte del dia y reporte completo (A4 vertical) ----------
+    const grafica = sel => d.querySelector(sel + " .js-plotly-plot");
+    const reporte = async tipo => {
+      const D = datos(); if (!D) throw new Error("sin datos del reporte");
+      const {jsPDF} = await cargarPdf(), lg = await logo(), completo = tipo === "completo";
+      const doc = new jsPDF({unit: "mm", format: "a4"}); nSec = nFig = nTab = 0;
+      const st = hoja(doc, lg, completo ? "Reporte completo del día" : "Reporte diario de recomendación",
+                      `AUG-${completo ? "RC" : "RD"}-${D.dia_iso}-H${pad(D.hora)}`);
+      const pct = p => p == null ? "No se estima para este día" : fmt(p * 100) + " %";
+      // titulo
+      parrafo(st, `Recomendación para el ${D.dia}, ${pad(D.hora)}:00 h`, {tam: 17, color: P.tinta, estilo: "bold", despues: 1.5});
+      parrafo(st, `Rol: ${D.rol}   ·   Horizonte: ${D.horizonte}   ·   Regla de umbrales: ${D.metodo}` +
+              (D.intradia ? " con filtro intradía" : ""), {tam: 9, color: P.gris, despues: 3});
+
+      seccion(st, "Recomendación");
+      { // recuadro de la accion
+        doc.setFontSize(9.5); const fr = doc.splitTextToSize(limpio(D.frase), st.ancho - 14), al = 19 + fr.length * 4.7;
+        st.cabe(al + 30);
+        doc.setFillColor(...rgb(P.fondo)); doc.rect(M, st.y, st.ancho, al, "F");
+        doc.setFillColor(...rgb(colorAccion(D.color))); doc.rect(M, st.y, 2.2, al, "F");
+        doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); tc(doc, P.gris); doc.text("ACCIÓN RECOMENDADA", M + 7, st.y + 6);
+        doc.setFontSize(17); tc(doc, D.color === "ambar" ? P.tinta : colorAccion(D.color)); doc.text(limpio(D.accion).toUpperCase(), M + 7, st.y + 13.5);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); tc(doc, P.texto); doc.text(fr, M + 7, st.y + 19.5);
+        st.y += al + 3;
+        // cifras clave
+        const kp = [["PRECIO ESPERADO (q50)", fmt(D.q50, 1), "COP/kWh"],
+                    ["BANDA [q10, q90]", `${fmt(D.q10)} a ${fmt(D.q90)}`, "COP/kWh"],
+                    ["UMBRAL BARATO", "hasta " + fmt(D.bajo), "COP/kWh · " + D.a_bar],
+                    ["UMBRAL CARO", "desde " + fmt(D.alto), "COP/kWh · " + D.a_car]];
+        const cw = (st.ancho - 9) / 4;
+        kp.forEach(([k, v, u], i) => {
+          const x = M + i * (cw + 3);
+          doc.setDrawColor(...rgb(P.linea)); doc.setLineWidth(0.3); doc.rect(x, st.y, cw, 20);
+          doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); tc(doc, P.gris); doc.text(k, x + 3, st.y + 5);
+          doc.setFontSize(13); tc(doc, P.tinta); doc.text(limpio(v), x + 3, st.y + 12);
+          doc.setFont("helvetica", "normal"); doc.setFontSize(7); tc(doc, P.gris); doc.text(doc.splitTextToSize(limpio(u), cw - 5)[0], x + 3, st.y + 17);
+        });
+        st.y += 26;
+      }
+
+      seccion(st, "Pronóstico del día", 78);
+      const gDia = grafica(".st-key-graf_dia");
+      if (gDia) {
+        const f = D.dia_iso, ini = `${f.slice(0, 4)}-${f.slice(4, 6)}-${f.slice(6)} 00:00`, fin = `${f.slice(0, 4)}-${f.slice(4, 6)}-${f.slice(6)} 23:00`;
+        await figuraPdf(st, await figura(gDia, 1000, 440, [ini, fin]),
+          `Pronóstico del ${D.dia}: curva esperada (q50), banda de incertidumbre [q10, q90], precio real cuando XM ya lo publicó y umbrales de decisión. Unidad: COP/kWh.`, 80);
+      }
+
+      seccion(st, "Confianza y posibilidad de saltos");
+      const alertas = [];
+      const hp = D.horas.filter(f => f[7] != null && f[7] >= D.umbral_alerta).map(f => pad(f[0]));
+      const hd = D.horas.filter(f => f[8] != null && f[8] >= D.umbral_alerta).map(f => pad(f[0]));
+      if (hp.length) alertas.push("posible pico a las " + hp.join(", ") + " h");
+      if (hd.length) alertas.push("posible desplome a las " + hd.join(", ") + " h");
+      claveValor(st, [
+        ["Nivel de confianza", `Confianza ${D.conf}: banda de ± ${fmt(D.semiancho)} COP/kWh, más ancha que el ${D.conf_pct} % de las horas anteriores.`],
+        ["Posibilidad de desplome (esta hora)", pct(D.p_desplome)],
+        ["Posibilidad de pico (esta hora)", pct(D.p_pico)],
+        ["Alertas del día", alertas.length ? alertas.join("; ") + "." : `Ninguna hora supera el ${fmt(D.umbral_alerta * 100)} %.`]]);
+      parrafo(st, "Son probabilidades estimadas por el detector de eventos, no certezas: pueden no ocurrir." +
+              (D.solo_pico ? " Para el segundo y el tercer día del pronóstico solo se estima la de pico, y es menos confiable." : ""),
+              {tam: 8.3, color: P.gris, estilo: "italic", despues: 3});
+
+      seccion(st, "El día, hora por hora", 55);
+      const fr = franja(D);
+      await figuraPdf(st, fr.url, `Acción del motor y precio esperado de cada hora del ${D.dia} para el rol ${D.rol}; el recuadro marca las ${pad(D.hora)}:00 h.`, 60);
+      tablaTitulo(st, `Pronóstico horario del ${D.dia} (COP/kWh).`);
+      tabla(st, [["Hora", 16, "left"], ["q10", 22, "right"], ["q50 (esperado)", 28, "right"], ["q90", 22, "right"],
+                 ["Precio real", 24, "right"], ["Posib. pico", 20, "right"], ["Acción del motor", st.ancho - 132, "left"]],
+            D.horas.map(f => [pad(f[0]) + ":00", fmt(f[1], 1), fmt(f[2], 1), fmt(f[3], 1), f[4] == null ? "n/d" : fmt(f[4], 1),
+                              f[7] == null ? "-" : fmt(f[7] * 100) + " %", f[5]]),
+            {marcar: i => D.horas[i][0] === D.hora, punto: i => colorAccion(D.horas[i][6])});
+      parrafo(st, "n/d: precio real aún no publicado por XM (se publica con unos tres días de rezago).", {tam: 7.8, color: P.gris, estilo: "italic", despues: 2});
+
+      if (completo) {
+        const gCal = grafica(".st-key-sec_calor");
+        if (gCal) {
+          seccion(st, "Mapa de calor día-hora", 80);
+          await figuraPdf(st, await figura(gCal, 1000, 420),
+            `Mapa de calor coloreado por ${D.calor.modo.toLowerCase()}. Periodo: ${D.calor.periodo}. El recuadro marca el día y la hora elegidos.` +
+            (D.calor.modo === "Señal del motor" ? ` Verde: ${D.indicadores.favor.toLowerCase()}; naranja: ${D.indicadores.contra.toLowerCase()}; gris: esperar.` : " Unidad: COP/kWh."), 90);
+        }
+        seccion(st, "Indicadores del periodo", 36);
+        const I = D.indicadores;
+        claveValor(st, [
+          ["Horas para actuar el día elegido", `${I.horas_hoy} de 24`],
+          ["Ventaja histórica de la regla", I.ventaja == null ? "n/d" : `${I.ventaja > 0 ? "+" : ""}${fmt(I.ventaja)} COP/kWh: habrías ${I.verbo} que el promedio en el backtest 2026.`],
+          ["Frecuencia de acción", `${fmt(I.frecuencia)} % del tiempo (${fmt(I.horas_accion)} horas de acción en el periodo).`],
+          ["Reparto de las señales", `${I.favor}: ${I.reparto[0]} %; ${I.contra.toLowerCase()}: ${I.reparto[1]} %; esperar: ${I.reparto[2]} %.`]]);
+        const gSem = grafica(".st-key-sec_semana");
+        if (gSem) {
+          seccion(st, "La semana alrededor del día elegido", 80);
+          await figuraPdf(st, await figura(gSem, 1000, 430),
+            `Precio real publicado por XM frente al pronóstico de Augur, con las horas en que el motor recomendó actuar. Periodo: ${D.semana}. Unidad: COP/kWh.`, 90);
+        }
+      }
+
+      seccion(st, "Notas metodológicas");
+      const notas = [
+        `Pronóstico: predespacho ideal que XM publica el día anterior, corregido con tres modelos CatBoost y combinado por regresión cuantílica (QRA). Versión del modelo: ${D.version}.`,
+        `Incertidumbre: banda [q10, q90] calibrada por predicción conforme; cobertura medida ${fmt(D.cobertura, 1)} % (objetivo: 80 %).`,
+        `Decisión: umbrales de barato y caro por el método ${D.metodo} (percentiles 25 y 75)` + (D.intradia ? ", con filtro intradía" : "") + ". " +
+          (D.regla_estable ? "Es la regla más estable del backtest 2026." : "Ninguna regla fue estable en las dos mitades del backtest; tómese con cautela."),
+        `Posibilidad de pico o desplome: detector de eventos (HistGradientBoosting); se señalan las horas con probabilidad de ${fmt(D.umbral_alerta * 100)} % o más.`,
+        "Datos: información pública de XM disponible a las 00:00 del día operativo; el precio real se publica con unos tres días de rezago."];
+      notas.forEach(n => { st.cabe(10); doc.setFillColor(...rgb(P.acento)); doc.rect(M + 1, st.y + 1.6, 1.4, 1.4, "F");
+        parrafo(st, n, {tam: 8.8, x: M + 5, despues: 1.6}); });
+      pies(doc);
+      doc.save(`augur_reporte_${completo ? "completo" : "dia"}_${D.dia_iso}_${pad(D.hora)}h.pdf`);
+    };
+
+    // ---------- clics ----------
+    d.addEventListener("click", async ev => {
+      const b = ev.target.closest(".exp-bar button, .augur-rep");
+      if (!b) return;
+      ev.preventDefault();
+      const lab = b.querySelector("span") || b, antes = lab.textContent;
+      b.disabled = true; b.setAttribute("aria-busy", "true"); lab.textContent = "Generando…";
+      try {
+        if (b.classList.contains("augur-rep")) await reporte(b.dataset.tipo);
+        else {
+          const bar = b.closest(".exp-bar"), f = b.dataset.f;
+          let png, tit, nota;
+          if (bar.dataset.obj === "franja") {
+            const D = datos(); png = franja(D).url; tit = "El día, hora por hora · " + D.dia;
+            nota = `Acción del motor y precio esperado de cada hora (COP/kWh) para el rol ${D.rol}; recuadro: ${pad(D.hora)}:00 h. Modelo de ${D.horizonte}, versión ${D.version}.`;
+          } else {
+            const gd = bar.nextElementSibling.querySelector(".js-plotly-plot");
+            png = await figura(gd, f === "jpg" ? 1600 : 1300, f === "jpg" ? 720 : 585); tit = titulo(gd); nota = metadatos(gd);
+          }
+          if (f === "jpg") bajar(await jpgMarca(png, tit, nota), "augur_" + slug(tit) + "_" + sello() + ".jpg");
+          else await unaPdf(png, tit, nota);
+        }
+        lab.textContent = antes;
+      } catch (e) {
+        console.error("[augur] exportar", e); lab.textContent = "No se pudo exportar";
+        setTimeout(() => { lab.textContent = antes; }, 1800);
+      }
+      b.disabled = false; b.removeAttribute("aria-busy");
+    }, true);
+    // una barra «Exportar» por grafica; Streamlit redibuja los elementos, asi que se revisa cada segundo y medio
+    setInterval(() => {
+      d.querySelectorAll(".js-plotly-plot").forEach(gd => {
+        const cont = gd.closest('[data-testid="stPlotlyChart"]') || gd.parentElement;
+        const prev = cont.previousElementSibling;
+        if (prev && prev.classList.contains("exp-bar")) return;
+        const bar = d.createElement("div");
+        bar.className = "exp-bar";
+        bar.appendChild(d.createTextNode("Exportar:"));
+        for (const [f, etq] of [["jpg", "JPG"], ["pdf", "PDF"]]) {
+          const bt = d.createElement("button"); bt.type = "button"; bt.dataset.f = f; bt.textContent = etq;
+          bt.setAttribute("aria-label", "Exportar gráfica en " + etq); bar.appendChild(bt);
+        }
+        cont.parentElement.insertBefore(bar, cont);
+      });
+    }, 1500);
+    })();
+    </script>"""
+    st.html(script.replace("__MAPA__", json.dumps(mapa)).replace("__PALETA__", json.dumps(paleta)).replace("__LOGO__", logo),
+            unsafe_allow_javascript=True, width="content")
+
+
+ICONO_DESCARGA = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+                  'stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/>'
+                  '<path d="M5 20h14"/></svg>')
+
+
+def boton_reporte(tipo, texto, principal=False, ayuda=""):
+    """Boton de reporte en PDF ("dia" o "completo"); el clic lo atiende exportar_js()."""
+    sub = f'<span class="rep-ayuda">{ayuda}</span>' if ayuda else ""
+    return (f'<div class="rep-fila rep-{tipo}">{sub}<button type="button" class="augur-rep{" principal" if principal else ""}" '
+            f'data-tipo="{tipo}">{ICONO_DESCARGA}<span>{texto}</span></button></div>')
+
+
 def estilo_figura(fig, tk, alto, titulo, margen_leyenda=64, fechas=True):
     # La leyenda se ancla al borde inferior del lienzo (no del area de datos) y se le
     # reserva margen propio, para que no se monte sobre las etiquetas del eje X.
@@ -1344,6 +1822,7 @@ def puerta_acceso():
 
 puerta_acceso()
 zoom_con_ctrl()
+exportar_js()
 
 with st.sidebar:
     oscuro = st.session_state["modo_oscuro"]
@@ -1529,9 +2008,9 @@ def vista_operador():
     <div class="gauge-bocadillo" style="left:{pq:.1f}%">{q50:.0f}</div>
   </div>
   <div class="escala3">
-    <div><b>Barato &le; {bajo_val:.0f}</b><br>{a_bar}</div>
+    <div><b>Barato &le; {bajo_val:.0f} COP/kWh</b><br>{a_bar}</div>
     <div><b>{bajo_val:.0f} &ndash; {alto_val:.0f}</b><br>esperar</div>
-    <div><b>Caro &ge; {alto_val:.0f}</b><br>{a_car}</div>
+    <div><b>Caro &ge; {alto_val:.0f} COP/kWh</b><br>{a_car}</div>
   </div>"""
 
     # riesgo de salto de la hora (desplome / pico) segun el detector de eventos
@@ -1556,7 +2035,7 @@ def vista_operador():
                    "que la del primer día." if bool(fila.get("solo_pico", False)) else ""))
         riesgo_html = (f'<div class="sub-card"><div class="t">Posibilidad de salto en esta hora</div>{chips}'
                        f'<div style="margin-top:6px">{"Este día: " + "; ".join(resumen) if resumen else "Sin alertas este día."}</div>'
-                       f'<div style="margin-top:4px;opacity:.75;font-size:.8rem">{nota}</div></div>')
+                       f'<div class="nota-prob">{nota}</div></div>')
 
     # si ninguna regla fue estable en el backtest, se avisa en la tarjeta (no solo al final de la pagina)
     aviso_estable = ("" if es_valido else
@@ -1575,9 +2054,9 @@ def vista_operador():
     conf_card = (f'<div class="sub-card"><div class="t">Nivel de confianza</div><div class="g">Confianza {conf}</div>'
                  f'banda de &plusmn;{ancho_t0 / 2:.0f} COP/kWh, más ancha que el {conf_pct:.0f} % de las horas '
                  f'anteriores{aviso_estable}</div>')
-    tramos = ([(f"Barato &le; {bajo_val:.0f}", a_bar, c_bar),
+    tramos = ([(f"Barato &le; {bajo_val:.0f} COP/kWh", a_bar, c_bar),
                (f"{bajo_val:.0f} &ndash; {alto_val:.0f}", "esperar", tk["ambar"]),
-               (f"Caro &ge; {alto_val:.0f}", a_car, c_car)] if umbral_ok else [])
+               (f"Caro &ge; {alto_val:.0f} COP/kWh", a_car, c_car)] if umbral_ok else [])
 
     def medidor():
         if not umbral_ok:
@@ -1640,11 +2119,16 @@ def vista_operador():
     st.markdown(metadatos_html(f"{dia:%d/%m/%Y}, 00:00 a 23:00 h",
                                "Semáforo y pronóstico del día con su banda de incertidumbre"),
                 unsafe_allow_html=True)
+    # reporte del dia en PDF: lo arma exportar_js() en el navegador con los datos de #augur-datos (al final de la vista)
+    st.markdown(boton_reporte("dia", "Reporte del día (PDF)"), unsafe_allow_html=True)
 
     # ---- El dia hora por hora ----
     sec = st.container(key="sec_franja")
-    sec.markdown('<div class="sec-tit">El día, hora por hora</div><div class="sec-sub">Pronóstico de cada hora y la '
-                 'acción del motor; haz clic en una hora para verla arriba.</div>', unsafe_allow_html=True)
+    sec.markdown('<div class="sec-tit">El día, hora por hora</div><div class="sec-sub">Precio esperado de cada hora, en '
+                 'COP/kWh, y la acción del motor; haz clic en una hora para verla arriba.</div>'
+                 # no es una grafica de Plotly: exportar_js() la dibuja desde #augur-datos
+                 '<div class="exp-bar" data-obj="franja">Exportar:<button type="button" data-f="jpg">JPG</button>'
+                 '<button type="button" data-f="pdf">PDF</button></div>', unsafe_allow_html=True)
     with sec:
         franja_botones(dia_df, hora, tk)
     if rol == "comercializador":
@@ -1673,6 +2157,7 @@ def vista_operador():
 
     # ---- Mapa de calor dia-hora: rango de dias (de 1 dia al ultimo disponible) y de horas a eleccion ----
     sec_calor = st.container(key="sec_calor")
+    DIAS_CALOR = 3     # dias del mapa de calor por defecto (23-oct: con 14 la encuesta lo encontro denso)
     sec_calor.markdown('<div class="sec-tit">Mapa de calor día-hora</div><div class="sec-sub">La señal o el precio '
                        'esperado de varios días a la vez; el recuadro marca el día y la hora elegidos.</div>',
                        unsafe_allow_html=True)
@@ -1689,7 +2174,7 @@ def vista_operador():
             st.session_state[clave_dias] = copia
         else:
             previos = [d for d in completos if d <= dia]
-            st.session_state[clave_dias] = (previos[-14:][0], previos[-1])
+            st.session_state[clave_dias] = (previos[-DIAS_CALOR:][0], previos[-1])
     # las fechas de los extremos de la barra se pueden escribir: si la barra cambio, las fechas la siguen; si el
     # usuario escribe una fecha, la barra toma el nuevo rango (si quedan al reves, se ordenan)
     clave_ini, clave_fin = f"ini_{clave_dias}", f"fin_{clave_dias}"
@@ -1823,6 +2308,36 @@ def vista_operador():
             "rol/horizonte). Revisa la vista Analista antes de confiar en la señal."
         )
 
+    # ---- Reporte completo (encuesta del 20-oct) y datos de los reportes en PDF ----
+    def num(v):
+        return None if v is None or pd.isna(v) else round(float(v), 1)
+    horas_rep = [[int(r.fecha_hora.hour), num(r.q10), num(r.q50), num(r.q90), num(r.real),
+                  SIGNIFICADO[r.senal][0].capitalize(), SIGNIFICADO[r.senal][1],
+                  num(getattr(r, "p_pico", np.nan)), num(getattr(r, "p_desplome", np.nan))]
+                 for r in dia_df.itertuples()]
+    datos = {
+        "dia": f"{dia:%d/%m/%Y}", "dia_iso": f"{dia:%Y%m%d}", "hora": int(hora), "rol": rol,
+        "horizonte": str(horizonte), "metodo": metodo, "intradia": bool(INTRADIA), "regla_estable": bool(es_valido),
+        "accion": titulo.capitalize(), "color": color, "frase": frase,
+        "q10": num(fila["q10"]), "q50": num(q50), "q90": num(fila["q90"]), "bajo": num(bajo_val), "alto": num(alto_val),
+        "a_bar": a_bar, "a_car": a_car, "conf": conf, "conf_pct": round(float(conf_pct)), "semiancho": num(ancho_t0 / 2),
+        "p_desplome": num(p_d), "p_pico": num(p_p), "umbral_alerta": UMBRAL_ALERTA,
+        "solo_pico": bool(fila.get("solo_pico", False)),
+        "cobertura": num(meta.get("cobertura_medida_pct")), "version": str(meta.get("generado", "n/d")),
+        "horas": horas_rep,
+        "calor": {"periodo": f"{d_ini:%d/%m/%Y} a {d_fin:%d/%m/%Y}, {h_ini:02d}:00 a {h_fin:02d}:00 h",
+                  "modo": modo_calor},
+        "semana": f"{v_ini:%d/%m/%Y} a {v_fin:%d/%m/%Y}",
+        "indicadores": {"horas_hoy": n_accion_dia, "ventaja": num(ventaja), "verbo": verbo,
+                        "frecuencia": num(bt["frecuencia_accion"] * 100), "horas_accion": int(bt["horas_accion"]),
+                        "reparto": [round(pf), round(pc_), round(pe)], "favor": SIGNIFICADO[favor][0].capitalize(),
+                        "contra": SIGNIFICADO[contra][0].capitalize()},
+    }
+    st.markdown(f'<div id="augur-datos" style="display:none" data-r="{html.escape(json.dumps(datos), quote=True)}">'
+                '</div>' + boton_reporte("completo", "Descargar reporte completo (PDF)", principal=True,
+                                         ayuda="Recomendación, gráficas, mapa de calor, semana e indicadores"),
+                unsafe_allow_html=True)
+
 
 # ==========================================================================
 # VISTA ANALISTA
@@ -1910,12 +2425,13 @@ def vista_analista():
             vista_df = base[base["senal"] == contra]
         elif filtro == "Solo esperar":
             vista_df = base[base["senal"] == "esperar"]
-        st.dataframe(vista_df, width="stretch", hide_index=True,
+        # solo_pico es una marca interna del horizonte de 72 h (dias 2 y 3), no un dato para el usuario
+        st.dataframe(vista_df.drop(columns=["solo_pico"], errors="ignore"), width="stretch", hide_index=True,
                      column_config={"fecha_hora": st.column_config.DatetimeColumn("Fecha y hora", format="DD/MM/YYYY HH:mm"),
                                     "real": st.column_config.NumberColumn("Real (COP/kWh)", format="%.1f"),
-                                    "q10": st.column_config.NumberColumn("q10", format="%.1f"),
-                                    "q50": st.column_config.NumberColumn("q50", format="%.1f"),
-                                    "q90": st.column_config.NumberColumn("q90", format="%.1f"),
+                                    "q10": st.column_config.NumberColumn("q10 (COP/kWh)", format="%.1f"),
+                                    "q50": st.column_config.NumberColumn("q50 (COP/kWh)", format="%.1f"),
+                                    "q90": st.column_config.NumberColumn("q90 (COP/kWh)", format="%.1f"),
                                     "senal": "Señal", "sin_umbral": "Sin umbral",
                                     "p_desplome": st.column_config.NumberColumn("P(desplome)", format="percent"),
                                     "p_pico": st.column_config.NumberColumn("P(pico)", format="percent")})
