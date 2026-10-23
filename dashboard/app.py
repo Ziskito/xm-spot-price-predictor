@@ -2309,11 +2309,11 @@ def vista_operador():
         )
 
     # ---- Reporte completo (encuesta del 20-oct) y datos de los reportes en PDF ----
-    def num(v):
-        return None if v is None or pd.isna(v) else round(float(v), 1)
+    def num(v, dec=1):     # precios con 1 decimal; probabilidades con 3 (con 1, un 27 % salia como 30 % en el reporte)
+        return None if v is None or pd.isna(v) else round(float(v), dec)
     horas_rep = [[int(r.fecha_hora.hour), num(r.q10), num(r.q50), num(r.q90), num(r.real),
                   SIGNIFICADO[r.senal][0].capitalize(), SIGNIFICADO[r.senal][1],
-                  num(getattr(r, "p_pico", np.nan)), num(getattr(r, "p_desplome", np.nan))]
+                  num(getattr(r, "p_pico", np.nan), 3), num(getattr(r, "p_desplome", np.nan), 3)]
                  for r in dia_df.itertuples()]
     datos = {
         "dia": f"{dia:%d/%m/%Y}", "dia_iso": f"{dia:%Y%m%d}", "hora": int(hora), "rol": rol,
@@ -2321,7 +2321,7 @@ def vista_operador():
         "accion": titulo.capitalize(), "color": color, "frase": frase,
         "q10": num(fila["q10"]), "q50": num(q50), "q90": num(fila["q90"]), "bajo": num(bajo_val), "alto": num(alto_val),
         "a_bar": a_bar, "a_car": a_car, "conf": conf, "conf_pct": round(float(conf_pct)), "semiancho": num(ancho_t0 / 2),
-        "p_desplome": num(p_d), "p_pico": num(p_p), "umbral_alerta": UMBRAL_ALERTA,
+        "p_desplome": num(p_d, 3), "p_pico": num(p_p, 3), "umbral_alerta": UMBRAL_ALERTA,
         "solo_pico": bool(fila.get("solo_pico", False)),
         "cobertura": num(meta.get("cobertura_medida_pct")), "version": str(meta.get("generado", "n/d")),
         "horas": horas_rep,
