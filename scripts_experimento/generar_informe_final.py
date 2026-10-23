@@ -406,10 +406,16 @@ R_("Se plantearon tres alternativas", (
     "Se plantearon tres alternativas para el bloque de pronóstico, que determina la calidad de la señal que recibe el motor. Las "
     "tres comparten la cadena de datos de OE1 y el motor de OE3, y se evaluaron con la misma regla: solo la información pública "
     "disponible a las 00:00 del día pronosticado. La Tabla 7 las resume."))
+p17 = P("Ninguno de los tres trabajos colombianos")
+reescribir(p17, texto_de(p17).replace(
+    "muestran que modelos simples compiten con el aprendizaje profundo [17], [16].",
+    "muestran que modelos simples compiten con el aprendizaje profundo [6], [16]; además, las 24 horas de un día se fijan en una "
+    "sola subasta, por lo que conviene modelarlas como un vector diario [17]."))
 R_("Solución 1:", (
     "**Solución 1: ensamble heterogéneo de seis modelos (diseño del informe de avance).** Combina persistencia, árboles de "
-    "gradiente (XGBoost), un modelo econométrico ARX con varianza GARCH [13], dos redes neuronales (N-BEATSx y N-HiTS) y un GARCH "
-    "con selección LASSO, con un peso no negativo por modelo y por franja horaria de 6 h [11]. El principio es el de diversificar "
+    "gradiente (XGBoost [28]), un modelo econométrico ARX con varianza GARCH [13], [24], dos redes neuronales (N-BEATSx [25] y "
+    "N-HiTS [29]) y un GARCH con errores GED [30] y selección LASSO [10], con un peso no negativo por modelo y por franja horaria "
+    "de 6 h [11]. El principio es el de diversificar "
     "un portafolio: si los errores de los modelos no están perfectamente correlacionados, su combinación reduce el error total. "
     f"Con el precio del día anterior su MAE era {n(C['ens6_optimista_mae'])} COP/kWh, 27 % menor que el de la persistencia; "
     "pero ese precio no es público al corte. Con lo publicado, los modelos trabajan con información de hace cuatro días y el "
@@ -528,6 +534,14 @@ reescribir(p, texto_de(p).strip() + (
     " Para el diseño definitivo se descargaron además, de la biblioteca pública del portal de XM [39], 3.192 archivos diarios del "
     "predespacho ideal (enero de 2018 a agosto de 2026) y los del costo marginal y la demanda del despacho programado (dMAR y "
     "dDEM), con su fecha de creación y de modificación para verificar que cada uno estuviera disponible antes del corte."))
+despues(p, p, (
+    "**Ventana de datos.** Se usa enero de 2019 a agosto de 2026 por tres razones. Primero, durante El Niño 2015-2016 el mercado "
+    "operó con medidas transitorias de escasez, entre ellas un piso al precio de escasez (Resolución CREG 178 de 2015 [42]), es "
+    "decir, con reglas de excepción. Segundo, desde el 1 de diciembre de 2017 rige el precio marginal de escasez (Resolución CREG "
+    "140 de 2017 [43]), que cambió la regla que activa la condición crítica y pone techo al precio que paga la demanda en bolsa; "
+    "empezar en 2019 deja un año completo de operación con la regla vigente. Tercero, los datos lo confirman: 2017 y 2018 forman "
+    "un régimen de precios más bajo y comprimido (medias de 106 y 116 COP/kWh, frente a 228 COP/kWh o más desde 2019), y "
+    "extender el entrenamiento a 2017 no mejoró ninguno de los modelos evaluados."))
 R_("Tabla 11.", "**Tabla 11.** Las 65 variables predictoras, agrupadas por familia (y = precio de bolsa; t = hora objetivo; "
                 "D = día del corte).")
 t11 = tabla_tras(P("Tabla 11."))
@@ -666,10 +680,13 @@ R_("Dashboard.", (
     "**Dashboard.** Se publicó en Streamlit Community Cloud (augurpredictor.streamlit.app) con la marca Augur. La vista Operador "
     "aplica el método que elige el criterio de estabilidad y muestra, para el día y la hora elegidos, la acción recomendada con "
     "una insignia (favorable, desfavorable o neutral), un medidor que ubica el precio esperado entre los tramos barato, normal y "
-    "caro, un nivel de confianza según el ancho relativo de la banda y la probabilidad de pico o desplome; la acompañan la "
-    "gráfica del día (con un botón para ampliarla y variables que se ocultan o muestran desde la leyenda), la franja de 24 horas "
-    "con el precio y la acción de cada hora, el mapa de calor día-hora, tres indicadores del backtest y la semana de referencia, "
-    "cada imagen con sus metadatos (unidad, periodo, confianza y versión del modelo). La vista Analista permite fijar el método, "
+    "caro, un nivel de confianza según el ancho relativo de la banda y la posibilidad de pico o desplome, presentada como una "
+    "probabilidad estimada y no como una certeza; la acompañan la gráfica del día (con un botón para ampliarla y variables que "
+    "se ocultan o muestran desde la leyenda), la franja de 24 horas (00:00 a 23:00) con el precio y la acción de cada hora, el "
+    "mapa de calor día-hora, tres indicadores del backtest y la semana de referencia, cada imagen con sus metadatos (unidad en "
+    "COP/kWh, periodo, confianza y versión del modelo). Cada gráfica y la franja se exportan en JPG o PDF con la identidad de "
+    "Augur, y la vista genera dos reportes en PDF: el del día (recomendación, gráfica, franja y tabla de las 24 horas) y uno "
+    "completo que agrega el mapa de calor, los indicadores y la semana, con figuras y tablas numeradas y notas metodológicas. La vista Analista permite fijar el método, "
     "los percentiles, el rango de fechas y el filtro intradía, y la vista Metodología muestra el desempeño en vivo del "
     "pronóstico frente al predespacho de XM y explica el flujo, las fórmulas y la validación. La presentación se rediseñó el 15 "
     "de octubre con la retroalimentación del equipo (tarjetas, tema oscuro y diseño adaptable a pantallas angostas) y el 19 de "
@@ -688,32 +705,33 @@ R_("Funcionamiento del prototipo.", (
     "en el Anexo 3, el manual de usuario en el Anexo 4 y los resultados que demuestran el funcionamiento de cada bloque, en la "
     "Sección 7."))
 R_("Vista Operador.", (
-    "**Vista Operador.** La Figura 4 muestra la vista Operador el 19 de octubre de 2026 a las 08:00 h para el generador, con el "
-    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 410,5 COP/kWh, "
-    "en el tramo barato (≤ 503) y lejos del caro (≥ 706), con confianza alta (banda de ±40 COP/kWh, más ancha que el 35 % de las "
-    "horas anteriores). El riesgo de salto a esa hora es bajo (desplome 5 %, pico 0 %), pero el detector anticipa un posible pico "
-    "a las 00:00 y entre las 16:00 y las 22:00, que la gráfica del día marca con ▲. Ese día el generador tiene 3 de 24 horas para "
-    "despachar y vender (18:00 a 20:00), y la regla activa, «rodante», tiene una ventaja histórica de +243 COP/kWh y actúa en el "
-    "22 % de las horas."))
+    "**Vista Operador.** La Figura 4 muestra la vista Operador el 23 de octubre de 2026 a las 08:00 h para el generador, con el "
+    "pronóstico emitido la víspera. La tarjeta recomienda «Retener generación»: el medidor ubica el precio esperado, 405,3 COP/kWh, "
+    "en el tramo barato (≤ 497 COP/kWh) y lejos del caro (≥ 707 COP/kWh), con confianza media (banda de ±46 COP/kWh, más ancha "
+    "que el 49 % de las horas anteriores). La posibilidad de desplome a esa hora es de 27 % y la de pico, de 0 %, ambas por debajo "
+    "del umbral de alerta de 30 %; en el día, el detector señala posible pico entre las 15:00 y las 23:00, que la gráfica marca "
+    "con ▲. Ese día el generador tiene 6 de 24 horas para despachar y vender (16:00 a 21:00), y la regla activa, «rodante», "
+    "tiene una ventaja histórica de +244 COP/kWh y actúa en el 22 % de las horas."))
 imagen("Figura 4.", "dash_operador.png", 6.3)
-R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (19 de octubre de 2026, 08:00 h, rol generador, horizonte "
+R_("Figura 4.", "**Figura 4.** Dashboard publicado, vista Operador (23 de octubre de 2026, 08:00 h, rol generador, horizonte "
                 "24 h).")
 R_("Rol generador.", (
-    "**Mapa de calor día-hora.** El mapa de calor (Figura 5) resume la señal de los 14 días anteriores hora por hora: en la "
-    "primera semana del periodo el motor recomendó vender en las horas de la tarde y de la noche y retener en la mañana, y "
-    "desde el 11 de octubre, con precios más bajos, retener en buena parte de la mañana y del mediodía, dejando la venta para "
-    "las horas de mayor demanda (18:00 a 21:00). Una leyenda bajo el mapa indica el color de cada acción. Las fechas de los extremos se escriben o se eligen en un "
+    "**Mapa de calor día-hora.** El mapa de calor (Figura 5) abre con los tres días que terminan en el día elegido, para que se "
+    "lea de un vistazo, y el rango se amplía con el deslizador. Del 21 al 23 de octubre de 2026 el patrón es estable: el motor "
+    "recomienda retener en la madrugada y la mañana (hasta las 11:00 o 13:00) y despachar y vender en las horas de mayor demanda, "
+    "entre las 16:00 y las 22:00. Una leyenda bajo el mapa indica el color de cada acción. Las fechas de los extremos se escriben o se eligen en un "
     "calendario, y el modo «Precio esperado» colorea las celdas con la escala de color del precio de bolsa que usa XM."))
 imagen("Figura 5.", "dash_calor.png", 6.0)
-R_("Figura 5.", "**Figura 5.** Mapa de calor día-hora de la señal del motor (6 al 19 de octubre de 2026, rol generador).")
+R_("Figura 5.", "**Figura 5.** Mapa de calor día-hora de la señal del motor (21 al 23 de octubre de 2026, rol generador).")
 R_("Vista Analista.", (
     "**Vista Analista.** La Figura 6 muestra la vista Analista para el generador a 24 h con todo el periodo publicado (1 de enero "
-    "al 20 de octubre de 2026). La tabla compara los cuatro métodos por ventaja y frecuencia de acción en el rango elegido: "
-    "«banda» queda sugerido por ventaja (+316 COP/kWh en el 18 % de las horas), pero la vista Operador usa el criterio de "
-    "estabilidad, que elige «rodante» porque «banda» y «fijo» casi no actúan en la primera mitad del año (Tabla 20). Debajo, la "
+    "al 24 de octubre de 2026). La tabla compara los cuatro métodos por ventaja y frecuencia de acción en el rango elegido: "
+    "«fijo» y «banda» empatan en ventaja (+312 COP/kWh, en el 29 % y el 18 % de las horas) y la vista sugiere «fijo», pero la "
+    "vista Operador usa el criterio de estabilidad, que elige «rodante» (+244 COP/kWh en el 22 % de las horas) porque «banda» y "
+    "«fijo» casi no actúan en la primera mitad del año (Tabla 20). Debajo, la "
     "tabla «Ver datos filtrados» permite auditar cada recomendación hora a hora y descargarla."))
 imagen("Figura 6.", "dash_analista.png", 4.3)
-R_("Figura 6.", "**Figura 6.** Dashboard publicado, vista Analista (rol generador, horizonte 24 h, 1 de enero al 20 de octubre de "
+R_("Figura 6.", "**Figura 6.** Dashboard publicado, vista Analista (rol generador, horizonte 24 h, 1 de enero al 24 de octubre de "
                 "2026).")
 eliminar(P("Rol generador en la vista Analista."))
 
@@ -1091,7 +1109,11 @@ for ref in (
         "xm.com.co. Consultado: oct. 2026.",
         "[40]\tV. Vovk, A. Gammerman y G. Shafer, Algorithmic Learning in a Random World. Nueva York, NY, EE. UU.: Springer, 2005.",
         "[41]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 025 de 1995, por la cual se establece el Código de "
-        "Redes,\" Bogotá, Colombia, 1995."):
+        "Redes,\" Bogotá, Colombia, 1995.",
+        "[42]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 178 de 2015, por la cual se establecen medidas para "
+        "garantizar la prestación del servicio público de energía eléctrica,\" Bogotá, Colombia, 27 de octubre de 2015.",
+        "[43]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 140 de 2017, por la cual se define el precio marginal "
+        "de escasez del Cargo por Confiabilidad y se hacen modificaciones a la Resolución CREG 071 de 2006,\" Bogotá, Colombia, 2017."):
     ultima = despues(ultima, ultima, ref)
 R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Ziskito/xm-spot-price-predictor): formulación en docs/, "

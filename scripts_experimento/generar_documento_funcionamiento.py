@@ -375,6 +375,12 @@ def s3_datos():
     P("Series del proyecto: un dataset maestro horario sincronizado de enero de 2019 a agosto de 2026 (66.576 horas) y "
       "una serie de operación que se actualiza todos los días con lo nuevo de XM y NOAA. El año 2026 se reservó como "
       "prueba fuera de muestra; 2019-2025 sirve para entrenar y para la validación histórica.")
+    P("**Por qué desde 2019.** Durante El Niño 2015-2016 el mercado operó con medidas transitorias de escasez (Resolución "
+      "CREG 178 de 2015, con un piso al precio de escasez), y desde el 1 de diciembre de 2017 rige el precio marginal de "
+      "escasez (Resolución CREG 140 de 2017), que cambió la regla que activa la condición crítica y pone techo al precio que "
+      "paga la demanda. Empezar en 2019 deja un año completo con la regla vigente. Los datos lo confirman: 2017 y 2018 forman "
+      "un régimen de precios más bajo (medias de 106 y 116 COP/kWh, frente a 228 o más desde 2019), y entrenar desde 2017 no "
+      "mejoró ningún modelo.")
 
 
 def s4_variables():
@@ -777,9 +783,11 @@ def s11_operacion():
     P("La corrida del mediodía ya tiene el predespacho del día siguiente; las de la tarde lo recalculan con el despacho "
       "programado. Solo se congelan los días que ya empezaron.")
     P("**Dashboard (augurpredictor.streamlit.app).** Tiene tres vistas: **Operador** (recomendación de la hora elegida, "
-      "pronóstico del día con banda, horas para actuar y posibilidad de pico o desplome), **Analista** (semana, mapa de calor, "
-      "backtest del motor y comparación de métodos) y **Metodología** (cómo funciona, fórmulas y validación). Las gráficas "
-      "admiten zoom con Ctrl + rueda o el touchpad, desplazamiento, clic en una hora para analizarla y botón para centrar.")
+      "pronóstico del día con banda, posibilidad de pico o desplome, franja de las 24 horas, mapa de calor de los últimos "
+      "tres días, indicadores y la semana alrededor del día), **Analista** (backtest del motor, comparación de métodos y datos "
+      "filtrados) y **Metodología** (desempeño en vivo, cómo funciona, fórmulas y validación). Las gráficas admiten zoom con "
+      "Ctrl + rueda o el touchpad, desplazamiento, clic en una hora para analizarla y botón para centrar. Cada gráfica y la "
+      "franja se exportan en JPG o PDF, y la vista Operador genera un reporte del día y un reporte completo en PDF.")
     if (FIG_INF / "dash_operador.png").exists():
         figura(FIG_INF / "dash_operador.png", 15, "Figura 4. Vista Operador del dashboard.")
 
