@@ -771,7 +771,7 @@ def franja_botones(dia_df, hora_sel, tk):
             h = int(r["fecha_hora"].hour)
             with col:
                 with st.container(key=f"hora_c_{h}"):
-                    st.button(f"{h:02d}", key=f"hora_btn_{h}", on_click=_set_hora, args=(h,),
+                    st.button(f"{h:02d}:00", key=f"hora_btn_{h}", on_click=_set_hora, args=(h,),
                               use_container_width=True)
 
 
