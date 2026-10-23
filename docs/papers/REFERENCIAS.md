@@ -109,10 +109,11 @@ Los PDF y su texto extraído (`.txt`) están en esta misma carpeta.
 - **Uso:** el modelo de tres regímenes (normal / salto / reversión). Es el origen de la línea de
   regímenes en EPF.
 
-### Das & Schlüter — regímenes con procesos neuronales condicionales
-> Das, A., & Schlüter, S. *Regime-Aware Conditional Neural Processes with Multi-Criteria Decision
-> Support for Operational Electricity Price Forecasting*. Universidad de Ulm / Ulm University of
-> Applied Sciences, Alemania.
+### Das, Schlüter & Schneider (2026) — regímenes con procesos neuronales condicionales
+> Das, A., Schlüter, S., & Schneider, L. (2026). *Regime-aware conditional neural processes with
+> multi-criteria decision support for operational electricity price forecasting*. Energy Economics,
+> 157, 109233. https://doi.org/10.1016/j.eneco.2026.109233 (preprint: arXiv:2508.00040, solo con
+> los dos primeros autores; la versión publicada agrega a Lorenz Schneider).
 
 - Archivo: `Das_Schluter_Regime_Aware_Conditional_Neural_Processes.pdf`
 - **Uso:** detección de regímenes (DS-HDP-HMM) acoplada a pronóstico de 24h en el mercado alemán.
@@ -161,8 +162,9 @@ Los PDF y su texto extraído (`.txt`) están en esta misma carpeta.
 > Functional Approach*. International Journal of Energy Economics and Policy, **11(2)**, 67-74.
 
 - Archivo: `Gallon_Barrientos_2021_Colombia_Functional_Approach.pdf`
-- **Corrección pendiente:** el informe cita este trabajo como 11(**1**); el PDF dice claramente
-  Vol 11 · Issue 2 · 2021, páginas 67-74.
+- **Corregido en el informe final:** ya cita 11(2), pp. 67-74, como dice el PDF.
+- **DOI:** el PDF imprime 10.32479/ijeep.10607, pero en Crossref ese DOI resuelve a otro artículo (sobre petróleo);
+  conviene citar también la URL de la revista (verificado el 23-oct-2026).
 
 ### Barrientos Marín, Tabares Orozco & Velilla (2018) — redes, ARMA e híbridos
 > Barrientos Marín, J., Tabares Orozco, E., & Velilla, E. (2018). *Forecasting Electricity Price in
@@ -354,11 +356,18 @@ Los PDF y su texto extraído (`.txt`) están en esta misma carpeta.
 
 ## Citadas en el informe pero sin PDF en esta carpeta
 
-Pendientes de incorporar y verificar contra el original:
+Verificadas el 23-oct-2026 contra el PDF y Crossref (los PDF están en Downloads\Referencias_Augur; la lista completa
+con su uso está en docs/Referencias_Augur_paper.docx):
 
-- **Herrera-Mejía, L. et al. (2025)** — AES Colombia, clasificación de régimen de oferta de plantas
-  hidroeléctricas. Smart Energy, Elsevier. *Título exacto sin verificar contra el PDF.*
-- **Muñoz-Santiago, N. et al. (2017)** — ARIMA con especificación IGARCH, mercado colombiano.
-- **Dias et al. (2024)** — Brasil, comparación contra el DECOMP oficial (Figura 5b).
-- **International Energy Agency (2023)** — Colombia 2023, Energy Policy Review.
-- **Low Carbon Power (2025)** — matriz de generación de Colombia (fuente del 70-74% hidroeléctrico).
+- **Herrera-Mejía, L., Hoyos, C. D., La Rotta, D., Mejía, Y., & Castillo, J. (2026).** *Forecasting day-ahead
+  hydropower bids in the Colombian electricity market: A two-stage machine learning framework.* Smart Energy, 21,
+  100221. https://doi.org/10.1016/j.segy.2025.100221 (no es de 2025: el volumen es de febrero de 2026).
+- **Muñoz-Santiago, A., Urquijo-Vanstrahlengs, J., Castro-Otero, A., & Lombana, J. (2017).** *Pronóstico del precio
+  de la energía en Colombia utilizando modelos ARIMA con IGARCH.* Revista de Economía del Rosario, 20(1), 127-161.
+  (El nombre es Alberto, no «N.»; Crossref registra mal la página.)
+- **Dias, M. B. B., Lira, G. R. S., & Freire, V. M. E. (2024).** *Methodology for multi-step forecasting of
+  electricity spot prices based on neural networks applied to the Brazilian energy market.* Energies, 17(8), 1864.
+- **International Energy Agency (2023)** — Colombia 2023, Energy Policy Review (fuente del 72 % hidroeléctrico del
+  informe final).
+- **Low Carbon Power (2025)** — matriz de generación de Colombia (70-74 % hidroeléctrico); se citaba en un borrador
+  anterior y el informe final ya no la usa.
