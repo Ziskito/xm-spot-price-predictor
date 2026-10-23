@@ -385,7 +385,7 @@ def html(c, paginas):
 <tr><td>1.1</td><td>14/10/2026</td><td>Actualización diaria automática y pronóstico del día siguiente; versión del modelo en la barra lateral; fechas editables en el mapa de calor; la hora se conserva al cambiar de vista.</td><td>J. Barceló, R. Dede</td></tr>
 <tr><td>1.2</td><td>15/10/2026</td><td>Interfaz rediseñada: tarjeta de recomendación con medidor, gráfica del día con botón Ampliar y variables que se ocultan o muestran desde la leyenda, franja horaria con precio y acción, tema oscuro de alto contraste y diseño adaptable a pantallas angostas.</td><td>J. Barceló, R. Dede</td></tr>
 <tr><td>1.3</td><td>19/10/2026</td><td>Nombre oficial con mayúscula (Augur). Vista Metodología. Tema oscuro Pizarra. Controles de día reordenados con «Ir al último». Gráficas con acercamiento por Ctrl + rueda o pellizco, desplazamiento con dos dedos, botón Centrar, clic en una hora de la gráfica del día y carga de días vecinos. Números y fechas en formato colombiano. Leyenda propia del mapa de calor. Actualización diaria también al mediodía.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.4</td><td>23/10/2026</td><td>Picos y desplomes se presentan como <i>posibilidad</i>, no como certeza; en el horizonte de 72 h se estima la posibilidad de pico de los días 2 y 3. Exportación de cada gráfica y de la franja horaria en JPG y PDF; reporte del día y reporte completo en PDF. El mapa de calor abre con 3 días. Unidades (COP/kWh) en umbrales, franja y tablas, y notas más visibles.</td><td>J. Barceló, R. Dede</td></tr></table>
+<tr><td>1.4</td><td>23/10/2026</td><td>Picos y desplomes se presentan como <i>posibilidad</i>, no como certeza; en el horizonte de 72 h se estima la posibilidad de pico de los días 2 y 3. Exportación de cada gráfica y de la franja horaria en JPG y PDF; reporte del día y reporte completo en PDF. El mapa de calor abre con 3 días. Horas de la franja en formato 00:00. Unidades (COP/kWh) en umbrales, franja y tablas, y notas más visibles.</td><td>J. Barceló, R. Dede</td></tr></table>
 <h2 class="salto">Contenido</h2>
 <div class="indice">{indice_html(paginas)}</div>
 
@@ -490,7 +490,7 @@ día elegido. Las <b>variables</b> de la leyenda funcionan como botones: un clic
 esa. <b>Ampliar</b> (16) abre la gráfica en una ventana grande.</p>''', 40)}
 <h2>4.5 Franja horaria</h2>
 {fig("op_franja", 7, "Franja horaria")}
-<p>Resume las 24 horas del día en dos filas. Cada casilla indica la hora, el precio esperado en COP/kWh y la acción abreviada
+<p>Resume las 24 horas del día en dos filas. Cada casilla indica la hora (00:00 a 23:00), el precio esperado en COP/kWh y la acción abreviada
 (Tabla 9), con el color de la señal: verde, acción favorable; naranja, acción desfavorable; gris, esperar. Los símbolos ▼ y ▲ sobre una
 casilla señalan posibilidad de desplome o de pico. Un clic en una casilla selecciona esa hora para la recomendación; la casilla
 seleccionada se resalta con un borde.</p>
