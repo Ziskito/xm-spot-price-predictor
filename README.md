@@ -52,7 +52,7 @@ docs/
 ## Datos
 
 - **Fuentes:** API REST pública de XM y SIMEM, IDEAM, NOAA CPC (índice ONI).
-- **Ventana:** enero de 2019 a agosto de 2026, resolución horaria. Se excluye 2015-2018 por el cambio estructural de la regulación CREG de 2015; se maneja la pandemia (2020) con una variable indicadora en vez de excluir esos datos.
+- **Ventana:** enero de 2019 a agosto de 2026, resolución horaria. Se excluye 2015-2018 por los cambios de regla del precio de escasez: medidas transitorias de El Niño 2015-2016 (Res. CREG 178 de 2015) y precio marginal de escasez vigente desde el 1-dic-2017 (Res. CREG 140 de 2017), con un año de margen; además, 2017-2018 es un régimen de precio más bajo y extender el entrenamiento a 2017 no mejoró ningún modelo (ver 2026-09, rama experimento-2017-hidrotermica); se maneja la pandemia (2020) con una variable indicadora en vez de excluir esos datos.
 - **Variables:** precio de bolsa, demanda, generación, volumen de embalses, aportes hídricos, ONI, indicador de pandemia.
 - `pydataxm` no es compatible con pandas 3.0 (4 incompatibilidades documentadas); la adquisición se implementó con una función propia sobre `requests`.
 - Demanda y generación **contemporáneas** (sin rezagar) se excluyen como predictoras porque se determinan en el mismo proceso de despacho que el precio; solo sus versiones rezagadas ≥ horizonte de pronóstico se usan.
@@ -589,6 +589,12 @@ Siete scripts del proyecto tenían la constante `PICO = [18, 19, 20]` y quedaron
   - **Validación histórica del predespacho:** igual. El ensamble de 7 baja el error entre 38 % y 47 % en todos los orígenes (DM t de 6,3 a 15,4).
   - **Backtest histórico del motor:** ninguna elección por estabilidad cambia. Las ventajas medias se mueven menos de 2 COP/kWh, y las combinaciones válidas en ambas mitades pasan de 26 a 27 de 60.
   - **Pendiente:** el informe debe actualizar los conteos de Diebold-Mariano. `walkforward_5origenes.csv` (notebook 07, versión anterior sin festivos) no se regeneró, porque nada lo usa ya.
+- **Exportar y reportes, manual rev. 1.4, referencias verificadas e informe al día (23-oct, a pedido de Juan)**:
+  - *Dashboard:* cada gráfica y la franja se exportan en JPG y PDF (se redibujan en blanco, con el eje de 24 horas y la leyenda pequeña, y con encabezado y pie de Augur); la vista Operador genera el reporte del día y el reporte completo en PDF (jsPDF en el navegador, datos en `#augur-datos`). El mapa de calor abre con 3 días, las horas de la franja van como 00:00, hay unidades COP/kWh en umbrales y tablas, y las notas son más visibles. Corrección: el paquete de los reportes redondeaba las probabilidades a un decimal (27 % salía como 30 %); ahora usa tres. Comparador de salidas: 0 diferencias.
+  - *Manual (MU-AUG-001 rev. 1.4):* capturas nuevas, sección 4.9 (exportar y reportes), «posibilidad» de pico y desplome y probabilidad de pico de los días 2 y 3 a 72 h.
+  - *Referencias:* `docs/Referencias_Augur_paper.docx` (99 referencias, cada «Uso» contrastado con el informe, la bitácora y el código; datos contra Crossref). PDF de todas en `Downloads\Referencias_Augur` (fuera del repositorio por derechos de autor).
+  - *Ventana 2019-2026:* el «cambio regulatorio de 2015» del Anexo 1 corresponde a la Res. CREG 178 de 2015 (medidas transitorias de El Niño 2015-2016) y a la Res. CREG 140 de 2017 (precio marginal de escasez desde el 1-dic-2017). Ojo: el artículo de XM en ERIAC 2025 atribuye a la Res. CREG 088 de 2016 un ajuste del precio de escasez, pero esa resolución es sobre GLP.
+  - *Informe final:* párrafo «Ventana de datos» con las referencias [42] y [43]; las cinco referencias que estaban listadas sin citarse ([24], [25], [28], [29], [30]) ya se citan; [17] pasa a usarse por la subasta única del día; el dashboard y las Figuras 4 a 6 con la vista del 23-oct.
 - **Dashboard rediseñado, manual rev. 1.2 e informe final al día (15-oct, con la retroalimentación de Juan)**:
   - *Dashboard:* presentación adaptada de la propuesta de Google Stitch («Control Room»), revisada opción por opción en localhost antes de publicarla.
     - Cabecera en tarjeta y vistas como navegación.

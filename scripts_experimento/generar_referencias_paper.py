@@ -373,7 +373,9 @@ SECCIONES = [
         ("L", "CREG, Resoluciones 071 de 2006, 140 de 2017 y 101 066 de 2024: precio de escasez y precio de "
               "transacciones en bolsa (PTB).",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0140_2017.htm",
-         "Limitación: el PTB fue menor que el PBN en 360 horas de 2026."),
+         "Limitación: el PTB fue menor que el PBN en 360 horas de 2026. La 140 de 2017 (precio marginal de escasez, "
+         "vigente desde el 1-dic-2017) es además el cambio permanente que justifica empezar la serie después de 2017: "
+         "cambió la regla que activa la condición crítica y pone techo al precio que paga la demanda."),
         ("C", "CREG, \"Resolución CREG 101 018 de 2022, por la cual se crea el Sistema de Información del Mercado de Energía "
               "Mayorista, SIMEM,\" Bogotá, 2022.", "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_101-18_2022.htm",
          "Crea el SIMEM: respalda el uso exclusivo de información pública de XM/SIMEM; el sistema no actúa como agente."),
@@ -413,6 +415,43 @@ SECCIONES = [
          "Índice ONI (El Niño / La Niña) como variable y para definir los orígenes del walk-forward."),
         ("L", "Paquete holidays (Python): festivos de Colombia.", "https://github.com/vacanza/holidays",
          "Variable de calendario (festivos)."),
+    ]),
+    ("9. Referencias del Anexo 1 (formulación) que no usa el informe final", [
+        ("L", "Congreso de Colombia, \"Ley 23 de 1982, sobre derechos de autor,\" Diario Oficial n.º 35.949, 19 de febrero "
+              "de 1982.",
+         "normas.cra.gov.co/gestor/docs/ley_0023_1982.htm",
+         "Anexo 1, restricciones del diseño: propiedad intelectual del código, los datos y los materiales de terceros."),
+        ("L", "Comunidad Andina, \"Decisión 351 de 1993: Régimen común sobre derecho de autor y derechos conexos,\" Lima, "
+              "1993.",
+         "https://www.comunidadandina.org/StaticFiles/DocOf/DEC351.pdf",
+         "Anexo 1, restricciones del diseño, junto con la Ley 23 de 1982."),
+        ("L", "ABET, \"Criteria for Accrediting Engineering Programs, 2025–2026,\" Engineering Accreditation Commission, "
+              "Baltimore, MD, EE. UU.",
+         "https://www.abet.org/accreditation/accreditation-criteria/criteria-for-accrediting-engineering-programs-2025-2026/",
+         "Resultado SO2 (diseño en ingeniería): ítem 6 del Anexo 1 y estructura del informe final ABET."),
+        ("L", "CREG, \"Resolución CREG 178 de 2015, por la cual se establecen medidas para garantizar la prestación del "
+              "servicio público de energía eléctrica,\" Bogotá, 27 de octubre de 2015.",
+         "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0178_2015.htm",
+         "El «cambio regulatorio de 2015» del Anexo 1, parte transitoria: durante El Niño 2015-2016 fijó un piso al "
+         "precio de escasez y una opción para térmicas a combustibles líquidos, por seis meses (la Res. 052 de 2016 no la "
+         "prorrogó). Justifica excluir 2015-2016: el mercado operó con reglas de excepción."),
+        ("L", "P. Villegas y H. A. Gómez, \"Medidas regulatorias posteriores a los fenómenos de El Niño 2015-2016 y 2023-2024 "
+              "en Colombia, una mirada desde la confiabilidad,\" en XX ERIAC, CIGRE, Ciudad del Este, Paraguay, mayo de 2025.",
+         "xm.com.co (Paper N.º 48, Comité C5)",
+         "Fuente secundaria sobre los cambios al precio de escasez tras El Niño 2015-2016: en ese periodo el precio de "
+         "bolsa superó el precio de escasez el 61,4 % de los días (hasta 2.821 COP/kWh), y el PME rige desde el 1-dic-2017. "
+         "Cautela: atribuye a la Res. CREG 088 de 2016 un ajuste del precio de escasez, pero esa resolución trata de la "
+         "oferta de GLP; no citarla."),
+        ("L", "Globalsyde, \"Software para comercializadoras de energía\" (plataforma en la nube), España.",
+         "https://globalsyde.com",
+         "Anexo 1, justificación (2): herramienta comercial para comercializadoras minoristas españolas (contratación, "
+         "tarificación y facturación), que no aplica al mercado mayorista colombiano."),
+        ("L", "Enexpa, \"Servicios para comercializadoras de electricidad y gas en España\".",
+         "https://www.enexpa.es",
+         "Anexo 1, justificación (2), por la misma razón que Globalsyde."),
+        ("V", "SIGE Comercialización, ERP para comercializadoras y distribuidoras de electricidad y gas, España.",
+         "asest.es/story/sige-erp-electridad-gas/",
+         "Anexo 1, justificación (2). Fabricante y página oficial sin confirmar (un directorio lo atribuye a Grupo Audinfor)."),
     ]),
 ]
 
@@ -569,7 +608,7 @@ for titulo, entradas in SECCIONES:
         r.bold, r.font.size = True, Pt(9.5)
         d.add_run(uso).font.size = Pt(9.5)
 
-doc.add_heading("9. Librerías de código abierto", level=1)
+doc.add_heading("10. Librerías de código abierto", level=1)
 doc.add_paragraph(
     "Versiones fijadas en requirements.txt (modelado), requirements-produccion.txt (actualización diaria) y "
     "dashboard/requirements.txt (app). Para el paper basta citar las que hacen el trabajo central: pandas, NumPy, "
@@ -590,13 +629,13 @@ for fila in tabla.rows:
     for i, c in enumerate(fila.cells):
         c.width = anchos[i]
 
-doc.add_heading("10. Herramientas e infraestructura", level=1)
+doc.add_heading("11. Herramientas e infraestructura", level=1)
 for nombre, uso in HERRAMIENTAS:
     p = doc.add_paragraph(style="List Bullet")
     p.add_run(nombre + ": ").bold = True
     p.add_run(uso)
 
-doc.add_heading("11. Material propio del proyecto (para citar o anexar)", level=1)
+doc.add_heading("12. Material propio del proyecto (para citar o anexar)", level=1)
 for nombre, uso in (
         ("Repositorio", "github.com/Ziskito/xm-spot-price-predictor (código, datos procesados, notebooks y bitácora en "
                         "el README)."),
