@@ -245,6 +245,6 @@ data/processed/resultados/escenario_realista/mejoras/pre_oni_14oct/
 .streamlit/secrets.toml
 
 # proyectos de edicion de los videos (fuentes y renders; los videos finales van en docs/video)
-video/
-video_2min/
-video_corto/
+/video/
+/video_2min/
+/video_corto/

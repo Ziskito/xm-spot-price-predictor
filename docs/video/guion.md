@@ -1,0 +1,29 @@
+# Guion: video explicativo de Augur
+
+Duración: 3 min 59 s (actualizado el 23-oct con tomas nuevas de la app y créditos). Voz: Gemini TTS, voz masculina Charon (español latinoamericano). Las cifras y siglas se escriben como se leen, para que la
+voz las pronuncie bien; los subtítulos mostrarán la transcripción de Whisper.
+
+| # | Escena (toma) | Pantalla | Narración |
+|---|---|---|---|
+| 0 | Intro | Logo animado: las tres aves suben en gris, tinta y ámbar; aparece «Augur · Motor de decisión». 4 s | Augur. Motor de decisión para el precio de bolsa de la energía. |
+| 1 | Introducción general | Captura completa de la vista Operador con acercamiento lento; rótulos: «Precio de bolsa hora a hora», «Datos públicos de XM», «Comprar · vender · esperar» | En Colombia, el precio de bolsa de la energía cambia cada hora y puede duplicarse de un día para otro. Augur pronostica ese precio hora por hora, para el día siguiente y los tres días siguientes, usando solo datos públicos de XM. Luego traduce el pronóstico en una recomendación clara: cuándo conviene comprar, vender o esperar. Está pensado para generadores y comercializadores de energía, y para cualquiera que quiera entender este mercado. |
+| 2 | `op_inicio` | Vista Operador. El cursor recorre el medidor, la acción, la confianza y la posibilidad de salto | La vista Operador responde una pregunta: qué hago ahora. Para el día y la hora elegidos, el medidor muestra el precio esperado frente a los umbrales de barato y caro, y al lado aparece la acción recomendada. Debajo están el nivel de confianza, que depende del ancho de la banda, y la posibilidad de un pico o un desplome de precio, que es una probabilidad, no una certeza. |
+| 3 | `op_dia_hora` | Clic en Anterior y Siguiente; la hora pasa a 19; la tarjeta cambia a «Despachar y vender» | Con los botones Anterior y Siguiente se cambia de día, y en el campo Hora del día se escoge la hora. A las siete de la noche, por ejemplo, el precio esperado supera el umbral caro, y el motor recomienda despachar y vender. |
+| 4 | `op_grafica` | Zoom con Control y rueda sobre la gráfica, clic en Centrar, clic en Ampliar y cierre | La gráfica del pronóstico del día muestra la curva esperada, su banda de incertidumbre y los umbrales. Se puede acercar con Control y la rueda del ratón, volver a la vista completa con Centrar, o abrirla en grande con Ampliar. |
+| 5 | `op_franja` | Franja de 24 horas; clic en la hora 20; la tarjeta de arriba se actualiza | Más abajo, la franja del día resume las veinticuatro horas: el precio y la acción de cada una. Un clic en cualquier hora la lleva a la tarjeta de recomendación. |
+| 6 | `op_calor` | Mapa de calor por señal; cambio a «Precio esperado» | El mapa de calor muestra varios días a la vez, coloreado por la señal del motor o por el precio esperado, para ver de un vistazo qué horas suelen convenir. |
+| 7 | `op_semana` | Gráfica de la semana con precio real, pronóstico y señales | Y la gráfica de la semana compara el precio real que publica XM con lo que Augur había pronosticado, junto con las horas en que el motor recomendó actuar. |
+| 8 | `rol_horizonte` | Hora 19 como generador; cambio a comercializador («Evitar la bolsa»); horizonte de 72 h y día siguiente | En la barra lateral se elige el rol. Para un generador, las siete de la noche son hora de vender; para un comercializador, esa misma hora es para evitar comprar en bolsa. El horizonte de setenta y dos horas extiende el pronóstico a los dos días siguientes. Para esos días solo se estima la posibilidad de pico, que es menos confiable que la del primer día. |
+| 9 | `analista` | Tarjetas, tabla de métodos, controles de la barra lateral, método «rodante», backtest y datos filtrados en «Solo vender» | La vista Analista sirve para evaluar las reglas del motor. Las tarjetas muestran la ventaja económica de actuar en las horas señaladas y con qué frecuencia se actúa, y la tabla compara los cuatro métodos de umbral. En la barra lateral se ajustan los percentiles, el rango de fechas, el filtro intradía y el método. La gráfica muestra el resultado con datos reales: precio, pronóstico y señales. Y en la sección Ver datos filtrados está la tabla hora a hora, que se puede filtrar y descargar. |
+| 10 | `metodologia` | Tarjetas de desempeño, cambio a «Todo 2026», error diario, Cómo funciona, Fórmulas y validación | La vista Metodología muestra qué tan bien le ha ido al pronóstico en vivo: su error, la mejora frente al predespacho de XM, cuántas veces el precio real quedó dentro de la banda y el acierto de las recomendaciones, en los últimos treinta días o en todo el año. Después explica cómo funciona, con las fórmulas y el protocolo de validación. |
+| 11 | `oscuro` | Clic en Modo oscuro | Y si se prefiere, el modo oscuro cambia toda la interfaz con un clic. |
+| 12 | Cierre | Resumen en tres rótulos y logo final con la dirección augurpredictor.streamlit.app | Augur: pronóstico hora a hora, incertidumbre medida y una recomendación clara, en una página que se actualiza sola todos los días. Proyecto final de Ingeniería Electrónica de la Universidad del Norte. |
+| 13 | Créditos (sin voz, 6 s) | «Autores: Juan David Barceló Barraza, Rafael Andrés Dede Perdomo · Asesores: José Daniel Soto Ortiz, Daniela María Charris Stand · Proyecto final · Ingeniería Electrónica · Universidad del Norte · 2026» | — |
+
+## Notas de sincronía
+
+- Cada narración arranca cuando empieza su toma. Si la voz dura más que la toma, la escena se sostiene en el último
+  cuadro o se ralentiza un poco; si dura menos, la toma se recorta.
+- En las escenas 3, 4, 5, 8 y 9 la frase se ubica en el segundo de la acción que nombra, con los tiempos de
+  `capturas/tiempos.json`. Por ejemplo, «Ampliar» suena cuando el cursor hace clic en Ampliar.
+- Resaltado suave: un recuadro ámbar sobre el elemento que se nombra (medidor, franja, mapa, controles).

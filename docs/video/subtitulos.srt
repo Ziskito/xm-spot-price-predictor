@@ -1,0 +1,247 @@
+1
+00:00:01,440 --> 00:00:02,420
+Augur.
+
+2
+00:00:02,460 --> 00:00:06,240
+Motor de decisión para el precio de bolsa de la energía.
+
+3
+00:00:06,680 --> 00:00:11,910
+En Colombia, el precio de bolsa de la energía cambia cada hora y puede duplicarse de
+
+4
+00:00:11,950 --> 00:00:13,380
+un día para otro.
+
+5
+00:00:13,420 --> 00:00:17,790
+Augur pronostica ese precio hora por hora, para el día siguiente y los tres días
+
+6
+00:00:17,830 --> 00:00:19,800
+siguientes, usando solo datos
+
+7
+00:00:19,920 --> 00:00:21,500
+públicos de XM.
+
+8
+00:00:21,540 --> 00:00:24,710
+Luego traduce el pronóstico en una recomendación clara:
+
+9
+00:00:24,750 --> 00:00:28,200
+cuándo conviene comprar, vender o esperar.
+
+10
+00:00:28,240 --> 00:00:31,450
+Está pensado para generadores y comercializadores de energía,
+
+11
+00:00:31,490 --> 00:00:34,600
+y para cualquiera que quiera entender este mercado.
+
+12
+00:00:35,140 --> 00:00:37,965
+La vista Operador responde una pregunta:
+
+13
+00:00:38,005 --> 00:00:40,090
+qué hago ahora.
+
+14
+00:00:40,130 --> 00:00:43,390
+Para el día y la hora elegidos, el medidor muestra el precio
+
+15
+00:00:43,430 --> 00:00:46,330
+esperado frente a los umbrales de barato y caro,
+
+16
+00:00:46,370 --> 00:00:49,100
+y al lado aparece la acción recomendada.
+
+17
+00:00:49,140 --> 00:00:53,210
+Debajo están el nivel de confianza, que depende del ancho de la banda,
+
+18
+00:00:53,250 --> 00:00:57,090
+y la posibilidad de un pico o un desplome de precio,
+
+19
+00:00:57,130 --> 00:01:00,560
+que es una probabilidad, no una certeza.
+
+20
+00:01:00,750 --> 00:01:04,480
+Con los botones Anterior y Siguiente se cambia de día,
+
+21
+00:01:04,520 --> 00:01:07,400
+y en el campo Hora del día se escoge la hora.
+
+22
+00:01:07,440 --> 00:01:12,330
+A las siete de la noche, por ejemplo, el precio esperado supera el umbral caro,
+
+23
+00:01:12,370 --> 00:01:15,660
+y el motor recomienda despachar y vender.
+
+24
+00:01:16,140 --> 00:01:19,740
+La gráfica del pronóstico del día muestra la curva esperada,
+
+25
+00:01:19,780 --> 00:01:22,500
+su banda de incertidumbre y los umbrales.
+
+26
+00:01:22,540 --> 00:01:25,750
+Se puede acercar con Control y la rueda del ratón,
+
+27
+00:01:25,790 --> 00:01:30,700
+volver a la vista completa con Centrar, o abrirla en grande con Ampliar.
+
+28
+00:01:32,727 --> 00:01:37,137
+Más abajo, la franja del día resume las veinticuatro horas:
+
+29
+00:01:37,177 --> 00:01:39,627
+el precio y la acción de cada una.
+
+30
+00:01:39,667 --> 00:01:44,687
+Un clic en cualquier hora la lleva a la tarjeta de recomendación.
+
+31
+00:01:45,147 --> 00:01:50,597
+El mapa de calor muestra varios días a la vez, coloreado por la señal del motor o
+
+32
+00:01:50,637 --> 00:01:55,667
+por el precio esperado, para ver de un vistazo qué horas suelen convenir.
+
+33
+00:01:56,047 --> 00:02:01,357
+Y la gráfica de la semana compara el precio real que publica XM con lo que Augur
+
+34
+00:02:01,397 --> 00:02:06,507
+había pronosticado, junto con las horas en que el motor recomendó actuar.
+
+35
+00:02:07,297 --> 00:02:09,897
+En la barra lateral se elige el rol.
+
+36
+00:02:09,937 --> 00:02:14,097
+Para un generador, las siete de la noche son hora de vender;
+
+37
+00:02:14,137 --> 00:02:17,877
+para un comercializador, esa misma hora es para evitar
+
+38
+00:02:17,917 --> 00:02:19,287
+comprar en bolsa.
+
+39
+00:02:19,327 --> 00:02:23,337
+El horizonte de setenta y dos horas extiende el pronóstico a los dos días
+
+40
+00:02:23,377 --> 00:02:24,597
+siguientes.
+
+41
+00:02:24,637 --> 00:02:26,807
+Para esos días solo se estima la posibilidad
+
+42
+00:02:26,847 --> 00:02:29,947
+de pico, que es menos confiable que la del primer día.
+
+43
+00:02:30,997 --> 00:02:34,757
+La vista Analista sirve para evaluar las reglas del motor.
+
+44
+00:02:34,797 --> 00:02:39,087
+Las tarjetas muestran la ventaja económica de actuar en las horas señaladas y con
+
+45
+00:02:39,127 --> 00:02:43,757
+qué frecuencia se actúa, y la tabla compara los cuatro métodos de umbral.
+
+46
+00:02:43,797 --> 00:02:46,857
+En la barra lateral se ajustan los percentiles,
+
+47
+00:02:46,897 --> 00:02:50,767
+el rango de fechas, el filtro intradía y el método.
+
+48
+00:02:50,807 --> 00:02:53,757
+La gráfica muestra el resultado con datos reales:
+
+49
+00:02:53,797 --> 00:02:55,757
+precio, pronóstico y señales.
+
+50
+00:02:55,797 --> 00:02:59,527
+Y en la sección Ver datos filtrados está la tabla hora a hora,
+
+51
+00:02:59,567 --> 00:03:02,327
+que se puede filtrar y descargar.
+
+52
+00:03:03,067 --> 00:03:08,927
+La vista Metodología muestra qué tan bien le ha ido al pronóstico en vivo:
+
+53
+00:03:08,967 --> 00:03:12,927
+su error, la mejora frente al predespacho de XM,
+
+54
+00:03:12,967 --> 00:03:17,287
+cuántas veces el precio real quedó dentro de la banda y el acierto de las
+
+55
+00:03:17,327 --> 00:03:22,067
+recomendaciones, en los últimos treinta días o en todo el año.
+
+56
+00:03:22,107 --> 00:03:26,687
+Después explica cómo funciona, con las fórmulas y el protocolo de validación.
+
+57
+00:03:28,147 --> 00:03:33,667
+Y si se prefiere, el modo oscuro cambia toda la interfaz con un clic.
+
+58
+00:03:34,717 --> 00:03:35,647
+Augur:
+
+59
+00:03:35,687 --> 00:03:41,597
+pronóstico hora a hora, incertidumbre medida y una recomendación clara,
+
+60
+00:03:41,637 --> 00:03:45,327
+en una página que se actualiza sola todos los días.
+
+61
+00:03:45,367 --> 00:03:48,857
+Proyecto final de Ingeniería Electrónica de la
+
+62
+00:03:48,897 --> 00:03:50,887
+Universidad del Norte.

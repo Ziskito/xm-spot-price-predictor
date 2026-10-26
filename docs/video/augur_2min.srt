@@ -1,0 +1,99 @@
+1
+00:00:01,370 --> 00:00:05,650
+Augur: un motor de decisión para el precio de la energía en Colombia.
+
+2
+00:00:10,440 --> 00:00:14,950
+En Colombia, el precio de bolsa de la energía cambia cada hora
+
+3
+00:00:14,990 --> 00:00:19,400
+y, con el fenómeno de El Niño, puede multiplicarse durante semanas.
+
+4
+00:00:19,440 --> 00:00:24,530
+Quien compra o vende en bolsa necesita saber no solo cuánto costará la energía,
+
+5
+00:00:24,570 --> 00:00:26,950
+sino qué hacer en cada hora.
+
+6
+00:00:28,000 --> 00:00:31,190
+Augur parte de los datos públicos de XM.
+
+7
+00:00:31,230 --> 00:00:33,820
+Toma el predespacho que XM publica la víspera,
+
+8
+00:00:33,860 --> 00:00:36,140
+lo corrige con aprendizaje automático
+
+9
+00:00:36,180 --> 00:00:40,920
+y entrega el precio esperado de cada hora, con su banda de incertidumbre.
+
+10
+00:00:40,960 --> 00:00:44,890
+Luego, un motor de decisión lo convierte en una acción concreta.
+
+11
+00:00:45,720 --> 00:00:49,440
+En la vista Operador, el usuario elige el día y la hora
+
+12
+00:00:49,480 --> 00:00:54,170
+y recibe la recomendación: vender, comprar o esperar,
+
+13
+00:00:54,210 --> 00:00:57,080
+según sea generador o comercializador.
+
+14
+00:00:57,120 --> 00:01:02,480
+Ve el nivel de confianza, la posibilidad de un pico o un desplome de precio
+
+15
+00:01:02,520 --> 00:01:05,370
+y las 24 horas del día de un vistazo,
+
+16
+00:01:05,410 --> 00:01:09,030
+y puede descargarlo todo en un reporte en PDF.
+
+17
+00:01:09,580 --> 00:01:14,980
+En la validación fuera de muestra, en 2026 y en cinco años históricos,
+
+18
+00:01:15,020 --> 00:01:20,840
+el error medio a 24 horas fue de 33,7 pesos por kilovatio hora:
+
+19
+00:01:20,880 --> 00:01:24,550
+68 % menos que repetir el último precio publicado
+
+20
+00:01:24,590 --> 00:01:27,530
+y 11 % menos que el predespacho de XM.
+
+21
+00:01:27,570 --> 00:01:32,100
+Las bandas cubren el 80,6 % de las horas.
+
+22
+00:01:33,280 --> 00:01:36,720
+La plataforma se actualiza sola tres veces al día,
+
+23
+00:01:36,760 --> 00:01:41,840
+reentrena sus modelos cada mes y muestra en vivo cómo le va al pronóstico.
+
+24
+00:01:42,640 --> 00:01:48,610
+Augur: pronóstico hora a hora, incertidumbre medida y una recomendación clara.
+
+25
+00:01:48,650 --> 00:01:52,780
+Pruébelo en augurpredictor.streamlit.app
