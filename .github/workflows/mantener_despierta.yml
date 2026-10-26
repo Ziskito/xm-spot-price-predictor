@@ -1,0 +1,41 @@
+# Streamlit Community Cloud duerme la app tras un tiempo sin visitas, y un commit no la despierta (26-oct-2026).
+# Cada 6 horas un navegador sin pantalla abre la app y, si esta dormida, oprime «Yes, get this app back up!».
+name: Mantener despierta la app
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  visitar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Playwright
+        run: |
+          pip install playwright==1.48.0
+          python -m playwright install --with-deps chromium
+
+      - name: Abrir la app
+        shell: python
+        run: |
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://augurpredictor.streamlit.app/"
+          with sync_playwright() as p:
+              pagina = p.chromium.launch().new_page()
+              pagina.goto(URL, wait_until="domcontentloaded", timeout=90_000)
+              pagina.wait_for_timeout(8_000)
+              boton = pagina.get_by_role("button", name="Yes, get this app back up!")
+              if boton.count():
+                  print("La app estaba dormida: se despierta")
+                  boton.first.click()
+                  pagina.wait_for_timeout(90_000)
+              else:
+                  print("La app estaba despierta")
+                  pagina.wait_for_timeout(20_000)

@@ -243,3 +243,8 @@ data/processed/resultados/escenario_realista/mejoras/pre_oni_14oct/
 
 # claves locales de Streamlit (la de produccion va en Settings > Secrets)
 .streamlit/secrets.toml
+
+# proyectos de edicion de los videos (fuentes y renders; los videos finales van en docs/video)
+video/
+video_2min/
+video_corto/

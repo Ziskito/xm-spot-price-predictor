@@ -1107,7 +1107,7 @@ for ref in (
         "features,\" en Adv. Neural Inf. Process. Syst. 31 (NeurIPS 2018), Montreal, Canadá, 2018.",
         "[39]\tXM S.A. E.S.P., \"Informes de despacho: predespacho ideal y despacho programado,\" biblioteca pública del portal "
         "xm.com.co. Consultado: oct. 2026.",
-        "[40]\tV. Vovk, A. Gammerman y G. Shafer, Algorithmic Learning in a Random World. Nueva York, NY, EE. UU.: Springer, 2005.",
+        "[40]\tV. Vovk, A. Gammerman y G. Shafer, Algorithmic Learning in a Random World, 2.ª ed. Cham, Suiza: Springer, 2022.",
         "[41]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 025 de 1995, por la cual se establece el Código de "
         "Redes,\" Bogotá, Colombia, 1995.",
         "[42]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 178 de 2015, por la cual se establecen medidas para "
@@ -1122,5 +1122,40 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto ([[completar enlace]]). El dashboard está "
     "publicado en augurpredictor.streamlit.app."))
 
+
+# ================================================================================================== numeracion IEEE
+def renumerar_citas(documento):
+    """IEEE numera por orden de primera cita; las [38]-[43] agregadas al final salian antes que otras. Renumera el texto
+    (incluidas tablas) y reordena la lista de referencias."""
+    def texto(p):
+        return "".join(t.text or "" for t in p.iter(qn("w:t")))
+    parrafos = list(documento.element.body.iter(qn("w:p")))
+    def con_tab(p):
+        return "".join((x.text or "") if x.tag == qn("w:t") else "\t" for x in p.iter() if x.tag in (qn("w:t"), qn("w:tab")))
+    es_ref = {id(p) for p in parrafos if re.match(r"\s*\[\d+\]\t", con_tab(p))}
+    refs = [p for p in parrafos if id(p) in es_ref]
+    orden = []
+    for p in parrafos:
+        if id(p) not in es_ref:
+            for n in re.findall(r"\[(\d+)\]", texto(p)):
+                if int(n) not in orden and int(n) <= len(refs):
+                    orden.append(int(n))
+    assert sorted(orden) == list(range(1, len(refs) + 1)), "hay referencias sin citar o citas sin referencia"
+    nuevo = {viejo: i + 1 for i, viejo in enumerate(orden)}
+    for p in parrafos:
+        for t in p.iter(qn("w:t")):
+            if t.text and "[" in t.text:
+                t.text = re.sub(r"\[(\d+)\]", lambda m: f"[{nuevo.get(int(m.group(1)), int(m.group(1)))}]", t.text)
+    ancla = refs[0].getprevious()
+    for p in refs:
+        p.getparent().remove(p)
+    for p in sorted(refs, key=lambda p: int(re.match(r"\[(\d+)\]", texto(p)).group(1))):
+        ancla.addnext(p)
+        ancla = p
+    return nuevo
+
+
+cambio = renumerar_citas(doc)
+print("Renumeradas:", {v: n for v, n in cambio.items() if v != n})
 doc.save(str(DESTINO))
 print("Guardado:", DESTINO)

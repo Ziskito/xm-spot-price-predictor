@@ -39,9 +39,7 @@ SECCIONES = [
               "vs. multivariate modeling frameworks,\" Energy Econ., vol. 70, pp. 396–420, 2018.",
          "doi: 10.1016/j.eneco.2017.12.016",
          "Explica el salto de medianoche: las 24 horas de un día salen de una sola subasta (bitácora del 18-sep). En el informe "
-         "se cita junto a Kapoor y Wichitaksorn para decir que los modelos simples compiten con el aprendizaje profundo; "
-         "ese uso conviene revisarlo, porque el paper compara marcos univariados y multivariados, no modelos simples contra "
-         "redes profundas."),
+         "respalda modelar el día como un vector de 24 horas (marcos multivariados)."),
         ("C", "J. Nowotarski y R. Weron, \"Computing electricity spot price prediction intervals using quantile regression "
               "and forecast averaging,\" Comput. Stat., vol. 30, no. 3, pp. 791–803, 2015.",
          "doi: 10.1007/s00180-014-0523-0",
@@ -56,7 +54,8 @@ SECCIONES = [
         ("C", "T. Chen y C. Guestrin, \"XGBoost: A scalable tree boosting system,\" en Proc. 22nd ACM SIGKDD, 2016, "
               "pp. 785–794.",
          "doi: 10.1145/2939672.2939785",
-         "Votante del ensamble de la primera etapa (notebook 06) y uno de los modelos del benchmark del escenario realista. En el informe final figura en la lista de referencias pero no se cita en el texto."),
+         "Votante del ensamble de la primera etapa (notebook 06) y uno de los modelos del benchmark del escenario realista. En el "
+         "informe, Solución 1 (ensamble de seis modelos)."),
         ("S", "G. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye y T.-Y. Liu, \"LightGBM: A highly efficient "
               "gradient boosting decision tree,\" en Adv. Neural Inf. Process. Syst. 30 (NIPS 2017), 2017.",
          "proceedings.neurips.cc (NIPS 2017)",
@@ -74,12 +73,12 @@ SECCIONES = [
               "exogenous variables: Forecasting electricity prices with NBEATSx,\" Int. J. Forecast., vol. 39, no. 2, "
               "pp. 884–900, 2023.",
          "doi: 10.1016/j.ijforecast.2022.03.001",
-         "N-BEATSx, votante del ensamble de la primera etapa (notebook 09). En el informe final figura en la lista de referencias pero no se cita en el texto."),
+         "N-BEATSx, votante del ensamble de la primera etapa (notebook 09). En el informe, Solución 1."),
         ("C", "C. Challu, K. G. Olivares, B. N. Oreshkin, F. Garza Ramírez, M. Mergenthaler Canseco y A. Dubrawski, "
               "\"NHITS: Neural hierarchical interpolation for time series forecasting,\" en Proc. AAAI, vol. 37, no. 6, "
               "2023, pp. 6989–6997.",
          "doi: 10.1609/aaai.v37i6.25854",
-         "N-HiTS, votante del ensamble de la primera etapa (notebook 09). En el informe final figura en la lista de referencias pero no se cita en el texto."),
+         "N-HiTS, votante del ensamble de la primera etapa (notebook 09). En el informe, Solución 1."),
         ("S", "B. N. Oreshkin, D. Carpov, N. Chapados y Y. Bengio, \"N-BEATS: Neural basis expansion analysis for "
               "interpretable time series forecasting,\" en Proc. ICLR, 2020.",
          "arXiv:1905.10437",
@@ -87,11 +86,12 @@ SECCIONES = [
         ("C", "T. Bollerslev, \"Generalized autoregressive conditional heteroskedasticity,\" J. Econometrics, vol. 31, "
               "no. 3, pp. 307–327, 1986.",
          "doi: 10.1016/0304-4076(86)90063-1",
-         "ARX+GARCH(1,1) (notebook 08). En el informe final figura en la lista de referencias pero no se cita en el texto."),
+         "ARX+GARCH(1,1) (notebook 08): varianza condicional del error y bandas propias; en el informe, Solución 1 (ensamble de seis modelos)."),
         ("C", "D. B. Nelson, \"Conditional heteroskedasticity in asset returns: A new approach,\" Econometrica, vol. 59, "
               "no. 2, pp. 347–370, 1991.",
          "doi: 10.2307/2938260",
-         "EGARCH: variantes asimétricas de GARCH probadas como votante (pronósticos EGARCH-t y EGARCH-skewt). En el informe final figura en la lista de referencias pero no se cita en el texto."),
+         "Introduce el EGARCH y la distribución de error generalizada (GED): base del votante GARCH-GED del ensamble de la "
+         "primera etapa (en el informe, Solución 1) y de las variantes EGARCH-t y EGARCH-skewt probadas después."),
         ("S", "S. J. Taylor y B. Letham, \"Forecasting at scale,\" Am. Stat., vol. 72, no. 1, pp. 37–45, 2018.",
          "doi: 10.1080/00031305.2017.1380080",
          "Prophet (notebook 04), el modelo más débil; descartado."),
@@ -139,8 +139,8 @@ SECCIONES = [
          "arXiv:1905.03222",
          "Inferencia conforme de las bandas [q10, q90]: q10 y q90 = q50·exp(∓m), con m el cuantil conforme de |log(y/q50)| de "
          "la misma hora en los 60 días anteriores ya publicados. También fija el criterio de cobertura (80 ± 5 %)."),
-        ("C", "V. Vovk, A. Gammerman y G. Shafer, Algorithmic Learning in a Random World. Nueva York: Springer, 2005.",
-         "doi: 10.1007/b106715",
+        ("C", "V. Vovk, A. Gammerman y G. Shafer, Algorithmic Learning in a Random World, 2.ª ed. Cham, Suiza: Springer, 2022.",
+         "doi: 10.1007/978-3-031-06649-8",
          "Fundamento de la predicción conforme; en el informe, junto a Romano et al., para las bandas por grupos (hora)."),
         ("S", "I. Gibbs y E. Candès, \"Adaptive conformal inference under distribution shift,\" en Adv. Neural Inf. "
               "Process. Syst. 34 (NeurIPS 2021), 2021.",
@@ -214,9 +214,6 @@ SECCIONES = [
          "doi: 10.1007/978-3-642-24412-4_16",
          "Trabajo futuro del informe: evaluar el criterio de estabilidad del motor con una formulación de bandits no "
          "estacionarios."),
-        ("S", "N. Cesa-Bianchi y G. Lugosi, Prediction, Learning, and Games. Cambridge: Cambridge Univ. Press, 2006.",
-         "doi: 10.1017/CBO9780511546921",
-         "Lectura pendiente según la bitácora: aprendizaje con expertos, alternativa continua a la selección de método."),
         ("L", "G. A. Singh, \"Regime-aware deep learning for financial forecasting: an adaptive short-term bias "
               "compensation framework for the Warsaw Stock Exchange,\" Expert Syst. Appl., vol. 332, art. 133584, 2027.",
          "doi: 10.1016/j.eswa.2026.133584",
@@ -230,9 +227,12 @@ SECCIONES = [
          "arXiv:1909.09020",
          "Pérdida de forma DILATE, probada contra el amortiguamiento en las rampas: recupera la amplitud pero pasa el error a "
          "la forma (49 % del error cuadrático), así que no se adoptó."),
-        ("S", "J. O. Ramsay y B. W. Silverman, Functional Data Analysis, 2.ª ed. Nueva York: Springer, 2005.",
-         "doi: 10.1007/b98888",
-         "FPCA de la curva diaria (probada como votante: peso cero, pero empata al ensamble en rampa fuerte)."),
+        ("S", "R. J. Hyndman y M. S. Ullah, \"Robust forecasting of mortality and fertility rates: A functional data "
+              "approach,\" Comput. Stat. Data Anal., vol. 51, no. 10, pp. 4942–4956, 2007.",
+         "doi: 10.1016/j.csda.2006.07.028",
+         "Método del análisis funcional de la curva diaria (fpca_hyndman_24h.py, vía Gallón y Barrientos): curva media más "
+         "componentes principales funcionales cuyos pesos se pronostican. Probado como votante: peso cero, pero empata al "
+         "ensamble en rampa fuerte."),
     ]),
     ("4. Procesamiento de señales (enfoque de Ingeniería Electrónica)", [
         ("C", "A. Savitzky y M. J. E. Golay, \"Smoothing and differentiation of data by simplified least squares "
@@ -327,12 +327,6 @@ SECCIONES = [
               "modelos autorregresivos,\" proyecto de grado, Ing. Electrónica, Univ. Santo Tomás, Bogotá, 2025.",
          "repository.usta.edu.co/items/d8dd82e6-6d1c-418d-915d-f035cef594d9",
          "El trabajo más comparable (mismo programa). Usa el precio del día anterior, que XM no publica a tiempo."),
-        ("L", "V. García del Villar, N. Verano Urueta y R. Ranauro Argumedo, \"Diseño de un modelo estadístico para la "
-              "predicción de los precios de bolsa de energía en Colombia,\" proyecto final, Univ. del Norte, 2020.",
-         "hdl.handle.net/10584/9283", "Antecedente de Uninorte (solo el póster es público)."),
-        ("L", "J. Sánchez y C. Noguera, \"Estimación del máximo precio ofertado en el mercado de energía mayorista "
-              "colombiano apoyado en IA,\" proyecto final, Univ. del Norte, 2024.",
-         "hdl.handle.net/10584/13009", "Antecedente de Uninorte sobre el MPO y el riesgo regulatorio."),
         ("L", "L. Herrera-Mejía, C. D. Hoyos, D. La Rotta, Y. Mejía y J. Castillo, \"Forecasting day-ahead hydropower bids in "
               "the Colombian electricity market: A two-stage machine learning framework,\" Smart Energy, vol. 21, art. 100221, "
               "2026.",
@@ -370,21 +364,31 @@ SECCIONES = [
               "liquidación TX1, TX2, TXR y TXF.",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/ee_2_9_2_3.htm",
          "Por qué el precio real llega con unos 3 días de rezago (corte del escenario realista)."),
-        ("L", "CREG, Resoluciones 071 de 2006, 140 de 2017 y 101 066 de 2024: precio de escasez y precio de "
-              "transacciones en bolsa (PTB).",
+        ("C", "CREG, \"Resolución CREG 178 de 2015, por la cual se establecen medidas para garantizar la prestación del "
+              "servicio público de energía eléctrica,\" Bogotá, 27 de octubre de 2015.",
+         "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0178_2015.htm",
+         "El «cambio regulatorio de 2015» del Anexo 1, parte transitoria: durante El Niño 2015-2016 fijó un piso al "
+         "precio de escasez y una opción para térmicas a combustibles líquidos, por seis meses (la Res. 052 de 2016 no la "
+         "prorrogó). En el informe (Ventana de datos), primera razón para excluir 2015-2016: el mercado operó con reglas "
+         "de excepción."),
+        ("C", "CREG, \"Resolución CREG 140 de 2017, por la cual se define el precio marginal de escasez del Cargo por "
+              "Confiabilidad y se hacen modificaciones a la Resolución CREG 071 de 2006,\" Bogotá, 2017.",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0140_2017.htm",
-         "Limitación: el PTB fue menor que el PBN en 360 horas de 2026. La 140 de 2017 (precio marginal de escasez, "
-         "vigente desde el 1-dic-2017) es además el cambio permanente que justifica empezar la serie después de 2017: "
-         "cambió la regla que activa la condición crítica y pone techo al precio que paga la demanda."),
+         "Precio marginal de escasez, vigente desde el 1-dic-2017: cambió la regla que activa la condición crítica y pone "
+         "techo al precio que paga la demanda. En el informe (Ventana de datos), segunda razón para empezar la serie en 2019."),
+        ("L", "CREG, Resoluciones 071 de 2006 y 101 066 de 2024: precio de escasez y precio de transacciones en bolsa (PTB).",
+         "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0071_2006.htm",
+         "Limitación: el PTB fue menor que el PBN en 360 horas de 2026."),
         ("C", "CREG, \"Resolución CREG 101 018 de 2022, por la cual se crea el Sistema de Información del Mercado de Energía "
               "Mayorista, SIMEM,\" Bogotá, 2022.", "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_101-18_2022.htm",
          "Crea el SIMEM: respalda el uso exclusivo de información pública de XM/SIMEM; el sistema no actúa como agente."),
         ("C", "Congreso de la República de Colombia, \"Ley Estatutaria 1581 de 2012, por la cual se dictan disposiciones "
               "generales para la protección de datos personales,\" Bogotá, Colombia, oct. 2012.", "—",
          "Restricción de diseño: el dashboard no recolecta ni almacena datos personales."),
-        ("C", "ISO 8601-1:2019, Date and time — Representations for information interchange — Part 1.", "—",
+        ("C", "ISO 8601-1:2019, Date and time — Representations for information interchange — Part 1: Basic rules.", "—",
          "Marcas de tiempo AAAA-MM-DD hh:mm:ss en hora legal de Colombia (UTC−5) para unir fuentes horarias, diarias y mensuales."),
-        ("C", "ISO/IEC 25010:2011, Systems and software Quality Requirements and Evaluation (SQuaRE).", "—",
+        ("C", "ISO/IEC 25010:2011, Systems and software engineering — Systems and software Quality Requirements and "
+              "Evaluation (SQuaRE) — System and software quality models.", "—",
          "Mantenibilidad: el motor lee el pronóstico por un contrato de datos (fuentes_pronostico.json) y no depende del modelo."),
         ("C", "ACIEM y Consejo Profesional Nacional de Ingenierías Eléctrica, Mecánica y Profesiones Afines, Manual de "
               "Referencia de Tarifas en Ingeniería. Cundinamarca, Colombia, 2015.", "—",
@@ -429,12 +433,6 @@ SECCIONES = [
               "Baltimore, MD, EE. UU.",
          "https://www.abet.org/accreditation/accreditation-criteria/criteria-for-accrediting-engineering-programs-2025-2026/",
          "Resultado SO2 (diseño en ingeniería): ítem 6 del Anexo 1 y estructura del informe final ABET."),
-        ("L", "CREG, \"Resolución CREG 178 de 2015, por la cual se establecen medidas para garantizar la prestación del "
-              "servicio público de energía eléctrica,\" Bogotá, 27 de octubre de 2015.",
-         "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0178_2015.htm",
-         "El «cambio regulatorio de 2015» del Anexo 1, parte transitoria: durante El Niño 2015-2016 fijó un piso al "
-         "precio de escasez y una opción para térmicas a combustibles líquidos, por seis meses (la Res. 052 de 2016 no la "
-         "prorrogó). Justifica excluir 2015-2016: el mercado operó con reglas de excepción."),
         ("L", "P. Villegas y H. A. Gómez, \"Medidas regulatorias posteriores a los fenómenos de El Niño 2015-2016 y 2023-2024 "
               "en Colombia, una mirada desde la confiabilidad,\" en XX ERIAC, CIGRE, Ciudad del Este, Paraguay, mayo de 2025.",
          "xm.com.co (Paper N.º 48, Comité C5)",

@@ -419,7 +419,8 @@ hr { border-color: $linea !important; }
 [class*="st-key-sec_dia_"] [data-testid="stVerticalBlock"], .st-key-sec_semana [data-testid="stVerticalBlock"] { gap: .45rem; }
 .pista-ley { font-size: .82rem; color: $texto; }
 /* exportar (encuesta 20-oct): botones discretos, objetivo >= 28 px, 8 px entre ellos, foco visible y estado ocupado */
-.exp-bar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; font-size: .8rem; color: $texto; margin: 0 0 4px; }
+.exp-bar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; font-size: .8rem; color: $texto; margin: 0 0 4px;
+           width: 100%; box-sizing: border-box; }
 .exp-bar button, .augur-rep { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; font: inherit; font-weight: 600;
   color: $tinta; background: $panel; border: 1px solid $control_borde; border-radius: 6px; padding: 3px 11px; cursor: pointer;
   transition: border-color .15s ease, background-color .15s ease; }
@@ -1390,10 +1391,11 @@ def exportar_js():
       }
       b.disabled = false; b.removeAttribute("aria-busy");
     }, true);
-    // una barra «Exportar» por grafica; Streamlit redibuja los elementos, asi que se revisa cada segundo y medio
+    // una barra «Exportar» por grafica; Streamlit redibuja los elementos, asi que se revisa cada segundo y medio.
+    // Va fuera del contenedor del elemento: adentro, su alto fijo (el de la figura) recortaba la leyenda de abajo (26-oct)
     setInterval(() => {
       d.querySelectorAll(".js-plotly-plot").forEach(gd => {
-        const cont = gd.closest('[data-testid="stPlotlyChart"]') || gd.parentElement;
+        const cont = gd.closest('[data-testid="stElementContainer"]') || gd.closest('[data-testid="stPlotlyChart"]') || gd.parentElement;
         const prev = cont.previousElementSibling;
         if (prev && prev.classList.contains("exp-bar")) return;
         const bar = d.createElement("div");
