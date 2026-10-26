@@ -317,6 +317,9 @@ hr { border-color: $linea !important; }
 .meta { font-size: .84rem; color: $texto; margin: -2px 0 18px; line-height: 1.5; }
 .meta b { color: $texto; font-weight: 600; }
 [data-testid="stRadio"] label p { color: $texto; }
+/* opcion no elegida: el circulo interior tomaba el fondo claro del tema base y en modo oscuro parecia marcado */
+[role="radiogroup"] label:has(input:not(:checked)) > div > div:first-child > div:has(> div:empty) { background-color: $gris; }
+[role="radiogroup"] label:has(input:not(:checked)) > div > div:first-child > div > div:empty { background-color: $panel; }
 
 [data-testid="stPlotlyChart"] { background: $panel; border: 1px solid $linea; border-radius: 10px;
                                 padding: 6px 6px 2px; box-shadow: $sombra; }
@@ -1470,8 +1473,9 @@ def grafico_precio(df, tk, titulo, alto=340, marca_x=None):
             continue
         sub = df[df["senal"] == senal]
         if len(sub):
+            # sobre el precio real si XM ya lo publico; si no (dias recientes y futuros), sobre el pronostico
             fig.add_trace(go.Scatter(
-                x=sub["fecha_hora"], y=sub["real"], mode="markers", name=etiqueta.capitalize(),
+                x=sub["fecha_hora"], y=sub["real"].fillna(sub["q50"]), mode="markers", name=etiqueta.capitalize(),
                 marker=dict(color=tk[color], size=7), hoverinfo="skip",
             ))
     if marca_x is not None:
@@ -1745,8 +1749,9 @@ def grafico_calor(df, dias, horas, dia_sel, hora_sel, modo, tk):
     fig = estilo_figura(fig, tk, alto, f"Mapa de calor día-hora · {modo.lower()}", margen_leyenda=60, fechas=False)
     fig.update_layout(hovermode="closest", yaxis_title=None, xaxis_title="Hora del día")
     fig.update_xaxes(dtick=1 if len(horas) <= 12 else 2, showgrid=False, range=[horas[0] - 0.5, horas[-1] + 0.5])
+    # una etiqueta por dia hasta 40 dias (con nticks Plotly saltaba dias: con 3 dias se veian 25/10 y 27/10, 26-oct)
     fig.update_yaxes(autorange="reversed", showgrid=False, type="category",
-                     nticks=min(len(dias), 40))
+                     **({"dtick": 1} if len(dias) <= 40 else {"nticks": 40}))
     return fig
 
 
@@ -1888,7 +1893,7 @@ with st.sidebar:
         est = json.loads((RAIZ / "data/processed/resultados/produccion/estado.json").read_text(encoding="utf-8"))
         st.caption(f"Actualizado {pd.Timestamp(est['actualizado']):%d/%m/%Y %H:%M} · precio real de XM hasta el "
                    f"{pd.Timestamp(est['precio_real_hasta']):%d/%m %H:%M} · pronóstico hasta el "
-                   f"{pd.Timestamp(est['pronostico_24h_hasta']):%d/%m %H:%M}")
+                   f"{pd.Timestamp(est.get('pronostico_72h_hasta' if horizonte == '72h' else 'pronostico_24h_hasta', est['pronostico_24h_hasta'])):%d/%m %H:%M}")
     except (OSError, ValueError, KeyError):
         pass
 
@@ -2389,8 +2394,10 @@ def vista_analista():
          "precio medio en horas de acción frente al promedio del periodo filtrado"),
         ("Frecuencia de acción", f"{es(resultado['frecuencia_accion'] * 100, 1)} %", "",
          "rango útil: 10 % a 40 % de las horas"),
+        # el backtest solo cuenta horas con precio real publicado: el periodo termina en la ultima de ellas
         ("Horas de acción", es(resultado['horas_accion']), "",
-         f"del {inicio:%d/%m/%Y} al {fin:%d/%m/%Y}"),
+         f"del {inicio:%d/%m/%Y} al {min(fin, base.loc[base['real'].notna(), 'fecha_hora'].max().date()) if base['real'].notna().any() else fin:%d/%m/%Y}, "
+         "con precio real publicado"),
     ]), unsafe_allow_html=True)
 
     sec_m = st.container(key="sec_metodos")
@@ -2598,14 +2605,19 @@ def vista_metodologia():
         ("4 · Motor de decisión",
          [r"U_b = \mathrm{P}_{25}(\text{precio}) \qquad U_a = \mathrm{P}_{75}(\text{precio})",
           r"\text{acci\'on}_h = \begin{cases} \text{favorable} & \hat{y}_h \text{ del lado bueno de } U \\ "
-          r"\text{desfavorable} & \hat{y}_h \text{ del lado malo de } U \\ \text{esperar} & \text{si no, o si } "
-          r"\dfrac{q_{90}-q_{10}}{\hat{y}_h} > \mathrm{P}_{75}(\text{anchos previos}) \end{cases}"],
+          r"\text{desfavorable} & \hat{y}_h \text{ del lado malo de } U \\ \text{esperar} & \text{en otro caso} "
+          r"\end{cases}",
+          # en una linea aparte: dentro de cases desbordaba la tarjeta (26-oct)
+          r"\text{esperar también si } \frac{q_{90}-q_{10}}{\hat{y}_h} > \mathrm{P}_{75}(\text{anchos previos})"],
          "Para el comercializador lo favorable es comprar si ŷ ≤ U<sub>b</sub>; para el generador, vender si "
          "ŷ ≥ U<sub>a</sub>. Los umbrales son fijos (2019-2025) o móviles (30 días) según el método. El filtro "
          "intradía deja la acción favorable solo en la mitad del día que el pronóstico pone a su favor."),
     ]
-    c1, c2 = sec3.columns(2, gap="medium")
+    # una fila de dos columnas por cada par de bloques: en pantallas angostas se apilan en orden 1, 2, 3, 4
+    # (con dos columnas para todo, quedaban 1, 3, 2, 4)
     for i, (tit, ecs, txt) in enumerate(bloques):
+        if i % 2 == 0:
+            c1, c2 = sec3.columns(2, gap="medium")
         caja = (c1 if i % 2 == 0 else c2).container(key=f"form_{i}")
         caja.markdown(f'<div class="t">{tit}</div>', unsafe_allow_html=True)
         for e in ecs:
@@ -2633,7 +2645,8 @@ def vista_metodologia():
         "- **Fuera de muestra y en orden.** Ventana creciente: el modelo de cada mes se entrena solo con meses "
         "anteriores, y el combinador y la banda solo con días ya publicados (margen de 5 días).\n"
         "- **Contra quién se compara.** Persistencia (el último precio publicado) y el predespacho ideal de XM.\n"
-        "- **Dónde.** Todo 2026 (24 h: MAE 33,7 COP/kWh; DM p < 0,001) y cinco años históricos, 2020-2025, "
+        "- **Dónde.** 2026, del 15 de enero al 5 de agosto (4.848 horas; 24 h: MAE 33,7 COP/kWh; DM p < 0,001) y "
+        "cinco años históricos, 2020-2025, "
         "donde supera al predespacho en todos.\n"
         "- **El motor.** Backtest hora a hora con el precio real; el método se elige por estabilidad entre las dos "
         "mitades del periodo, no por el mejor resultado.")
