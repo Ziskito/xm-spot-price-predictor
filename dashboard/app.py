@@ -726,6 +726,12 @@ def _mover_dia(paso, dias):
 ETQ_CORTA = {"vender": "VEN", "comprar": "COM", "retener": "RET", "evitar_compra": "EVI", "esperar": "ESP"}
 
 
+def color_riesgo(rol, tk):
+    """Colores de (desplome, pico): para el generador el pico es favorable (verde) y el desplome no (rojo);
+    para el comercializador, al reves (26-oct)."""
+    return (tk["verde"], tk["rojo"]) if rol == "comercializador" else (tk["rojo"], tk["verde"])
+
+
 def franja_botones(dia_df, hora_sel, tk):
     """Franja horaria clickeable: cada hora es un boton coloreado segun su senal;
     comparte estado con el deslizador de hora (session_state["hora_operador"])."""
@@ -758,8 +764,9 @@ def franja_botones(dia_df, hora_sel, tk):
         )
         # marca de riesgo de salto: triangulo hacia abajo (desplome) o hacia arriba (pico)
         pd_, pp_ = r.get("p_desplome", np.nan), r.get("p_pico", np.nan)
-        marca = ("▼", tk["rojo"]) if pd_ >= UMBRAL_ALERTA and pd_ >= pp_ else \
-                (("▲", tk["verde"]) if pp_ >= UMBRAL_ALERTA else None)
+        c_desp, c_pico = color_riesgo(rol, tk)
+        marca = ("▼", c_desp) if pd_ >= UMBRAL_ALERTA and pd_ >= pp_ else \
+                (("▲", c_pico) if pp_ >= UMBRAL_ALERTA else None)
         if marca:
             reglas.append(f'.st-key-hora_c_{h} {{ position:relative; }}'
                           f'.st-key-hora_c_{h}::after {{ content:"{marca[0]}"; position:absolute; top:-9px; '
@@ -1573,7 +1580,7 @@ def fechas_compactas(fig):
     return fig
 
 
-def grafico_dia(v, bajo_s, alto_s, tk):
+def grafico_dia(v, bajo_s, alto_s, tk, rol="generador"):
     """Pronostico de varios dias (el bloque cargado) con los umbrales del motor; el encuadre en el dia elegido y la
     linea de la hora se ponen despues (encuadrar), para que la base se pueda guardar en cache."""
     fig = go.Figure()
@@ -1584,8 +1591,9 @@ def grafico_dia(v, bajo_s, alto_s, tk):
     fig.add_trace(go.Scatter(x=v["fecha_hora"], y=bajo_s.reindex(v.index), name="Umbral barato",
                              line=dict(color=tk["verde"], width=1, dash="dash"),
                              hovertemplate="%{y:,.0f} COP/kWh"))
-    for col, simbolo, color, nombre in (("p_desplome", "triangle-down", tk["rojo"], "Posibilidad de desplome"),
-                                        ("p_pico", "triangle-up", tk["verde"], "Posibilidad de pico")):
+    c_desp, c_pico = color_riesgo(rol, tk)
+    for col, simbolo, color, nombre in (("p_desplome", "triangle-down", c_desp, "Posibilidad de desplome"),
+                                        ("p_pico", "triangle-up", c_pico, "Posibilidad de pico")):
         if col in v and (v[col] >= UMBRAL_ALERTA).any():
             m = v[v[col] >= UMBRAL_ALERTA]
             fig.add_trace(go.Scatter(x=m["fecha_hora"], y=m["q50"], mode="markers", name=nombre,
@@ -1631,7 +1639,7 @@ def base_dia(horizonte, rol, metodo, intradia, tema, b_ini, b_fin):
     df = serie_con_senal(horizonte, rol, metodo, intradia=intradia)
     bajo_s, alto_s = umbrales_serie(df, metodo, cargar_precio_historico(), 25, 75)
     v = df[(df["fecha_hora"] >= b_ini) & (df["fecha_hora"] < b_fin)]
-    return leyenda_en_columnas(sin_titulo(grafico_dia(v, bajo_s, alto_s, TEMAS[tema]))).to_dict()
+    return leyenda_en_columnas(sin_titulo(grafico_dia(v, bajo_s, alto_s, TEMAS[tema], rol))).to_dict()
 
 
 @st.cache_data(max_entries=24, show_spinner=False)
@@ -2037,8 +2045,9 @@ def vista_operador():
             resumen.append(f"posibilidad de desplome a las {', '.join(f'{h:02d}' for h in horas_d)} h")
         if horas_p:
             resumen.append(f"posibilidad de pico a las {', '.join(f'{h:02d}' for h in horas_p)} h")
-        chips = ("" if np.isnan(p_d) else chip_riesgo("&#9660; Posibilidad de desplome", p_d, "chip-baja") + " ") + \
-            ("" if np.isnan(p_p) else chip_riesgo("&#9650; Posibilidad de pico", p_p, "chip-alta"))
+        cl_d, cl_p = ("chip-alta", "chip-baja") if rol == "comercializador" else ("chip-baja", "chip-alta")
+        chips = ("" if np.isnan(p_d) else chip_riesgo("&#9660; Posibilidad de desplome", p_d, cl_d) + " ") + \
+            ("" if np.isnan(p_p) else chip_riesgo("&#9650; Posibilidad de pico", p_p, cl_p))
         nota = ("Es una probabilidad estimada, no una certeza: puede no ocurrir."
                 + (" Para el segundo y el tercer día del pronóstico solo se estima la de pico, y es menos confiable "
                    "que la del primer día." if bool(fila.get("solo_pico", False)) else ""))
@@ -2362,7 +2371,7 @@ def vista_analista():
         rango = bandas["fecha_hora"].dt.date
         fecha_min, fecha_max = rango.min(), rango.max()
         inicio, fin = st.slider("Rango de fechas", min_value=fecha_min, max_value=fecha_max,
-                                value=(fecha_min, fecha_max))
+                                value=(fecha_min, fecha_max), format="DD/MM/YYYY")
 
         st.toggle("Filtro intradía", key="filtro_intradia_w", value=INTRADIA, on_change=_guardar_intradia,
                   help=("Conserva cada señal solo en la mitad del día que le corresponde según el pronóstico: "
@@ -2437,15 +2446,19 @@ def vista_analista():
         elif filtro == "Solo esperar":
             vista_df = base[base["senal"] == "esperar"]
         # solo_pico es una marca interna del horizonte de 72 h (dias 2 y 3), no un dato para el usuario
-        st.dataframe(vista_df.drop(columns=["solo_pico"], errors="ignore"), width="stretch", hide_index=True,
+        # coma decimal y un decimal, como el resto de la app; las probabilidades en porcentaje. El Styler solo cambia
+        # lo que se muestra: al ordenar por columna se usa el numero
+        tabla = vista_df.drop(columns=["solo_pico"], errors="ignore").copy()
+        for c in ("p_desplome", "p_pico"):
+            if c in tabla:
+                tabla[c] = tabla[c] * 100
+        numeros = [c for c in ("real", "q10", "q50", "q90", "p_desplome", "p_pico") if c in tabla]
+        st.dataframe(tabla.style.format(precision=1, decimal=",", thousands=".", na_rep="", subset=numeros),
+                     width="stretch", hide_index=True,
                      column_config={"fecha_hora": st.column_config.DatetimeColumn("Fecha y hora", format="DD/MM/YYYY HH:mm"),
-                                    "real": st.column_config.NumberColumn("Real (COP/kWh)", format="%.1f"),
-                                    "q10": st.column_config.NumberColumn("q10 (COP/kWh)", format="%.1f"),
-                                    "q50": st.column_config.NumberColumn("q50 (COP/kWh)", format="%.1f"),
-                                    "q90": st.column_config.NumberColumn("q90 (COP/kWh)", format="%.1f"),
-                                    "senal": "Señal", "sin_umbral": "Sin umbral",
-                                    "p_desplome": st.column_config.NumberColumn("P(desplome)", format="percent"),
-                                    "p_pico": st.column_config.NumberColumn("P(pico)", format="percent")})
+                                    "real": "Real (COP/kWh)", "q10": "q10 (COP/kWh)", "q50": "q50 (COP/kWh)",
+                                    "q90": "q90 (COP/kWh)", "senal": "Señal", "sin_umbral": "Sin umbral",
+                                    "p_desplome": "P(desplome) %", "p_pico": "P(pico) %"})
         st.caption(f"{es(len(vista_df))} horas. Usa la lupa de la tabla para buscar y el botón de descarga para bajarla en CSV.")
 
 
@@ -2559,7 +2572,8 @@ def vista_metodologia():
          "<li>Filtro intradía: vender solo en la mitad más cara del día; retener, en la más barata.</li>"
          f"<li>De los cuatro métodos se usa el más estable en el backtest; hoy, «{metodo}» para el {rol}.</li></ul>"),
         ("Validación del informe final",
-         "<ul><li>Fuera de muestra, en 4.848 horas de 2026 y en cinco años históricos.</li>"
+         "<ul><li>Fuera de muestra, en las 5.184 horas del 1 de enero al 5 de agosto de 2026 y en cinco años "
+         "históricos.</li>"
          "<li>24 h: error medio de 33,7 COP/kWh (MAPE 10 %), 68 % menor que la persistencia y 11 % menor que el "
          "predespacho (prueba de Diebold-Mariano, p &lt; 0,001).</li>"
          "<li>72 h: 52,2 COP/kWh. Cobertura de la banda: 80,6 %.</li></ul>"),
@@ -2645,7 +2659,7 @@ def vista_metodologia():
         "- **Fuera de muestra y en orden.** Ventana creciente: el modelo de cada mes se entrena solo con meses "
         "anteriores, y el combinador y la banda solo con días ya publicados (margen de 5 días).\n"
         "- **Contra quién se compara.** Persistencia (el último precio publicado) y el predespacho ideal de XM.\n"
-        "- **Dónde.** 2026, del 15 de enero al 5 de agosto (4.848 horas; 24 h: MAE 33,7 COP/kWh; DM p < 0,001) y "
+        "- **Dónde.** 2026, del 1 de enero al 5 de agosto (5.184 horas; 24 h: MAE 33,7 COP/kWh; DM p < 0,001) y "
         "cinco años históricos, 2020-2025, "
         "donde supera al predespacho en todos.\n"
         "- **El motor.** Backtest hora a hora con el precio real; el método se elige por estabilidad entre las dos "
