@@ -29,6 +29,7 @@ ORIGEN = RAIZ / "docs" / "Informe_Avance_ABET_Barcelo_Dede.docx"
 DESTINO = RAIZ / "docs" / "Informe_Final_ABET_Barcelo_Dede.docx"
 FIG = AQUI / "informe_final_assets"
 C = json.loads((FIG / "cifras.json").read_text(encoding="utf-8"))
+TODO26 = json.loads((FIG / "cifras_todo2026.json").read_text(encoding="utf-8"))   # informe_final_todo2026.py
 shutil.copyfile(ORIGEN, DESTINO)
 doc = Document(str(DESTINO))
 body = doc.element.body
@@ -967,7 +968,11 @@ x = despues(cap10, plant, (
     f"{pc(OP['MAPE'])}), frente a {n(OP['MAE_pre'])} del predespacho solo; por mes, {n(OP['mensual']['2026-08'])} en agosto, "
     f"{n(OP['mensual']['2026-09'])} en septiembre y {n(OP['mensual']['2026-10'])} en lo corrido de octubre, meses más volátiles. "
     f"La banda cubrió el {pc(OP['cobertura'])} de las horas, por debajo del objetivo, porque se calibra con los 60 días "
-    "anteriores y el precio se volvió más volátil en septiembre y octubre."))
+    "anteriores y el precio se volvió más volátil en septiembre y octubre. Sumando el periodo del proyecto y la operación, "
+    f"en todo 2026 hasta el 11 de octubre ({n(TODO26['horas'], 0)} horas) el MAE es {n(TODO26['MAE'])} COP/kWh (MAPE "
+    f"{pc(TODO26['MAPE'])}), {pc((1 - TODO26['MAE'] / TODO26['MAE_pre']) * 100, 0)} menor que el del predespacho "
+    f"({n(TODO26['MAE_pre'])}; Diebold-Mariano t = {n(TODO26['DM_vs_pre'][0], 1)}, p < 0,001), y la banda cubre el "
+    f"{pc(TODO26['cobertura'])} de las horas: la ventaja sobre el predespacho se mantiene aun con los meses más volátiles."))
 x = despues(x, plant, (
     f"**Eventos.** El detector de picos y desplomes, con solo información pública, alcanza un AUC de "
     f"{n(EV[('desplome', 'clasificador realista')]['AUC'], 3)} para desplomes y {n(EV[('pico', 'clasificador realista')]['AUC'], 3)} "
@@ -1119,7 +1124,7 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Ziskito/xm-spot-price-predictor): formulación en docs/, "
     "código fuente en notebooks/, src/, dashboard/ y scripts_experimento/, y datos y predicciones en data/. El anexo 2 corresponde "
     "a docs/tabla_riesgos_proyecto.xlsx; el anexo 4, al manual de usuario (docs/Manual_Usuario_augur.pdf); el anexo 7, a la "
-    "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto ([[completar enlace]]). El dashboard está "
+    "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto (youtu.be/aOOvyiJHD24, también al inicio de la vista Metodología del dashboard). El dashboard está "
     "publicado en augurpredictor.streamlit.app."))
 
 

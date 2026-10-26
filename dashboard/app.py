@@ -2473,6 +2473,16 @@ def cargar_predespacho():
     return p.set_index("fecha_hora")["costo_marginal"]
 
 
+@st.cache_data(show_spinner=False)
+def cargar_predespacho_al_corte():
+    """Predespacho disponible al corte de cada pronostico, el que usa el modelo y la comparacion del informe final
+    (ensamble_con_predespacho_24h.alinear_2026): la hora 00:00 lleva el valor de las 23:00, porque el archivo de XM
+    con esa hora aun no se ha publicado."""
+    ruta = RAIZ / "data" / "processed" / "resultados" / "ensamble_24h_realista_2026.csv"
+    p = pd.read_csv(ruta, parse_dates=["fecha_hora"], usecols=["fecha_hora", "Predespacho"])
+    return p.set_index("fecha_hora")["Predespacho"]
+
+
 def grafico_error_diario(d, tk):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=d.index, y=d["pre"], name="Predespacho de XM", mode="lines+markers",
@@ -2564,6 +2574,15 @@ def vista_metodologia():
     ]
     sec2.markdown('<div class="flujo">' + "".join(f'<div class="paso"><div class="n">{a}</div><div class="d">{b}</div></div>'
                                                   for a, b in pasos) + "</div>", unsafe_allow_html=True)
+    # todo 2026 hasta el ultimo precio publicado (periodo oficial + operacion), calculado en vivo (Juan, 26-oct)
+    anio = serie_con_senal("24h", rol, metodo, intradia=INTRADIA)
+    anio = anio[anio["real"].notna()].copy()
+    # misma referencia del informe: el predespacho publicado al corte (en la hora 00:00, el de las 23:00 anteriores)
+    anio["pre"] = cargar_predespacho_al_corte().reindex(anio["fecha_hora"]).to_numpy()
+    con_pre = anio[anio["pre"].notna()]
+    mae_anio = (anio["q50"] - anio["real"]).abs().mean()
+    mejora_anio = (1 - (con_pre["q50"] - con_pre["real"]).abs().mean() / (con_pre["pre"] - con_pre["real"]).abs().mean()) * 100
+    cob_anio = ((anio["real"] >= anio["q10"]) & (anio["real"] <= anio["q90"])).mean() * 100
     fichas = [
         ("Cómo decide el motor",
          "<ul><li>Umbral barato y caro: percentiles 25 y 75 del precio (fijos sobre 2019-2025 o móviles sobre los "
@@ -2576,7 +2595,10 @@ def vista_metodologia():
          "históricos.</li>"
          "<li>24 h: error medio de 33,7 COP/kWh (MAPE 10 %), 68 % menor que la persistencia y 11 % menor que el "
          "predespacho (prueba de Diebold-Mariano, p &lt; 0,001).</li>"
-         "<li>72 h: 52,2 COP/kWh. Cobertura de la banda: 80,6 %.</li></ul>"),
+         "<li>72 h: 52,2 COP/kWh. Cobertura de la banda: 80,6 %.</li>"
+         f"<li>Todo 2026, con la operación diaria (1 de enero al {anio['fecha_hora'].max():%d/%m}, {es(len(anio))} "
+         f"horas): error medio de {es(mae_anio, 1)} COP/kWh, {es(mejora_anio, 0)} % menor que el predespacho; cobertura "
+         f"{es(cob_anio, 1)} %. Desde septiembre rigen las medidas de la Resolución CREG 101 127 de 2026.</li></ul>"),
         ("Limitaciones",
          "<ul><li>Es apoyo a la decisión, no asesoría financiera.</li>"
          "<li>El pronóstico de 24 h sale después de las 10:30 de la víspera: no sirve para la oferta de las 08:00.</li>"
