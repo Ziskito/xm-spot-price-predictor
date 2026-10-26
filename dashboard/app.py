@@ -356,10 +356,12 @@ hr { border-color: $linea !important; }
 .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700;
         letter-spacing: .06em; text-transform: uppercase; background: $neutro_bg; color: $tinta; }
 .st-key-sec_franja, .st-key-sec_calor, .st-key-sec_semana, .st-key-sec_datos, .st-key-sec_metodos, .st-key-sec_backtest,
-.st-key-sec_desempeno, .st-key-sec_metodo, .st-key-sec_formulas, .st-key-sec_acceso {
+.st-key-sec_desempeno, .st-key-sec_metodo, .st-key-sec_formulas, .st-key-sec_acceso, .st-key-sec_video {
   background: $panel; border: 1px solid $linea; border-radius: 12px; padding: 16px 18px 6px; box-shadow: $sombra;
   margin-bottom: 14px; }
 .st-key-sec_acceso { margin-top: 12vh; padding: 22px 24px 14px; }
+.st-key-sec_video [data-testid="stVideo"], .st-key-sec_video iframe { width: 100%; max-width: 960px; margin: 0 auto 10px; display: block;
+  border-radius: 8px; }
 .st-key-sec_acceso [data-baseweb="input"], .st-key-sec_acceso [data-baseweb="base-input"],
 .st-key-sec_acceso input { background: $control !important; color: $tinta !important; }
 .st-key-sec_acceso [data-baseweb="input"] { border: 1px solid $control_borde !important; }
@@ -2465,7 +2467,16 @@ def grafico_error_diario(d, tk):
     return fig
 
 
+VIDEO_AUGUR = "https://youtu.be/aOOvyiJHD24"   # video explicativo largo (3:58), no listado en YouTube
+
+
 def vista_metodologia():
+    # ---------------------------------------------------------------- video explicativo (Juan, 26-oct)
+    sec_v = st.container(key="sec_video")
+    sec_v.markdown('<div class="sec-tit">Cómo funciona Augur (4 min)</div><div class="sec-sub">Recorrido por las tres '
+                   'vistas de la plataforma: qué hacer ahora, cómo se evalúan las reglas del motor y qué tan bien le va al '
+                   'pronóstico.</div>', unsafe_allow_html=True)
+    sec_v.video(VIDEO_AUGUR)
     # ---------------------------------------------------------------- desempeno en vivo (pronostico de 24 h)
     sec = st.container(key="sec_desempeno")
     sec.markdown('<div class="sec-tit">Desempeño en vivo</div><div class="sec-sub">Qué tan bien le ha ido al pronóstico '
