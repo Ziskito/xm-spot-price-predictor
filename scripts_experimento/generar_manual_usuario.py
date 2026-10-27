@@ -328,7 +328,6 @@ table.compacta th, table.compacta td { padding: 1.5pt 5pt; white-space: nowrap; 
 """
 
 INDICE = [
-    ("", "CONTROL DE REVISIONES", 1),
     ("1", "INTRODUCCIÓN", 1),
     ("2", "ACCESO", 1), ("2.1", "Acceso web", 2), ("2.2", "Parámetros de la dirección", 2),
     ("3", "DESCRIPCIÓN DE LA INTERFAZ", 1), ("3.1", "Vista Operador", 2), ("3.2", "Vista Analista", 2), ("3.3", "Vista Metodología", 2), ("3.4", "Tema oscuro", 2),
@@ -340,7 +339,6 @@ INDICE = [
     ("5.3", "Filtro intradía", 2), ("5.4", "Método de umbral", 2), ("5.5", "Resultados y comparación de métodos", 2),
     ("5.6", "Datos filtrados", 2),
     ("6", "REFERENCIA DE SEÑALES Y SÍMBOLOS", 1),
-    ("7", "SOLUCIÓN DE PROBLEMAS", 1),
     ("", "ANEXO A. MODELO Y DATOS", 1),
 ]
 
@@ -381,15 +379,6 @@ def html(c, paginas):
  </div>
 </div>
 
-<h1 class="salto">Control de revisiones</h1>
-<div class="tit-tabla"><b>Tabla 1.</b> Historial de revisiones</div>
-<table><tr><th style="width:14mm">Rev.</th><th style="width:28mm">Fecha</th><th>Descripción</th><th style="width:44mm">Elaboró</th></tr>
-<tr><td>1.0</td><td>14/10/2026</td><td>Emisión inicial. Pronóstico de 24 h del escenario realista y detector de eventos realista.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.1</td><td>14/10/2026</td><td>Actualización diaria automática y pronóstico del día siguiente; versión del modelo en la barra lateral; fechas editables en el mapa de calor; la hora se conserva al cambiar de vista.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.2</td><td>15/10/2026</td><td>Interfaz rediseñada: tarjeta de recomendación con medidor, gráfica del día con botón Ampliar y variables que se ocultan o muestran desde la leyenda, franja horaria con precio y acción, tema oscuro de alto contraste y diseño adaptable a pantallas angostas.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.3</td><td>19/10/2026</td><td>Nombre oficial con mayúscula (Augur). Vista Metodología. Tema oscuro Pizarra. Controles de día reordenados con «Ir al último». Gráficas con acercamiento por Ctrl + rueda o pellizco, desplazamiento con dos dedos, botón Centrar, clic en una hora de la gráfica del día y carga de días vecinos. Números y fechas en formato colombiano. Leyenda propia del mapa de calor. Actualización diaria también al mediodía.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.4</td><td>23/10/2026</td><td>Picos y desplomes se presentan como <i>posibilidad</i>, no como certeza; en el horizonte de 72 h se estima la posibilidad de pico de los días 2 y 3. Exportación de cada gráfica y de la franja horaria en JPG y PDF; reporte del día y reporte completo en PDF. El mapa de calor abre con 3 días. Horas de la franja en formato 00:00. Unidades (COP/kWh) en umbrales, franja y tablas, y notas más visibles.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.5</td><td>27/10/2026</td><td>Video explicativo al inicio de la vista Metodología y validación de todo 2026. En la semana de referencia y en el backtest, las horas de acción de los días sin precio real se marcan sobre el pronóstico. Colores de ▼ y ▲ según el rol. Una etiqueta por día en el mapa de calor. Tabla de datos con coma decimal. Enlaces con día y hora (<code>dia</code>, <code>hora</code>).</td><td>J. Barceló, R. Dede</td></tr></table>
 <h2 class="salto">Contenido</h2>
 <div class="indice">{indice_html(paginas)}</div>
 
@@ -397,7 +386,7 @@ def html(c, paginas):
 <p>Augur es un tablero web que presenta el pronóstico horario del precio de bolsa de energía en Colombia, con su banda de
 incertidumbre del 80 %, y una recomendación de acción por hora generada por el motor de decisión. Este manual describe
 las funciones del tablero y su uso.</p>
-<div class="tit-tabla"><b>Tabla 2.</b> Roles y señales</div>
+<div class="tit-tabla"><b>Tabla 1.</b> Roles y señales</div>
 <table><tr><th>Rol</th><th>Acción favorable</th><th>Acción desfavorable</th><th>Neutra</th></tr>
 <tr><td>Generador</td><td>Vender</td><td>Retener</td><td>Esperar</td></tr>
 <tr><td>Comercializador</td><td>Comprar</td><td>Evitar compra</td><td>Esperar</td></tr></table>
@@ -409,7 +398,7 @@ motor sobre datos históricos; y <b>Metodología</b>, que muestra el desempeño 
 <p>El tablero está publicado en Streamlit Community Cloud en <code>https://augurpredictor.streamlit.app</code> y no requiere
 autenticación. La primera carga del día puede demorar hasta un minuto mientras se activa el servidor.</p>
 <h2>2.2 Parámetros de la dirección</h2>
-<div class="tit-tabla" style="text-align:left"><b>Tabla 3.</b> Parámetros de la dirección web</div>
+<div class="tit-tabla" style="text-align:left"><b>Tabla 2.</b> Parámetros de la dirección web</div>
 <table class="compacta"><tr><th>Parámetro</th><th>Efecto</th></tr>
 <tr><td><code>vista=operador | analista | metodologia</code></td><td>Vista inicial</td></tr>
 <tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial</td></tr>
@@ -418,7 +407,7 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 
 <h1 class="salto">3. Descripción de la interfaz</h1>
 <h2>3.1 Vista Operador</h2>
-{lado(fig("op_arriba_globos", 1, "Vista Operador (rol generador, horizonte 24 h)"), '''<div class="tit-tabla"><b>Tabla 4.</b> Elementos de la vista Operador</div>
+{lado(fig("op_arriba_globos", 1, "Vista Operador (rol generador, horizonte 24 h)"), '''<div class="tit-tabla"><b>Tabla 3.</b> Elementos de la vista Operador</div>
 <table class="compacta"><tr><th>N.º</th><th>Elemento</th><th>Sección</th></tr>
 <tr><td>1</td><td>Modo oscuro</td><td>—</td></tr>
 <tr><td>2</td><td>Vista</td><td>—</td></tr>
@@ -439,7 +428,7 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <tr><td>17</td><td>Exportar (JPG / PDF)</td><td>4.9</td></tr></table>
 <p class="nota-lado">Debajo se ubican el botón del reporte del día (4.9), la franja horaria (4.5), el mapa de calor (4.6), los indicadores (4.7), la semana de referencia (4.8) y el botón del reporte completo (4.9).</p>''', 69)}
 <h2 style="page-break-before:always">3.2 Vista Analista</h2>
-{lado(fig("an_todo_globos", 2, "Vista Analista"), '''<div class="tit-tabla"><b>Tabla 5.</b> Elementos de la vista Analista</div>
+{lado(fig("an_todo_globos", 2, "Vista Analista"), '''<div class="tit-tabla"><b>Tabla 4.</b> Elementos de la vista Analista</div>
 <table class="compacta"><tr><th>N.º</th><th>Elemento</th><th>Sección</th></tr>
 <tr><td>1</td><td>Tarjetas de resultado</td><td>5.5</td></tr>
 <tr><td>2</td><td>Comparación de métodos</td><td>5.5</td></tr>
@@ -461,13 +450,13 @@ banda, el motor y las métricas.</p>''', 44)}
 <h2 style="page-break-before:always">3.4 Tema oscuro</h2>
 {lado(fig("op_oscuro", 4, "Vista Operador con el tema oscuro"), '''<p>El interruptor <b>Modo oscuro</b> (1) cambia a un tema de fondo
 azul pizarra y alto contraste, pensado para salas de control, proyección y uso nocturno. Las señales conservan sus colores (verde, naranja y gris)
-y todas las funciones son las mismas que en el tema claro. El tema también se puede fijar desde la dirección web (Tabla 3).</p>
+y todas las funciones son las mismas que en el tema claro. El tema también se puede fijar desde la dirección web (Tabla 2).</p>
 <p>En pantallas de menos de 1200 px de ancho (tabletas o ventanas pequeñas), la tarjeta de recomendación y la gráfica del día se
 muestran una debajo de la otra.</p>''', 66)}
 
 <h1 class="salto">4. Funciones de la vista Operador</h1>
 <h2>4.1 Rol y horizonte</h2>
-<p><b>Rol</b> (3) define cómo se traduce el pronóstico en acciones (Tabla 2). <b>Horizonte de pronóstico</b> (4) selecciona el
+<p><b>Rol</b> (3) define cómo se traduce el pronóstico en acciones (Tabla 1). <b>Horizonte de pronóstico</b> (4) selecciona el
 pronóstico de 24 h, emitido a las 00:00 para la 01:00 a 00:00 siguientes, o el de 72 h. El recuadro <b>Modelo activo</b> (5) indica la
 versión del pronóstico y la cobertura medida de su banda; debajo se indica la fecha de la última actualización, hasta dónde llega el precio real
 publicado por XM y hasta dónde llega el pronóstico. Con el horizonte de 72 h, el primer día trae la posibilidad de pico y de desplome, y el
@@ -497,7 +486,7 @@ esa. <b>Ampliar</b> (16) abre la gráfica en una ventana grande.</p>''', 40)}
 <h2>4.5 Franja horaria</h2>
 {fig("op_franja", 7, "Franja horaria")}
 <p>Resume las 24 horas del día en dos filas. Cada casilla indica la hora (00:00 a 23:00), el precio esperado en COP/kWh y la acción abreviada
-(Tabla 9), con el color de la señal: verde, acción favorable; naranja, acción desfavorable; gris, esperar. Los símbolos ▼ y ▲ sobre una
+(Tabla 8), con el color de la señal: verde, acción favorable; naranja, acción desfavorable; gris, esperar. Los símbolos ▼ y ▲ sobre una
 casilla señalan posibilidad de desplome o de pico. Un clic en una casilla selecciona esa hora para la recomendación; la casilla
 seleccionada se resalta con un borde.</p>
 <h2>4.6 Mapa de calor día-hora</h2>
@@ -506,7 +495,7 @@ seleccionada se resalta con un borde.</p>
 calendario, y la barra se ajusta; <b>Colorear por</b> alterna entre <b>Señal del motor</b> y <b>Precio esperado</b>; con la señal
 del motor, la leyenda bajo el mapa indica el color de cada acción. El recuadro marca el día y la hora seleccionados.</p>''', 60)}
 <h2>4.7 Indicadores</h2>
-{lado(fig("op_indicadores", 9, "Indicadores"), '''<div class="tit-tabla"><b>Tabla 6.</b> Indicadores de la vista Operador</div>
+{lado(fig("op_indicadores", 9, "Indicadores"), '''<div class="tit-tabla"><b>Tabla 5.</b> Indicadores de la vista Operador</div>
 <table><tr><th style="width:38mm">Indicador</th><th>Contenido</th></tr>
 <tr><td>Horas para actuar hoy</td><td>Horas del día con acción favorable; barras de los últimos 14 días.</td></tr>
 <tr><td>Ventaja histórica de la regla</td><td>Diferencia entre el precio medio de las horas de acción y el promedio del periodo en el backtest de 2026 (COP/kWh); serie mensual.</td></tr>
@@ -526,7 +515,7 @@ la versión del modelo. El JPG sirve para presentaciones y el PDF es una hoja ho
 {lado(fig("reporte_dia_p1", 12, "Primera página del reporte del día"), '''<p><b>Reporte del día (PDF)</b>, bajo la gráfica del día,
 arma un documento de tres páginas con el día, la hora y el rol elegidos. <b>Descargar reporte completo (PDF)</b>, al final de la vista
 Operador, agrega el mapa de calor (con el rango y el color elegidos), los indicadores y la semana.</p>
-<div class="tit-tabla" style="text-align:left"><b>Tabla 7.</b> Contenido de los reportes en PDF</div>
+<div class="tit-tabla" style="text-align:left"><b>Tabla 6.</b> Contenido de los reportes en PDF</div>
 <table class="compacta"><tr><th>Sección</th><th>Del día</th><th>Completo</th></tr>
 <tr><td>Recomendación y cifras clave</td><td>Sí</td><td>Sí</td></tr>
 <tr><td>Pronóstico del día (figura)</td><td>Sí</td><td>Sí</td></tr>
@@ -550,7 +539,7 @@ no cambia.</p>
 <p><b>Filtro intradía</b> (7) conserva la acción favorable solo en la mitad del día que el pronóstico ubica más cara (generador) o más
 barata (comercializador). Activo por defecto.</p>
 <h2>5.4 Método de umbral</h2>
-<div class="tit-tabla"><b>Tabla 8.</b> Métodos de umbral</div>
+<div class="tit-tabla"><b>Tabla 7.</b> Métodos de umbral</div>
 <table><tr><th style="width:22mm">Método</th><th>Umbrales</th></tr>
 <tr><td>fijo</td><td>Percentiles del precio histórico 2019-2025.</td></tr>
 <tr><td>rodante</td><td>Percentiles del pronóstico de los 30 días anteriores.</td></tr>
@@ -569,7 +558,7 @@ evento, con las cifras en COP/kWh con un decimal y las probabilidades en porcent
 admite búsqueda, ordenamiento y descarga en CSV.</p>
 
 <h1>6. Referencia de señales y símbolos</h1>
-<div class="tit-tabla"><b>Tabla 9.</b> Señales y símbolos</div>
+<div class="tit-tabla"><b>Tabla 8.</b> Señales y símbolos</div>
 <table><tr><th style="width:44mm">Elemento</th><th>Significado</th></tr>
 <tr><td>Verde</td><td>Vender (generador) o comprar (comercializador).</td></tr>
 <tr><td>Naranja</td><td>Retener (generador) o evitar compra en bolsa (comercializador).</td></tr>
@@ -586,19 +575,6 @@ admite búsqueda, ordenamiento y descarga en CSV.</p>
 <tr><td>Ctrl + rueda / pellizco</td><td>Acerca o aleja la gráfica; doble clic restablece el encuadre.</td></tr>
 <tr><td>Exportar: JPG · PDF</td><td>Descarga la gráfica o la franja (4.9).</td></tr>
 <tr><td>Reporte del día / completo</td><td>Descarga el reporte en PDF (4.9).</td></tr></table>
-
-<h1>7. Solución de problemas</h1>
-<div class="tit-tabla"><b>Tabla 10.</b> Síntoma, causa y acción</div>
-<table><tr><th style="width:46mm">Síntoma</th><th style="width:56mm">Causa probable</th><th>Acción</th></tr>
-<tr><td>Página en blanco o en carga.</td><td>Servidor en activación.</td><td>Esperar y recargar.</td></tr>
-<tr><td>«No pude cargar la fuente de pronóstico».</td><td>Falta el archivo indicado en <code>fuentes_pronostico.json</code>.</td><td>Restaurar el repositorio completo.</td></tr>
-<tr><td>Día no seleccionable.</td><td>Día sin las 24 horas pronosticadas.</td><td>Seleccionar otro día.</td></tr>
-<tr><td>Sin precio real en los últimos días.</td><td>XM publica el precio con unos 3 días de rezago.</td><td>Ninguna; se completa en las actualizaciones siguientes.</td></tr>
-<tr><td>El pronóstico no llega a mañana.</td><td>XM aún no publica el predespacho del día siguiente o la actualización no ha corrido.</td><td>Consultar después del mediodía.</td></tr>
-<tr><td>Sin marcadores ▼ en el segundo o tercer día (72 h).</td><td>A 72 h solo se estima la posibilidad de pico de esos días.</td><td>Ninguna; es lo esperado.</td></tr>
-<tr><td>La descarga no inicia.</td><td>El navegador bloquea las descargas del sitio o el archivo aún se genera.</td><td>Esperar a que el botón deje de decir «Generando…» y permitir las descargas.</td></tr>
-<tr><td>Una variable no aparece en la gráfica.</td><td>Se ocultó con un clic en la leyenda.</td><td>Clic de nuevo en su nombre o doble clic sobre la leyenda.</td></tr>
-<tr><td>Aviso ⚠ en la recomendación.</td><td>Ningún método estable para el rol y horizonte.</td><td>Revisar la comparación de métodos (5.5).</td></tr></table>
 
 <h1 class="salto">Anexo A. Modelo y datos</h1>
 <div class="anexo">
@@ -700,8 +676,6 @@ def paginas_de(pdf_ruta):
             if clave in t:
                 paginas[tit] = i
                 break
-        if tit == "CONTROL DE REVISIONES":
-            paginas[tit] = 2
     return paginas
 
 
