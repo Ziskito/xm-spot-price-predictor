@@ -33,11 +33,14 @@ EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 PUERTO = 8599
 PDF = DOCS / "Manual_Usuario_augur.pdf"
 
+# rev. 1.5: el dia y la hora van fijos en la URL (?dia=&hora=), los mismos de las figuras del informe final, para que
+# las capturas sean reproducibles; Metodologia, mas alta por el video que va arriba
+DIA_CAPTURA = "dia=2026-10-23&hora=8"
 CAPTURAS = {  # nombre: (parametros de la URL, alto de la ventana)
-    "operador_generador": ("vista=operador&tema=claro", 3600),
-    "operador_oscuro": ("vista=operador&tema=oscuro", 1100),
+    "operador_generador": (f"vista=operador&tema=claro&{DIA_CAPTURA}", 3600),
+    "operador_oscuro": (f"vista=operador&tema=oscuro&{DIA_CAPTURA}", 1100),
     "analista": ("vista=analista&tema=claro", 2000),
-    "metodologia": ("vista=metodologia&tema=claro", 1500),
+    "metodologia": ("vista=metodologia&tema=claro", 2400),
 }
 ESCALA = 1.5
 
@@ -163,8 +166,8 @@ def img(nombre, ancho="100%", pie=""):
 
 
 DOC = "MU-AUG-001"
-REV = "1.4"
-FECHA = "23 de octubre de 2026"
+REV = "1.5"
+FECHA = "27 de octubre de 2026"
 
 # globos numerados (coordenadas en pixeles del recorte, calculadas con las cajas de cada elemento). Los de la barra
 # lateral (x < 200) van en un margen blanco a la izquierda de la figura, con linea guia hasta la etiqueta; los demas,
@@ -385,7 +388,8 @@ def html(c, paginas):
 <tr><td>1.1</td><td>14/10/2026</td><td>Actualización diaria automática y pronóstico del día siguiente; versión del modelo en la barra lateral; fechas editables en el mapa de calor; la hora se conserva al cambiar de vista.</td><td>J. Barceló, R. Dede</td></tr>
 <tr><td>1.2</td><td>15/10/2026</td><td>Interfaz rediseñada: tarjeta de recomendación con medidor, gráfica del día con botón Ampliar y variables que se ocultan o muestran desde la leyenda, franja horaria con precio y acción, tema oscuro de alto contraste y diseño adaptable a pantallas angostas.</td><td>J. Barceló, R. Dede</td></tr>
 <tr><td>1.3</td><td>19/10/2026</td><td>Nombre oficial con mayúscula (Augur). Vista Metodología. Tema oscuro Pizarra. Controles de día reordenados con «Ir al último». Gráficas con acercamiento por Ctrl + rueda o pellizco, desplazamiento con dos dedos, botón Centrar, clic en una hora de la gráfica del día y carga de días vecinos. Números y fechas en formato colombiano. Leyenda propia del mapa de calor. Actualización diaria también al mediodía.</td><td>J. Barceló, R. Dede</td></tr>
-<tr><td>1.4</td><td>23/10/2026</td><td>Picos y desplomes se presentan como <i>posibilidad</i>, no como certeza; en el horizonte de 72 h se estima la posibilidad de pico de los días 2 y 3. Exportación de cada gráfica y de la franja horaria en JPG y PDF; reporte del día y reporte completo en PDF. El mapa de calor abre con 3 días. Horas de la franja en formato 00:00. Unidades (COP/kWh) en umbrales, franja y tablas, y notas más visibles.</td><td>J. Barceló, R. Dede</td></tr></table>
+<tr><td>1.4</td><td>23/10/2026</td><td>Picos y desplomes se presentan como <i>posibilidad</i>, no como certeza; en el horizonte de 72 h se estima la posibilidad de pico de los días 2 y 3. Exportación de cada gráfica y de la franja horaria en JPG y PDF; reporte del día y reporte completo en PDF. El mapa de calor abre con 3 días. Horas de la franja en formato 00:00. Unidades (COP/kWh) en umbrales, franja y tablas, y notas más visibles.</td><td>J. Barceló, R. Dede</td></tr>
+<tr><td>1.5</td><td>27/10/2026</td><td>Video explicativo al inicio de la vista Metodología y validación de todo 2026. En la semana de referencia y en el backtest, las horas de acción de los días sin precio real se marcan sobre el pronóstico. Colores de ▼ y ▲ según el rol. Una etiqueta por día en el mapa de calor. Tabla de datos con coma decimal. Enlaces con día y hora (<code>dia</code>, <code>hora</code>).</td><td>J. Barceló, R. Dede</td></tr></table>
 <h2 class="salto">Contenido</h2>
 <div class="indice">{indice_html(paginas)}</div>
 
@@ -409,6 +413,7 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <table class="compacta"><tr><th>Parámetro</th><th>Efecto</th></tr>
 <tr><td><code>vista=operador | analista | metodologia</code></td><td>Vista inicial</td></tr>
 <tr><td><code>tema=claro | oscuro</code></td><td>Tema inicial</td></tr>
+<tr><td><code>dia=AAAA-MM-DD</code>, <code>hora=0 a 23</code></td><td>Día y hora iniciales de la vista Operador</td></tr>
 <tr><td><code>?vista=analista&amp;tema=oscuro</code></td><td>Ejemplo combinado</td></tr></table>
 
 <h1 class="salto">3. Descripción de la interfaz</h1>
@@ -445,13 +450,14 @@ autenticación. La primera carga del día puede demorar hasta un minuto mientras
 <tr><td>7</td><td>Filtro intradía</td><td>5.3</td></tr>
 <tr><td>8</td><td>Método de umbral</td><td>5.4</td></tr></table>''', 56)}
 <h2 style="page-break-before:always">3.3 Vista Metodología</h2>
-{lado(fig("met_arriba", 3, "Vista Metodología: desempeño en vivo"), '''<p>Presenta, sin controles adicionales, cómo le ha ido al
-pronóstico de 24 h y cómo funciona. <b>Desempeño en vivo</b> compara el pronóstico con el precio real que XM ya publicó (últimos
+{lado(fig("met_arriba", 3, "Vista Metodología: video y desempeño en vivo"), '''<p>Presenta, sin controles adicionales, cómo le ha ido al
+pronóstico de 24 h y cómo funciona. Arriba, <b>Cómo funciona Augur (4 min)</b> reproduce el video explicativo de la plataforma.
+<b>Desempeño en vivo</b> compara el pronóstico con el precio real que XM ya publicó (últimos
 30 días o todo 2026): error del pronóstico y del predespacho ideal de XM, mejora frente a ese predespacho, porcentaje de horas en que
 el precio real cayó dentro de la banda y acierto de las recomendaciones, con la gráfica del error de cada día.</p>
 <p>Debajo, <b>Cómo funciona</b> resume el flujo (datos públicos, corte a las 00:00, pronóstico, incertidumbre y motor), cómo decide
-el motor, la validación del informe final y las limitaciones, y <b>Fórmulas y validación</b> presenta las ecuaciones del pronóstico, la
-banda, el motor y las métricas.</p>''', 60)}
+el motor, la validación del informe final (con una línea de todo 2026 que se actualiza cada día) y las limitaciones, y <b>Fórmulas y validación</b> presenta las ecuaciones del pronóstico, la
+banda, el motor y las métricas.</p>''', 44)}
 <h2 style="page-break-before:always">3.4 Tema oscuro</h2>
 {lado(fig("op_oscuro", 4, "Vista Operador con el tema oscuro"), '''<p>El interruptor <b>Modo oscuro</b> (1) cambia a un tema de fondo
 azul pizarra y alto contraste, pensado para salas de control, proyección y uso nocturno. Las señales conservan sus colores (verde, naranja y gris)
@@ -507,7 +513,7 @@ del motor, la leyenda bajo el mapa indica el color de cada acción. El recuadro 
 <tr><td>Con qué frecuencia actúa</td><td>Porcentaje de horas con acción favorable; serie mensual. Rango útil: 10 % a 40 %. La barra inferior reparte el periodo entre acción favorable, desfavorable y esperar.</td></tr></table>''', 55)}
 <h2>4.8 Semana de referencia</h2>
 {lado(fig("op_semana", 10, "Semana de referencia"), '''<p>Compara el precio real con el pronóstico en siete días alrededor del día seleccionado (si este es de los últimos, la semana se
-corre hacia atrás), con las horas de acción marcadas. Admite los mismos gestos de la gráfica del día (4.4), la barra de herramientas
+corre hacia atrás), con las horas de acción marcadas: sobre el precio real si XM ya lo publicó y, si no, sobre el pronóstico. Admite los mismos gestos de la gráfica del día (4.4), la barra de herramientas
 de la gráfica al pasar el cursor y la consulta de valores; las variables se ocultan o muestran desde la leyenda.</p>''', 62)}
 <h2 style="page-break-before:always">4.9 Exportar gráficas y reportes</h2>
 {lado(fig("export_jpg", 11, "Gráfica del día exportada en JPG"), '''<p>Sobre cada gráfica y sobre la franja horaria aparece la barra
@@ -559,7 +565,7 @@ pronóstico, la banda y las señales del método en el rango elegido. Abre en lo
 variables se ocultan o muestran desde la leyenda.</p>
 <h2>5.6 Datos filtrados</h2>
 <p><b>Ver datos filtrados</b> (4) despliega la tabla horaria del rango: precio real, cuantiles del pronóstico, señal y probabilidades de
-evento, con las cifras en COP/kWh. El selector <b>Mostrar</b> deja todas las horas o solo las de una señal (acción favorable, desfavorable o esperar). La tabla
+evento, con las cifras en COP/kWh con un decimal y las probabilidades en porcentaje. El selector <b>Mostrar</b> deja todas las horas o solo las de una señal (acción favorable, desfavorable o esperar). La tabla
 admite búsqueda, ordenamiento y descarga en CSV.</p>
 
 <h1>6. Referencia de señales y símbolos</h1>
@@ -570,8 +576,8 @@ admite búsqueda, ordenamiento y descarga en CSV.</p>
 <tr><td>Gris</td><td>Esperar.</td></tr>
 <tr><td>VEN / COM / RET / EVI / ESP</td><td>Vender, comprar, retener, evitar compra y esperar (abreviaturas de la franja horaria).</td></tr>
 <tr><td>Favorable / desfavorable / neutral</td><td>Insignia de la tarjeta de recomendación.</td></tr>
-<tr><td>▼</td><td>Posibilidad de desplome de 30 % o más (precio ≤ 0,7 × mediana del día).</td></tr>
-<tr><td>▲</td><td>Posibilidad de pico de 30 % o más (precio ≥ 1,3 × mediana del día).</td></tr>
+<tr><td>▼</td><td>Posibilidad de desplome de 30 % o más (precio ≤ 0,7 × mediana del día). Naranja para el generador; verde para el comercializador.</td></tr>
+<tr><td>▲</td><td>Posibilidad de pico de 30 % o más (precio ≥ 1,3 × mediana del día). Verde para el generador; naranja para el comercializador.</td></tr>
 <tr><td>⚠</td><td>Ningún método fue estable en el backtest.</td></tr>
 <tr><td>Confianza alta / media / baja</td><td>Ancho relativo de la banda frente a las horas anteriores.</td></tr>
 <tr><td>Línea vertical (gráficas)</td><td>Hora seleccionada.</td></tr>

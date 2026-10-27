@@ -1933,7 +1933,15 @@ def vista_operador():
     # se dibuja, p. ej. al pasar por la vista Analista) y se acota al rango del horizonte activo
     elegido = st.session_state.get("dia_operador", st.session_state.get("_copia_dia_operador"))
     if elegido is None:
-        st.session_state["dia_operador"] = dia_max
+        # al abrir la pagina, ?dia=AAAA-MM-DD (y ?hora=H) eligen el dia y la hora: enlaces a un dia concreto y capturas
+        # reproducibles del informe y del manual (27-oct)
+        try:
+            pedido = pd.Timestamp(st.query_params["dia"]).date()
+            st.session_state["dia_operador"] = min(max(pedido, dia_min), dia_max)
+            if "hora" in st.query_params and "hora_operador" not in st.session_state:
+                st.session_state["hora_operador"] = int(min(max(int(st.query_params["hora"]), 0), 23))
+        except (KeyError, ValueError):
+            st.session_state["dia_operador"] = dia_max
     elif not dia_min <= elegido <= dia_max:
         st.session_state["dia_operador"] = min(max(elegido, dia_min), dia_max)
     elif "dia_operador" not in st.session_state:
