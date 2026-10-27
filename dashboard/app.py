@@ -2465,14 +2465,6 @@ def vista_analista():
 # ==========================================================================
 # VISTA METODOLOGIA: desempeno en vivo y como funciona
 # ==========================================================================
-@st.cache_data
-def cargar_predespacho():
-    """Predespacho ideal de XM (costo marginal del iMAR), la referencia que publica XM la vispera."""
-    ruta = RAIZ / "data" / "processed" / "predespacho_ideal_xm.csv"
-    p = pd.read_csv(ruta, parse_dates=["fecha_hora"], usecols=["fecha_hora", "costo_marginal"])
-    return p.set_index("fecha_hora")["costo_marginal"]
-
-
 @st.cache_data(show_spinner=False)
 def cargar_predespacho_al_corte():
     """Predespacho disponible al corte de cada pronostico, el que usa el modelo y la comparacion del informe final
@@ -2517,7 +2509,7 @@ def vista_metodologia():
     _, metodo, _ = comparacion_estable("24h", rol, INTRADIA)
     df = serie_con_senal("24h", rol, metodo, intradia=INTRADIA)
     df = df[df["real"].notna()].copy()
-    df["pre"] = cargar_predespacho().reindex(df["fecha_hora"]).to_numpy()
+    df["pre"] = cargar_predespacho_al_corte().reindex(df["fecha_hora"]).to_numpy()   # misma referencia del informe
     if periodo == "Últimos 30 días":
         df = df[df["fecha_hora"] > df["fecha_hora"].max() - pd.Timedelta(days=30)]
     df = df[df["pre"].notna()]
