@@ -5,8 +5,8 @@
     "eventos": "probabilidades_eventos_24h_realista_2026.csv",
     "calibrado": true,
     "cobertura_objetivo_pct": 80,
-    "cobertura_medida_pct": 78.5,
-    "generado": "2026-10-28",
+    "cobertura_medida_pct": 78.6,
+    "generado": "2026-10-29",
     "notebook_origen": "scripts_experimento/pronostico_realista_24h.py",
     "notas": "Solo usa lo que XM y NOAA ya publicaron a las 00:00 del dia (precio con ~3 dias de rezago). Configuracion anterior (ensamble de 7, escenario optimista) en fuentes_pronostico_optimista.json."
   },
@@ -15,8 +15,8 @@
     "modelo": "Escenario realista: pasos 1-24 = pronostico realista de 24 h; pasos 25-72 = predespacho del dia del corte + promedio de 3 CatBoost por horizonte reentrenados cada mes (combinador causal, objetivo MAE) + bandas conformes por hora en escala log (60 dias)",
     "calibrado": true,
     "cobertura_objetivo_pct": 80,
-    "cobertura_medida_pct": 81.7,
-    "generado": "2026-10-28",
+    "cobertura_medida_pct": 81.8,
+    "generado": "2026-10-29",
     "notebook_origen": "scripts_experimento/pronostico_realista_72h.py",
     "notas": "Solo usa lo publicado a las 00:00 del dia del corte. Contrato anterior (escenario optimista) en fuentes_pronostico_optimista.json."
   }
