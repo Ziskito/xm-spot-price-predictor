@@ -66,7 +66,7 @@ def main():
     print(f"2) dataset_maestro_2026.csv parchado: 48 filas (columna 'demanda' unicamente)")
 
     # ---------- 3) dataset_features_2026.csv ----------
-    # Se recalculan demanda_lag24h/48h/72h/media_24h con la MISMA formula de 05_features_compartidas
+    # Se recalculan demanda_lag24h/48h/72h/media_24h con la MISMA formula de 05_features_compartidas (hoy notebooks/02b_features_compartidas_juan.ipynb)
     # (H=24), usando una serie continua construida a partir del maestro 2019-2025 (intacto) + el
     # 2026 ya corregido, exactamente como hace el notebook (concatena antes de derivar).
     m25 = pd.read_csv(RAIZ / "data/processed/dataset_maestro_2019_2025.csv", parse_dates=["fecha_hora"])

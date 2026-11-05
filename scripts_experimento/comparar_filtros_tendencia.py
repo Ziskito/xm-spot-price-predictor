@@ -2,7 +2,7 @@
 """
 Comparacion de filtros de tendencia frente al Savitzky-Golay de la caracterizacion (OE1).
 
-Metricas, las mismas del notebook 03 (sin modificarlo) mas una de suavizado:
+Metricas, las mismas del notebook 03 original (antes del 5-nov-2026; esta en el historial de git) mas una de suavizado:
   * retraso: horas hasta que la tendencia alcanza el 90 % de la subida de El Nino 2023-2024,
     contadas desde 60 dias antes del pico del tramo jun-2023 a mar-2024 (notebook 03, celda 29);
   * residuo: desviacion estandar de precio - tendencia (notebook 03, celda 29);

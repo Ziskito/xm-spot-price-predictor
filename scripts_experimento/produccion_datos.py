@@ -15,6 +15,7 @@ a data/produccion/ y se une al oficial solo para pronosticar (maestro_produccion
     con la marca a_tiempo (archivo creado y modificado antes de las 23:00 del dia anterior; validar_predespacho_ideal.py)
 Uso: python produccion_datos.py   (lo llama actualizar_produccion.py)
 """
+import os
 import sys
 from pathlib import Path
 
@@ -34,6 +35,12 @@ SERIE = PROD / "serie_xm.csv"
 ONI = PROD / "oni_index.csv"
 INICIO = pd.Timestamp("2026-08-06")              # primera hora despues del dataset oficial
 TEMP = ad.TEMP
+# demanda del ultimo dia publicado: XM la publica incompleta (~25 % del valor; 22 de 22 corridas del 11-oct al 4-nov) y se
+# completa al dia siguiente. Con AUGUR_COMPLETAR_DEMANDA=1, maestro_produccion() la reemplaza por la generacion del mismo
+# dia por la razon demanda/generacion de los 30 dias completos anteriores. Apagado por defecto (en prueba, 5-nov-2026;
+# backtest en realista_exp_demanda_parcial.py).
+COMPLETAR_DEMANDA = os.environ.get("AUGUR_COMPLETAR_DEMANDA") == "1"
+RAZON_PARCIAL = 0.9
 
 
 def hoy():
@@ -111,14 +118,35 @@ def actualizar_dmar_ddem():
     return str(t.loc[t["a_tiempo_mar"], "fecha_hora"].max())
 
 
+def completar_demanda_parcial(m):
+    """Dias con demanda/generacion media < RAZON_PARCIAL (publicacion incompleta de XM): demanda = generacion x la
+    mediana de la razon diaria en los 30 dias completos anteriores. Devuelve (m corregido, dias corregidos)."""
+    m = m.copy()
+    dia = m["fecha_hora"].dt.normalize()
+    razon = (m["demanda"] / m["generacion"]).groupby(dia).mean()
+    parciales = razon.index[razon < RAZON_PARCIAL]
+    for p in parciales:
+        normal = razon[(razon.index < p) & (razon >= RAZON_PARCIAL)].iloc[-30:]
+        if normal.empty:
+            continue
+        sel = (dia == p).to_numpy()
+        m.loc[sel, "demanda"] = m.loc[sel, "generacion"] * float(normal.median())
+    return m, [str(p.date()) for p in parciales]
+
+
 def maestro_produccion():
-    """Maestro oficial (hasta el 5-ago-2026) + serie de produccion (desde el 6-ago), horas consecutivas."""
+    """Maestro oficial (hasta el 5-ago-2026) + serie de produccion (desde el 6-ago), horas consecutivas.
+    Con COMPLETAR_DEMANDA, el ultimo dia de demanda incompleto se completa (completar_demanda_parcial)."""
     m = pd.concat([pd.read_csv(PROC / f, parse_dates=["fecha_hora"])
                    for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]).drop_duplicates("fecha_hora")
     if SERIE.exists():
         s = pd.read_csv(SERIE, parse_dates=["fecha_hora"], float_precision="round_trip")
         m = pd.concat([m, s[s["fecha_hora"] > m["fecha_hora"].max()][m.columns]])
-    return m.sort_values("fecha_hora").reset_index(drop=True)
+    m = m.sort_values("fecha_hora").reset_index(drop=True)
+    if COMPLETAR_DEMANDA:
+        m, dias = completar_demanda_parcial(m)
+        print(f"  demanda completada con la generacion: {', '.join(dias) or 'ningun dia'}", flush=True)
+    return m
 
 
 def actualizar():
