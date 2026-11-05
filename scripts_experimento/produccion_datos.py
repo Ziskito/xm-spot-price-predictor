@@ -36,10 +36,10 @@ ONI = PROD / "oni_index.csv"
 INICIO = pd.Timestamp("2026-08-06")              # primera hora despues del dataset oficial
 TEMP = ad.TEMP
 # demanda del ultimo dia publicado: XM la publica incompleta (~25 % del valor; 22 de 22 corridas del 11-oct al 4-nov) y se
-# completa al dia siguiente. Con AUGUR_COMPLETAR_DEMANDA=1, maestro_produccion() la reemplaza por la generacion del mismo
-# dia por la razon demanda/generacion de los 30 dias completos anteriores. Apagado por defecto (en prueba, 5-nov-2026;
-# backtest en realista_exp_demanda_parcial.py).
-COMPLETAR_DEMANDA = os.environ.get("AUGUR_COMPLETAR_DEMANDA") == "1"
+# completa al dia siguiente. maestro_produccion() la reemplaza por la generacion del mismo dia por la razon
+# demanda/generacion de los 30 dias completos anteriores (activo desde el 5-nov-2026; backtest en
+# realista_exp_demanda_parcial.py). AUGUR_COMPLETAR_DEMANDA=0 lo apaga.
+COMPLETAR_DEMANDA = os.environ.get("AUGUR_COMPLETAR_DEMANDA", "1") != "0"
 RAZON_PARCIAL = 0.9
 
 
