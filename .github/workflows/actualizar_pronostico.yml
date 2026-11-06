@@ -65,3 +65,11 @@ jobs:
             sleep 15
           done
           exit 1
+
+      # El commit redespliega la app; el robot espera el arranque para que no lo espere el primer usuario (6-nov-2026)
+      - name: Calentar la app tras el redespliegue
+        continue-on-error: true
+        run: |
+          pip install playwright==1.48.0
+          python -m playwright install --with-deps chromium
+          python scripts_experimento/visitar_app.py --esperar-redespliegue 90
