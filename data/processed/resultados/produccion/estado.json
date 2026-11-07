@@ -1,16 +1,16 @@
 {
-  "actualizado": "2026-11-06 20:10",
-  "precio_real_hasta": "2026-11-03 23:00:00",
-  "pronostico_24h_hasta": "2026-11-08 00:00:00",
-  "pronostico_72h_ultimo_corte": "2026-11-07",
-  "pronostico_72h_hasta": "2026-11-10 00:00:00",
+  "actualizado": "2026-11-07 11:20",
+  "precio_real_hasta": "2026-11-04 23:00:00",
+  "pronostico_24h_hasta": "2026-11-09 00:00:00",
+  "pronostico_72h_ultimo_corte": "2026-11-08",
+  "pronostico_72h_hasta": "2026-11-11 00:00:00",
   "fuentes": {
     "oni": "ok",
     "serie_xm": {
-      "precio_bolsa": "2026-11-03 23:00:00",
-      "volumen_embalses": "2026-11-05 23:00:00"
+      "precio_bolsa": "2026-11-04 23:00:00",
+      "volumen_embalses": "2026-11-06 23:00:00"
     },
-    "predespacho_ideal": "2026-11-07 23:00:00",
+    "predespacho_ideal": "2026-11-08 23:00:00",
     "dmar_ddem": "2026-11-07 23:00:00"
   }
 }
