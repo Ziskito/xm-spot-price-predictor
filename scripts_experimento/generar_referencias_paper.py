@@ -306,6 +306,12 @@ SECCIONES = [
          "Compuerta por régimen hidrológico; probada en qra_por_regimen.py: no sirve."),
     ]),
     ("6. Antecedentes en Colombia", [
+        ("C", "J. D. Barceló Barraza y R. A. Dede Perdomo, \"Anexo 1 — Formulación del proyecto: Diseño de una plataforma "
+              "de procesamiento y analítica de datos para el pronóstico del precio de la energía y el apoyo en la toma de "
+              "decisiones,\" Depto. de Ingeniería Eléctrica y Electrónica, Universidad del Norte, Barranquilla, 2026.",
+         "docs/Anexo 1_Formulación del Proyecto - 2026_30.pdf (repositorio del proyecto)",
+         "Documento propio: objetivos, alcance, restricciones y cronograma. En el informe se cita como origen del alcance "
+         "(OE1 a OE4) y de las limitaciones declaradas."),
         ("C", "A. P. Agudelo, J. M. López-Lezama y E. Velilla, \"Predicción del precio de la electricidad en la bolsa "
               "mediante un modelo neuronal no-lineal autorregresivo con entradas exógenas,\" Inf. Tecnol., vol. 26, "
               "no. 6, pp. 99–108, 2015.",
@@ -327,6 +333,19 @@ SECCIONES = [
          "la URL de econjournals.com)",
          "Antecedente colombiano horario (FPCA): su MAPE de 6,7 % a un día se compara con el 10,0 % de Augur, en un periodo "
          "calmo (2000-2017) y suponiendo conocido el precio del día anterior."),
+        ("L", "V. García del Villar, N. Verano Urueta y R. Ranauro Argumedo, \"Diseño de un modelo estadístico para la "
+              "predicción de los precios de bolsa de energía en Colombia,\" proyecto final, Univ. del Norte, Barranquilla, "
+              "2020. Asesor: A. A. Henao Pérez.",
+         "hdl.handle.net/10584/9283 (solo el póster es público)",
+         "Antecedente de Uninorte (documento de funcionamiento, Tabla 24): compara series de tiempo, regresión, TBATS, "
+         "Prophet y redes para el precio promedio del día siguiente; la red fue la mejor y aun así subestimó el precio en "
+         "19 % en promedio. Augur es horario, con bandas y motor de decisión."),
+        ("L", "J. Sánchez y C. Noguera, \"Estimación del máximo precio ofertado en el mercado de energía mayorista "
+              "colombiano apoyado en IA,\" proyecto final, Univ. del Norte, Barranquilla, 2024. Asesora: A. Arango Manrique.",
+         "hdl.handle.net/10584/13009 (públicos el resumen y la interfaz)",
+         "Antecedente de Uninorte (documento de funcionamiento, Tabla 24): aplica el proyecto de resolución CREG 701 049 de "
+         "2024 (MPO ajustado) y lo estima con una red neuronal a partir de aportes y reservas, con un dashboard diario. "
+         "Estudia la formación del precio; Augur pronostica el precio y recomienda acciones."),
         ("L", "C. A. Ferraro Rodríguez, \"Análisis de correlaciones del precio de bolsa de energía eléctrica con variables "
               "del sector eléctrico y económicas,\" tesis de maestría, Univ. Nacional de Colombia, Medellín, 2025.",
          "repositorio.unal.edu.co/items/05583774-4f00-4fb1-8cfa-ecf426497670",

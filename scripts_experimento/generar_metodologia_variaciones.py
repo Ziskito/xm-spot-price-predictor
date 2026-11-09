@@ -108,6 +108,29 @@ def tabla(enc, filas, anchos, titulo, fuente=None, tam=8.5):
         doc.add_paragraph().paragraph_format.space_after = Pt(0)
 
 
+def vivo():
+    """Todo 2026 hasta el ultimo precio publicado, con el mismo calculo de generar_documento_funcionamiento.vivo()."""
+    import numpy as np
+    import statsmodels.api as sm
+    c = pd.read_csv(RES / "pronostico_realista_bandas_24h_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")
+    c = c.dropna(subset=["real"])
+    c["pre"] = pd.read_csv(RES / "ensamble_24h_realista_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")["Predespacho"]
+    precio = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])
+                        for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]
+                       + [pd.read_csv(RAIZ / "data/produccion/serie_xm.csv", usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])]
+                       ).drop_duplicates("fecha_hora", keep="last").set_index("fecha_hora").sort_index()["precio_bolsa"]
+    c["pers"] = precio.reindex(c.index - pd.to_timedelta(np.where(c.index.hour == 0, 120, 96), unit="h")).to_numpy()
+    e = c["real"] - c["q50"]
+    d = (c["pre"] - c["real"]).abs() - e.abs()
+    t = sm.OLS(d.to_numpy(), np.ones(len(d))).fit(cov_type="HAC", cov_kwds={"maxlags": 23}).tvalues[0]
+    return {"hasta": c.index.max(), "horas": len(c), "MAE": e.abs().mean(), "MAE_pre": (c["pre"] - c["real"]).abs().mean(),
+            "MAE_pers": (c["pers"] - c["real"]).abs().mean(), "t": float(t)}
+
+
+VIVO = vivo()
+MESES = {1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio", 7: "julio", 8: "agosto",
+         9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"}
+
 # ================================================================================================== portada breve
 p = doc.add_paragraph(); r = p.add_run("Augur: metodología y variaciones probadas"); r.bold = True; r.font.size = Pt(20)
 r.font.color.rgb = TINTA
@@ -169,8 +192,9 @@ tabla(["Modelo"] + cab, [[nom.get(k, k)] + [n(pw.loc[k, c]) for c in per]
                                    "Pre + CatBoost"]],
       [4] + [1.15] * 6, "Tabla 1. Resultado principal: MAE con información realista, walk-forward (5 años) y 2026",
       "2026 = 15 de enero a 5 de agosto. Fuente: walkforward/metricas.csv (realista_walkforward_individuales.py). Con todo 2026 y "
-      "la operación hasta el 1 de noviembre (7.319 h): Augur 38,5, predespacho 42,1, persistencia 116,4 (DM frente al "
-      "predespacho t = 9,4).")
+      f"la operación hasta el {VIVO['hasta'].day} de {MESES[VIVO['hasta'].month]} ({n(VIVO['horas'], 0)} h, pronóstico publicado): "
+      f"Augur {n(VIVO['MAE'])}, predespacho {n(VIVO['MAE_pre'])}, persistencia {n(VIVO['MAE_pers'])} (DM frente al predespacho "
+      f"t = {n(VIVO['t'])}).")
 
 # ================================================================================================== 2 variaciones
 doc.add_heading("2. Variaciones probadas", 1)
