@@ -146,7 +146,10 @@ P("Este documento reúne, en un solo lugar, la metodología final de Augur y **t
 # ================================================================================================== 1 metodologia
 doc.add_heading("1. Metodología final", 1)
 doc.add_heading("1.1 Información disponible al corte", 2)
-P("El pronóstico se emite a las 00:00 del día D para la ventana de 01:00 de D a 00:00 de D+1, y solo usa lo publicado "
+P("**Notación.** D es el día que se pronostica; D-1 es el día anterior (la víspera), D-4 cuatro días antes, y D+1 y "
+  "D+2 los dos días siguientes. Como el precio de bolsa se liquida por hora y la última hora de cada día es las 00:00 "
+  "del día siguiente, la «ventana» del día D va de la 01:00 de D a las 00:00 de D+1.")
+P("El pronóstico se emite a las 00:00 del día D (el «corte») para la ventana de 01:00 de D a 00:00 de D+1, y solo usa lo publicado "
   "a esa hora (escenario realista): precio, demanda y generación hasta las 23:00 de D-4 (la API de XM publica con unos "
   "tres días de rezago); embalses y aportes de D-2; ONI de NOAA de dos meses antes; el predespacho ideal de D (iMAR, "
   "publicado D-1 hacia las 10:30) y el despacho programado de D (dMAR y dDEM, D-1 hacia las 14:30). Se auditó la hora "
@@ -165,8 +168,11 @@ V("**Bandas conformes del 80 %:** q50·exp(±m), con m el cuantil conforme de |l
   "días anteriores con precio publicado.")
 V("**Detector de picos y desplomes** (HistGradientBoosting, reentrenado cada semana): probabilidad de que el precio "
   "quede ≥ 1,3 o ≤ 0,7 veces la mediana de la ventana.")
-V("**72 h:** los pasos 25-72 usan como referencia el predespacho de D, con tres CatBoost por horizonte y el mismo "
-  "combinador y bandas.")
+V("**72 h:** los pasos 1-24 son el pronóstico de 24 h. Para los pasos 25-72 (D+1 y D+2) todavía no hay predespacho, así "
+  "que la referencia es el predespacho de D, con tres CatBoost por día de anticipación (los mismos tres conjuntos de "
+  "variables), el mismo combinador y las mismas bandas. Las mejoras del pronóstico de 24 h se aplican también aquí, "
+  "porque comparten los datos (incluido el arreglo de la demanda incompleta) y el modelo de los pasos 1-24; las del "
+  "motor (ventana elegible y filtro de contrato) se validaron también con el contrato de 72 h.")
 doc.add_heading("1.3 Motor de decisión", 2)
 V("Umbrales barato y caro = percentiles 25 y 75 del pronóstico en los 30 días anteriores (método «rodante»; el usuario "
   "puede elegir de 7 a 365 días). Otros métodos: fijo (histórico 2019-2025), banda (fijo + «esperar» con banda ancha) "
@@ -304,6 +310,9 @@ tabla(["Variación", "Resultado", "Decisión"], [
     ["Filtro de precio de contrato (MC de XM)", f"Nunca empeora la ganancia frente al contrato; mejora en 8 de 14 casos "
      f"(DM p < 0,01). Comercializador en la operación: {n(eco.loc[('R30 (vigente)', 'comercializador'), 'operación ago-nov'])} "
      f"→ {n(eco.loc[('R30+MC', 'comercializador'), 'operación ago-nov'])} COP/kWh por hora", "Adoptado (9-nov)"],
+    ["Ventana y filtro de contrato con el contrato de 72 h (2026 y operación hasta el 31-oct)", "30 días estable en los dos "
+     "periodos y los dos roles (60 y 90, no); el filtro nunca empeora frente al contrato (comercializador en la operación: "
+     "−46,8 → 0,0 COP/kWh por hora, p < 0,001)", "Igual que a 24 h"],
 ], [6.2, 6.8, 3.5], "Tabla 7. Motor de decisión",
     "Fuente: motor_umbrales_alternativos.csv (realista_motor_umbrales_alternativos.py), motor_caracterizacion.csv, "
     "motor_fuzzy_histeresis.csv y la bitácora del README.")

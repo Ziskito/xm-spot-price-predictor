@@ -442,7 +442,9 @@ def s2_mercado():
 
 def s3_datos():
     H("3. Datos e información disponible al corte")
-    P("El corte es las **00:00 del día D**, y la ventana pronosticada va de la 01:00 de D a las 00:00 de D+1 (24 horas). "
+    P("**Notación.** D es el día que se pronostica; D-1 es el día anterior (la víspera), D-4 cuatro días antes, y D+1 y D+2 "
+      "los dos días siguientes. El corte es las **00:00 del día D**, y la ventana pronosticada va de la 01:00 de D a las 00:00 "
+      "de D+1 (24 horas), porque la última hora de cada día se liquida a las 00:00 del día siguiente. "
       "Cada fuente entra al modelo solo con lo que ya estaba publicado a esa hora; esta regla se verificó midiendo la "
       "hora real de publicación en la API y en la biblioteca del portal de XM.")
     tabla(["Fuente", "Variables", "Resolución", "Disponible al corte"], [
