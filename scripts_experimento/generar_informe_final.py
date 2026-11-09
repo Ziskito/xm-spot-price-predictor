@@ -979,12 +979,12 @@ cap10 = R_("Figura 10.", "**Figura 10.** Ganancia total por método en el últim
 plant = P("Último mes y traducción a pesos.")
 x = despues(cap10, plant, (
     f"**Operación posterior al periodo del proyecto.** Desde el 6 de agosto el sistema opera con los datos que XM publica cada "
-    f"día. Hasta el 11 de octubre ({n(OP['horas'], 0)} horas con precio publicado), el MAE fue {n(OP['MAE'])} COP/kWh (MAPE "
+    f"día. Hasta el 31 de octubre ({n(OP['horas'], 0)} horas con precio publicado), el MAE fue {n(OP['MAE'])} COP/kWh (MAPE "
     f"{pc(OP['MAPE'])}), frente a {n(OP['MAE_pre'])} del predespacho solo; por mes, {n(OP['mensual']['2026-08'])} en agosto, "
-    f"{n(OP['mensual']['2026-09'])} en septiembre y {n(OP['mensual']['2026-10'])} en lo corrido de octubre, meses más volátiles. "
+    f"{n(OP['mensual']['2026-09'])} en septiembre y {n(OP['mensual']['2026-10'])} en octubre, meses más volátiles. "
     f"La banda cubrió el {pc(OP['cobertura'])} de las horas, por debajo del objetivo, porque se calibra con los 60 días "
     "anteriores y el precio se volvió más volátil en septiembre y octubre. Sumando el periodo del proyecto y la operación, "
-    f"en todo 2026 hasta el 11 de octubre ({n(TODO26['horas'], 0)} horas) el MAE es {n(TODO26['MAE'])} COP/kWh (MAPE "
+    f"en todo 2026 hasta el 31 de octubre ({n(TODO26['horas'], 0)} horas) el MAE es {n(TODO26['MAE'])} COP/kWh (MAPE "
     f"{pc(TODO26['MAPE'])}), {pc((1 - TODO26['MAE'] / TODO26['MAE_pre']) * 100, 0)} menor que el del predespacho "
     f"({n(TODO26['MAE_pre'])}; Diebold-Mariano t = {n(TODO26['DM_vs_pre'][0], 1)}, p < 0,001), y la banda cubre el "
     f"{pc(TODO26['cobertura'])} de las horas: la ventaja sobre el predespacho se mantiene aun con los meses más volátiles."))

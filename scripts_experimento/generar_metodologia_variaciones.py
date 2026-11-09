@@ -114,6 +114,7 @@ def vivo():
     import statsmodels.api as sm
     c = pd.read_csv(RES / "pronostico_realista_bandas_24h_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")
     c = c.dropna(subset=["real"])
+    c = c[c.index <= pd.Timestamp("2026-10-31 23:00")]      # corte fijo, el mismo del informe final (Juan, 9-nov-2026)
     c["pre"] = pd.read_csv(RES / "ensamble_24h_realista_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")["Predespacho"]
     precio = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])
                         for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]

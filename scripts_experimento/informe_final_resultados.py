@@ -38,6 +38,7 @@ RES = RAIZ / "data" / "processed" / "resultados"
 OUT = AQUI / "informe_final_assets"
 OUT.mkdir(exist_ok=True)
 FIN_OFICIAL = pd.Timestamp("2026-08-05 00:00")
+FIN_OPERACION = pd.Timestamp("2026-10-31 23:00")   # corte fijo de la operacion para el informe (Juan, 9-nov-2026)
 INI_COMUN = pd.Timestamp("2026-01-15 01:00")
 AZUL, NARANJA, VERDE, GRIS = "#2a78d6", "#eb6834", "#1baf7a", "#898781"
 plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Calibri", "Arial", "DejaVu Sans"],
@@ -172,9 +173,9 @@ R["tabla72"] = tramos
 R["cortes72"] = int(c72["cutoff"].nunique())
 
 # ------------------------------------------------------------------------------------------------------------------
-# 3) Operacion del 6-ago al ultimo precio publicado (pronostico ya publicado, datos de data/produccion/)
+# 3) Operacion del 6-ago al 31-oct (pronostico ya publicado, datos de data/produccion/)
 # ------------------------------------------------------------------------------------------------------------------
-op = c24[(c24["fecha_hora"] > FIN_OFICIAL) & c24["real"].notna()]
+op = c24[(c24["fecha_hora"] > FIN_OFICIAL) & (c24["fecha_hora"] <= FIN_OPERACION) & c24["real"].notna()]
 pre_op = prod["Predespacho"].reindex(op["fecha_hora"]).to_numpy()
 R["operacion"] = {"desde": str(op.fecha_hora.min()), "hasta": str(op.fecha_hora.max()), "horas": int(len(op)), **metr(op.real, op.q50),
                   "MAE_pre": float(np.nanmean(np.abs(pre_op - op.real.to_numpy()))),

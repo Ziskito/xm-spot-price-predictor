@@ -296,7 +296,7 @@ VERSION = "5 de noviembre de 2026"
 
 
 def vivo():
-    """Todo 2026 y la operacion (desde el 5-ago) hasta el ultimo precio publicado, con el contrato de 24 h en produccion,
+    """Todo 2026 y la operacion (desde el 5-ago) hasta el 31-oct-2026 (corte del informe), con el contrato de 24 h en produccion,
     el predespacho disponible al corte y la persistencia realista (misma hora de D-4; 120 h para la 00:00)."""
     import numpy as np
     import pandas as pd
@@ -304,6 +304,7 @@ def vivo():
     res = RAIZ / "data/processed/resultados"
     c = pd.read_csv(res / "pronostico_realista_bandas_24h_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")
     c = c.dropna(subset=["real"])
+    c = c[c.index <= pd.Timestamp("2026-10-31 23:00")]      # corte fijo, el mismo del informe final (Juan, 9-nov-2026)
     c["pre"] = pd.read_csv(res / "ensamble_24h_realista_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")["Predespacho"]
     precio = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])
                         for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]
@@ -764,8 +765,8 @@ def s9_resultados():
     H("9.5 Operación en vivo", 2)
     om = OPV["mensual"]
     P(
-      f"Desde el 5 de agosto el sistema corre solo todos los días. Entre esa fecha y el {fecha(OPV['hasta'])} (último precio "
-      f"publicado al cierre de esta versión, {n(OPV['horas'], 0)} horas) el MAE fue {n(OPV['MAE'])} COP/kWh frente a "
+      f"Desde el 5 de agosto el sistema corre solo todos los días. Entre esa fecha y el {fecha(OPV['hasta'])} (corte de este "
+      f"documento y del informe final, {n(OPV['horas'], 0)} horas con precio publicado) el MAE fue {n(OPV['MAE'])} COP/kWh frente a "
       f"{n(OPV['MAE_pre'])} del predespacho, y la cobertura de la banda {pc(OPV['cobertura'])}. Por mes: "
       + ", ".join(f"{MESES[k[5:]]} {n(v)}" for k, v in om.items()) + ".")
     tabla(["Periodo", "Horas", "Augur", "Predespacho", "Persistencia", "MAPE", "Cobertura 80 %"], [
@@ -774,7 +775,7 @@ def s9_resultados():
         [f"Operación (5 de agosto al {fecha(OPV['hasta'])})", n(OPV["horas"], 0), n(OPV["MAE"]), n(OPV["MAE_pre"]),
          n(OPV["MAE_pers"]), pc(OPV["MAPE"]), pc(OPV["cobertura"])],
     ], anchos=[4.4, 1.2, 1.3, 1.8, 1.8, 1.3, 1.9], tam=8.5,
-        titulo="Tabla 18b. MAE (COP/kWh) del pronóstico de 24 h publicado, hasta el último precio de XM",
+        titulo="Tabla 18b. MAE (COP/kWh) del pronóstico de 24 h publicado, hasta el 31 de octubre de 2026",
         fuente="Mismas horas para los tres pronósticos. Persistencia: misma hora de D-4, el último precio publicado al corte. "
                f"Diebold-Mariano de todo 2026 frente al predespacho: t = {n(ANIO['DM_vs_pre'], 1)} (positivo = Augur se "
                "equivoca menos).")
