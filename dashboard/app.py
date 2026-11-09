@@ -1988,6 +1988,25 @@ st.markdown(
 # ==========================================================================
 # VISTA OPERADOR
 # ==========================================================================
+def acciones_tramos(rol, metodo, ref_contrato):
+    """Etiquetas de los tramos barato y caro del medidor con las condiciones de los filtros activos, para que el medidor
+    no anuncie una accion que los filtros quitan (Juan, 10-nov: el medidor decia «retener» y la tarjeta «esperar»)."""
+    a_bar, a_car = (("comprar en bolsa", "evitar la bolsa") if rol == "comercializador"
+                    else ("retener generación", "despachar y vender"))
+    if INTRADIA:
+        a_bar += " en la mitad barata del día"
+        a_car += " en la mitad cara del día"
+    if metodo in ("banda", "hibrido"):
+        a_bar += ", si la banda no es ancha"
+        a_car += ", si la banda no es ancha"
+    if not np.isnan(ref_contrato):
+        if rol == "comercializador":
+            a_bar += f" y bajo el contrato ({ref_contrato:.0f})"
+        else:
+            a_car += f" y sobre el contrato ({ref_contrato:.0f})"
+    return a_bar, a_car
+
+
 def vista_operador():
     tabla, metodo, es_valido = comparacion_estable(horizonte, rol, INTRADIA, VENTANA)
     df = serie_con_senal(horizonte, rol, metodo, intradia=INTRADIA, ventana=VENTANA, contrato=CONTRATO)
@@ -2092,10 +2111,12 @@ def vista_operador():
         cara = bool(df["q50"].groupby(dia_f).rank(pct=True).loc[idx] > 0.5)
         accion = {("generador", "bajo"): "retener generación", ("generador", "alto"): "despachar y vender",
                   ("comercializador", "bajo"): "comprar en bolsa", ("comercializador", "alto"): "evitar la bolsa"}[(rol, crudo)]
+        # con las cifras: en dias planos la hora puede quedar del otro lado de la mediana por pocos pesos (Juan, 10-nov)
+        mediana = float(df.loc[dia_f == dia_f.loc[idx], "q50"].median())
         frase = (
-            f"El precio esperado está {crudo}, pero según el pronóstico esta hora está entre las "
-            f"{'más caras' if cara else 'más baratas'} del día. El motor deja «{accion}» para las horas "
-            f"{'más baratas' if cara else 'más caras'} del día (filtro intradía), así que en esta hora espera."
+            f"El precio esperado ({es(q50, 1)} COP/kWh) está {crudo} frente a los últimos {VENTANA} días, pero queda "
+            f"{'por encima' if cara else 'por debajo'} de la mediana del día ({es(mediana, 1)} COP/kWh). El filtro intradía "
+            f"reserva «{accion}» para la mitad {'más barata' if cara else 'más cara'} del día, así que en esta hora espera."
         )
     else:
         frase = FRASE[senal]
@@ -2113,8 +2134,7 @@ def vista_operador():
         grad = (f"linear-gradient(90deg,{c_bar} 0%,{c_bar} {pb:.1f}%,"
                 f"{tk['neutro_bg']} {pb:.1f}%,{tk['neutro_bg']} {pa:.1f}%,"
                 f"{c_car} {pa:.1f}%,{c_car} 100%)")
-        a_bar, a_car = (("comprar en bolsa", "evitar la bolsa") if rol == "comercializador"
-                        else ("retener generación", "despachar y vender"))
+        a_bar, a_car = acciones_tramos(rol, metodo, ref_c)
         gauge_html = f"""
   <div class="escala-tit"><span>Escala de precio</span><span>esperado ahora <span class="v">{es(q50, 1)} COP/kWh</span></span></div>
   <div class="gauge-track" style="background:{grad};opacity:.85">
@@ -2160,8 +2180,7 @@ def vista_operador():
     # ---- Recomendacion + pronostico del dia ----
     favorable = {"verde": "favorable", "rojo": "desfavorable", "ambar": "neutral"}[color]
     c_bar, c_car = (tk["verde"], tk["rojo"]) if rol == "comercializador" else (tk["rojo"], tk["verde"])
-    a_bar, a_car = (("comprar en bolsa", "evitar la bolsa") if rol == "comercializador"
-                    else ("retener generación", "despachar y vender"))
+    a_bar, a_car = acciones_tramos(rol, metodo, ref_c)
     umbral_ok = not (np.isnan(bajo_val) or np.isnan(alto_val))
     tag = (f'<div class="hero-tag">Recomendaci&oacute;n &middot; {dia:%d/%m/%Y} &middot; {hora:02d}:00 h '
            f'&middot; rol {rol}</div>')
