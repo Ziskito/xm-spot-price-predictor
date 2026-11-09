@@ -48,6 +48,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/produccion data/processed/predespacho_ideal_xm.csv data/processed/despacho_programado_cm_demanda_xm.csv \
+            data/processed/mc_mensual_xm.csv \
             data/processed/resultados/produccion data/processed/resultados/fuentes_pronostico.json \
             data/processed/resultados/ensamble_24h_realista_2026.csv \
             data/processed/resultados/pronostico_realista_bandas_24h_2026.csv \

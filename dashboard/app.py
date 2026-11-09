@@ -380,6 +380,7 @@ hr { border-color: $linea !important; }
   font-weight: 700; }
 [class*="st-key-form_"] p, [class*="st-key-form_"] li { font-size: .82rem; color: $texto; }
 .st-key-sec_formulas .katex { color: $tinta; font-size: 1.05em; }
+[class*="st-key-form_"] .katex-display { overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
 [data-testid="stPlotlyChart"] { border: none !important; box-shadow: none !important; padding: 0 !important;
   border-radius: 0 !important; background: transparent !important; }
 .sec-tit { font-size: 1.05rem; font-weight: 700; color: $tinta; }
@@ -570,7 +571,7 @@ def cargar_precio_fechado():
 
 
 @st.cache_data
-def comparacion(horizonte, rol, p_bajo, p_alto, inicio=None, fin=None, intradia=True):
+def comparacion(horizonte, rol, p_bajo, p_alto, inicio=None, fin=None, intradia=True, ventana=30):
     """Corre el backtest de los 4 metodos y devuelve (tabla, metodo_sugerido, es_valido).
 
     Si se dan inicio/fin (fechas), la senal se calcula sobre TODA la serie
@@ -580,19 +581,19 @@ def comparacion(horizonte, rol, p_bajo, p_alto, inicio=None, fin=None, intradia=
     mascara = None
     if inicio is not None and fin is not None:
         mascara = (bandas["fecha_hora"].dt.date >= inicio) & (bandas["fecha_hora"].dt.date <= fin)
-    tabla = comparar_metodos(bandas, rol, cargar_precio_historico(), p_bajo=p_bajo, p_alto=p_alto,
+    tabla = comparar_metodos(bandas, rol, cargar_precio_historico(), p_bajo=p_bajo, p_alto=p_alto, ventana_dias=ventana,
                              mascara_evaluacion=mascara, precio_previo=cargar_precio_fechado(), intradia=intradia)
     metodo, es_valido = elegir_mejor_metodo(tabla)
     return tabla, metodo, es_valido
 
 
 @st.cache_data
-def comparacion_estable(horizonte, rol, intradia=True):
+def comparacion_estable(horizonte, rol, intradia=True, ventana=30):
     """Elige el metodo que mejor se sostiene en su mitad mas debil del periodo
     (criterio maximin, ver comparar_metodos_estable() en motor_decision.py)."""
     bandas, _ = cargar_bandas(horizonte)
     tabla = comparar_metodos_estable(bandas, rol, cargar_precio_historico(), precio_previo=cargar_precio_fechado(),
-                                     intradia=intradia)
+                                     intradia=intradia, ventana_dias=ventana)
     metodo, es_estable = elegir_mejor_metodo_estable(tabla)
     return tabla, metodo, es_estable
 
@@ -618,13 +619,49 @@ def cargar_probabilidades_eventos():
 
 
 @st.cache_data
-def serie_con_senal(horizonte, rol, metodo, p_bajo=25, p_alto=75, intradia=True):
+def cargar_mc():
+    """MC mensual de XM (costo promedio ponderado de los contratos del mercado regulado), por mes. None si falta."""
+    ruta = RAIZ / "data" / "processed" / "mc_mensual_xm.csv"
+    if not ruta.exists():
+        return None
+    mc = pd.read_csv(ruta)
+    return pd.Series(mc["mc"].to_numpy(), index=pd.PeriodIndex(mc["mes"], freq="M"))
+
+
+def precio_contrato(fechas, contrato):
+    """Precio de contrato por hora. contrato = "mc" (MC de XM conocido en ese momento: el del mes anterior desde el dia
+    10, antes el de dos meses atras; si aun no esta publicado, el ultimo disponible) o un numero (precio propio)."""
+    fechas = pd.DatetimeIndex(fechas)
+    if contrato != "mc":
+        return np.full(len(fechas), float(contrato))
+    mc = cargar_mc()
+    if mc is None:
+        return np.full(len(fechas), np.nan)
+    dia = fechas - pd.Timedelta(hours=1)
+    meses = dia.to_period("M") - np.where(dia.day >= 10, 1, 2)
+    disp = mc.index.max()
+    return np.array([mc.get(min(m, disp), np.nan) for m in meses])
+
+
+@st.cache_data
+def serie_con_senal(horizonte, rol, metodo, p_bajo=25, p_alto=75, intradia=True, ventana=30, contrato=None):
     bandas, _ = cargar_bandas(horizonte)
     previo = cargar_precio_fechado()
     senal = generar_senales(bandas, metodo, rol, cargar_precio_historico(), p_bajo=p_bajo, p_alto=p_alto,
-                            precio_previo=previo, intradia=intradia)
+                            ventana_dias=ventana, precio_previo=previo, intradia=intradia)
     # horas en que el metodo aun no tiene umbral: su "esperar" es por falta de datos, no una decision
-    out = bandas.assign(senal=senal, sin_umbral=horas_sin_umbral(bandas, metodo, precio_previo=previo))
+    out = bandas.assign(senal=senal, sin_umbral=horas_sin_umbral(bandas, metodo, ventana_dias=ventana,
+                                                                 precio_previo=previo))
+    # filtro de contrato (6-nov-2026, realista_motor_umbrales_alternativos.py): la senal favorable solo se mantiene si
+    # ademas conviene frente al precio de contrato; si no, "esperar" (usar el contrato). Va despues de elegir el metodo.
+    out["contrato"], out["por_contrato"] = np.nan, False
+    if contrato is not None:
+        ref = precio_contrato(out["fecha_hora"], contrato)
+        favorable = "comprar" if rol == "comercializador" else "vender"
+        no_conviene = (out["q50"].to_numpy() > ref) if rol == "comercializador" else (out["q50"].to_numpy() < ref)
+        quitar = (out["senal"] == favorable).to_numpy() & no_conviene & ~np.isnan(ref)
+        out.loc[quitar, "senal"] = "esperar"
+        out["contrato"], out["por_contrato"] = ref, quitar
     prob = cargar_probabilidades_eventos()
     out["p_desplome"], out["p_pico"] = np.nan, np.nan
     validas = np.ones(len(out), dtype=bool) if horizonte == "24h" else pasos_1_24(horizonte, out["fecha_hora"])
@@ -668,9 +705,9 @@ def pasos_1_24(horizonte, fechas):
 
 
 @st.cache_data
-def resumen_mensual(horizonte, rol, metodo, intradia=True):
+def resumen_mensual(horizonte, rol, metodo, intradia=True, ventana=30, contrato=None):
     """Ventaja y frecuencia de accion del metodo, mes a mes (para las mini graficas)."""
-    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia)
+    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia, ventana=ventana, contrato=contrato)
     filas = []
     for (anio, mes), g in df.groupby([df["fecha_hora"].dt.year, df["fecha_hora"].dt.month]):
         bt = evaluar_backtest(g, g["senal"], rol)
@@ -698,11 +735,12 @@ def pos_en_barra(valor, lo, hi):
     return float(np.clip((valor - lo) / (hi - lo), 0, 1) * 100)
 
 
-def umbrales_serie(bandas, metodo, precio_hist, p_bajo, p_alto):
-    """Umbrales (bajo, alto) para cada fila de bandas: series moviles para rodante/hibrido, constantes si no."""
+def umbrales_serie(bandas, metodo, precio_hist, p_bajo, p_alto, ventana=30):
+    """Umbrales (bajo, alto) para cada fila de bandas: series moviles de `ventana` dias para rodante/hibrido,
+    constantes si no."""
     if metodo in ("rodante", "hibrido"):
-        return umbrales_rodantes(bandas["q50"], 30, p_bajo, p_alto,
-                                 previo=precio_previo_ventana(bandas, cargar_precio_fechado(), 30))
+        return umbrales_rodantes(bandas["q50"], ventana, p_bajo, p_alto,
+                                 previo=precio_previo_ventana(bandas, cargar_precio_fechado(), ventana))
     u = umbrales_fijos(precio_hist, p_bajo, p_alto)
     return (pd.Series(u["bajo"], index=bandas.index), pd.Series(u["alto"], index=bandas.index))
 
@@ -1580,17 +1618,23 @@ def fechas_compactas(fig):
     return fig
 
 
-def grafico_dia(v, bajo_s, alto_s, tk, rol="generador"):
+def grafico_dia(v, bajo_s, alto_s, tk, rol="generador", ventana=None):
     """Pronostico de varios dias (el bloque cargado) con los umbrales del motor; el encuadre en el dia elegido y la
     linea de la hora se ponen despues (encuadrar), para que la base se pueda guardar en cache."""
     fig = go.Figure()
     trazar_banda(fig, v, tk)
+    # la ventana va en el texto al pasar el mouse: en la leyenda de dos columnas, "(30 días)" se montaba sobre la vecina
+    ref = f" · P75 de los últimos {ventana} días" if ventana else ""
     fig.add_trace(go.Scatter(x=v["fecha_hora"], y=alto_s.reindex(v.index), name="Umbral caro",
                              line=dict(color=tk["rojo"], width=1, dash="dash"),
-                             hovertemplate="%{y:,.0f} COP/kWh"))
+                             hovertemplate="%{y:,.0f} COP/kWh" + ref))
     fig.add_trace(go.Scatter(x=v["fecha_hora"], y=bajo_s.reindex(v.index), name="Umbral barato",
                              line=dict(color=tk["verde"], width=1, dash="dash"),
-                             hovertemplate="%{y:,.0f} COP/kWh"))
+                             hovertemplate="%{y:,.0f} COP/kWh" + ref.replace("P75", "P25")))
+    if "contrato" in v and v["contrato"].notna().any():
+        fig.add_trace(go.Scatter(x=v["fecha_hora"], y=v["contrato"], name="Precio de contrato",
+                                 line=dict(color=tk["gris"], width=1.5, dash="dot"),
+                                 hovertemplate="%{y:,.0f} COP/kWh · precio de contrato"))
     c_desp, c_pico = color_riesgo(rol, tk)
     for col, simbolo, color, nombre in (("p_desplome", "triangle-down", c_desp, "Posibilidad de desplome"),
                                         ("p_pico", "triangle-up", c_pico, "Posibilidad de pico")):
@@ -1635,23 +1679,25 @@ def botones_cargar_mas(clave, dia):
 
 
 @st.cache_data(max_entries=24, show_spinner=False)
-def base_dia(horizonte, rol, metodo, intradia, tema, b_ini, b_fin):
-    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia)
-    bajo_s, alto_s = umbrales_serie(df, metodo, cargar_precio_historico(), 25, 75)
+def base_dia(horizonte, rol, metodo, intradia, ventana, contrato, tema, b_ini, b_fin):
+    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia, ventana=ventana, contrato=contrato)
+    bajo_s, alto_s = umbrales_serie(df, metodo, cargar_precio_historico(), 25, 75, ventana)
     v = df[(df["fecha_hora"] >= b_ini) & (df["fecha_hora"] < b_fin)]
-    return leyenda_en_columnas(sin_titulo(grafico_dia(v, bajo_s, alto_s, TEMAS[tema], rol))).to_dict()
+    movil = metodo in ("rodante", "hibrido")
+    return leyenda_en_columnas(sin_titulo(grafico_dia(v, bajo_s, alto_s, TEMAS[tema], rol,
+                                                      ventana if movil else None))).to_dict()
 
 
 @st.cache_data(max_entries=24, show_spinner=False)
-def base_semana(horizonte, rol, metodo, intradia, tema, b_ini, b_fin):
-    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia)
+def base_semana(horizonte, rol, metodo, intradia, ventana, contrato, tema, b_ini, b_fin):
+    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia, ventana=ventana, contrato=contrato)
     v = df[(df["fecha_hora"] >= b_ini) & (df["fecha_hora"] < b_fin)]
     return fechas_compactas(sin_titulo(grafico_precio(v, TEMAS[tema], "La semana alrededor del día elegido"))).to_dict()
 
 
 @st.cache_data(max_entries=24, show_spinner=False)
-def base_calor(horizonte, rol, metodo, intradia, tema, dias, horas, modo):
-    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia)
+def base_calor(horizonte, rol, metodo, intradia, ventana, contrato, tema, dias, horas, modo):
+    df = serie_con_senal(horizonte, rol, metodo, intradia=intradia, ventana=ventana, contrato=contrato)
     return grafico_calor(df, list(dias), list(horas), None, None, modo, TEMAS[tema]).to_dict()
 
 
@@ -1868,6 +1914,28 @@ with st.sidebar:
               "Comercializador: compra energía, busca precios bajos."),
     )
     horizonte = st.selectbox("Horizonte de pronóstico", ["24h", "72h"])
+    # ventana de los umbrales moviles (metodos rodante e hibrido); 30 dias es la validada (6-nov-2026)
+    # botones y no barra deslizante: las opciones no son lineales y la barra hacia creer que si (Juan, 6-nov)
+    VENTANA = st.pills(
+        "Comparar con los últimos", options=[7, 14, 30, 60, 90, 180, 365], default=30, key="ventana_umbral",
+        format_func=lambda d: f"{d} días" + (" ✓" if d == 30 else ""),
+        help=("Periodo con el que se definen los umbrales barato y caro: percentiles 25 y 75 del precio "
+              "pronosticado en esos días anteriores a cada hora. Con pocos días, «caro» es caro frente a la semana; "
+              "con muchos, frente al trimestre o el año. 30 días es el valor validado (el más estable en ene-ago y "
+              "en la operación de ago-nov de 2026): 7 días persigue el ruido y 60 o más reaccionan tarde a los "
+              "cambios de nivel (✓ = validado). Aplica a los métodos rodante e híbrido; fijo y banda usan el histórico "
+              "2019-2025."))
+    VENTANA = VENTANA or 30          # si se desmarca el boton elegido, vuelve al valor validado
+    usar_contrato = st.toggle("Comparar con el precio de contrato", value=True, key="usar_contrato",
+                              help=("Solo recomienda comprar en bolsa si el precio esperado está por debajo del precio de "
+                                    "contrato, y vender en bolsa si está por encima; si no, conviene el contrato y la "
+                                    "señal pasa a «esperar». En el backtest (2020-2026) nunca empeoró la ganancia frente "
+                                    "al contrato y la mejoró de forma significativa en 8 de 14 casos."))
+    mi_precio = st.number_input("Mi precio de contrato (COP/kWh)", min_value=0.0, value=0.0, step=10.0,
+                                key="mi_precio_contrato", disabled=not usar_contrato,
+                                help=("Déjelo en 0 para usar el MC de XM: el costo promedio de los contratos del "
+                                      "mercado regulado, el del mes anterior (publicado hacia el día 10)."))
+    CONTRATO = None if not usar_contrato else ("mc" if mi_precio <= 0 else float(mi_precio))
 
 bandas, meta = cargar_bandas(horizonte)
 if bandas is None:
@@ -1920,8 +1988,8 @@ st.markdown(
 # VISTA OPERADOR
 # ==========================================================================
 def vista_operador():
-    tabla, metodo, es_valido = comparacion_estable(horizonte, rol, INTRADIA)
-    df = serie_con_senal(horizonte, rol, metodo, intradia=INTRADIA)
+    tabla, metodo, es_valido = comparacion_estable(horizonte, rol, INTRADIA, VENTANA)
+    df = serie_con_senal(horizonte, rol, metodo, intradia=INTRADIA, ventana=VENTANA, contrato=CONTRATO)
 
     # Solo se ofrecen dias con las 24 horas: segun el modelo, el pronostico puede cubrir 01:00 a 00:00
     # del dia siguiente y dejar el primer o el ultimo dia con una sola hora.
@@ -1988,7 +2056,7 @@ def vista_operador():
     ancho_t0 = float(fila["q90"] - fila["q10"])
     conf, conf_pct = nivel_confianza(float(rel.loc[idx]), previas if len(previas) else rel.to_numpy())
 
-    bajo_s, alto_s = umbrales_serie(df, metodo, precio_hist, 25, 75)
+    bajo_s, alto_s = umbrales_serie(df, metodo, precio_hist, 25, 75, VENTANA)
     bajo_val, alto_val = float(bajo_s.loc[idx]), float(alto_s.loc[idx])
 
     # Clasificacion "cruda" del precio (antes del filtro de banda ancha), para
@@ -2003,7 +2071,15 @@ def vista_operador():
         crudo = "normal"
 
     titulo, color = SIGNIFICADO[senal]
-    if senal == "esperar" and metodo in ("banda", "hibrido") and crudo != "normal":
+    ref_c = float(fila.get("contrato", np.nan))
+    if bool(fila.get("por_contrato", False)):
+        frase = (
+            f"El precio esperado ({es(q50)} COP/kWh) está "
+            + (f"bajo para los últimos {VENTANA} días, pero sigue por encima" if rol == "comercializador"
+               else f"alto para los últimos {VENTANA} días, pero sigue por debajo")
+            + f" del precio de contrato ({es(ref_c)} COP/kWh). En esta hora conviene más el contrato que la bolsa."
+        )
+    elif senal == "esperar" and metodo in ("banda", "hibrido") and crudo != "normal":
         frase = (
             f"El precio esperado está {crudo}, pero el pronóstico de esta hora es muy incierto "
             "(banda ancha). El motor prefiere esperar antes que arriesgarse con una señal poco confiable."
@@ -2015,7 +2091,7 @@ def vista_operador():
     if np.isnan(bajo_val) or np.isnan(alto_val):
         gauge_html = (
             '<div class="stat-s" style="margin-top:14px">Umbrales móviles aún sin definir '
-            '(los métodos rodante e híbrido necesitan 30 días de historia antes de operar).</div>'
+            f'(los métodos rodante e híbrido necesitan {VENTANA} días de historia antes de operar).</div>'
         )
     else:
         pb, pa, pq = (pos_en_barra(x, lo, hi) for x in (bajo_val, alto_val, q50))
@@ -2131,7 +2207,7 @@ def vista_operador():
                      on_click=lambda: st.session_state.update(rev_dia=st.session_state.get("rev_dia", 0) + 1))
         bloque_d = bloque_dias(dia, "mas_dia")
         fig_dia = encuadrar(
-            base_dia(horizonte, rol, metodo, INTRADIA, TEMA, *bloque_d),
+            base_dia(horizonte, rol, metodo, INTRADIA, VENTANA, CONTRATO, TEMA, *bloque_d),
             x=[inicio_dia, inicio_dia + pd.Timedelta(hours=23)],     # 00:00 a 23:00 exactas (Juan, 19-oct)
             y=rango_y(dia_df["q10"], dia_df["q90"], dia_df["real"], alto_s.reindex(dia_df.index),
                       bajo_s.reindex(dia_df.index)),
@@ -2240,7 +2316,7 @@ def vista_operador():
         modo_calor = st.radio("Colorear por", ["Señal del motor", "Precio esperado"], key="modo_calor")
     dias_calor = [d for d in completos if d_ini <= d <= d_fin]
     horas_calor = list(range(h_ini, h_fin + 1))
-    fig_calor = base_calor(horizonte, rol, metodo, INTRADIA, TEMA, tuple(dias_calor), tuple(horas_calor), modo_calor)
+    fig_calor = base_calor(horizonte, rol, metodo, INTRADIA, VENTANA, CONTRATO, TEMA, tuple(dias_calor), tuple(horas_calor), modo_calor)
     if dia in dias_calor and hora in horas_calor:     # recuadro del dia y la hora elegidos
         y0 = dias_calor.index(dia)
         fig_calor = encuadrar(fig_calor, formas=[{"type": "rect", "x0": hora - .5, "x1": hora + .5, "y0": y0 - .5,
@@ -2266,7 +2342,7 @@ def vista_operador():
     n_accion_dia = int(por_dia.get(dia, 0))
     bt = evaluar_backtest(df, df["senal"], rol)
     ventaja = bt["ventaja_cop_kwh"]
-    mensual = resumen_mensual(horizonte, rol, metodo, INTRADIA)
+    mensual = resumen_mensual(horizonte, rol, metodo, INTRADIA, VENTANA, CONTRATO)
     verbo = "comprado más barato" if rol == "comercializador" else "vendido más caro"
     # reparto de las senales en todo el periodo (favorable / desfavorable / esperar)
     favor, contra = ("comprar", "evitar_compra") if rol == "comercializador" else ("vender", "retener")
@@ -2304,7 +2380,7 @@ def vista_operador():
     sec_sem.markdown('<div class="sec-tit">La semana alrededor del día elegido</div>', unsafe_allow_html=True)
     pista_variables(sec_sem)
     bloque_s = bloque_dias(ini + pd.Timedelta(days=3), "mas_sem")
-    fig_sem = encuadrar(base_semana(horizonte, rol, metodo, INTRADIA, TEMA, *bloque_s), meta=meta_bloque(df, bloque_s),
+    fig_sem = encuadrar(base_semana(horizonte, rol, metodo, INTRADIA, VENTANA, CONTRATO, TEMA, *bloque_s), meta=meta_bloque(df, bloque_s),
                         x=[ini, fin - pd.Timedelta(hours=1)], y=rango_y(ventana["q10"], ventana["q90"], ventana["real"]),
                         rev=f"{dia}", formas=[linea_vertical(marca, tk["gris"], punteada=True)])
     sec_sem.plotly_chart(fig_sem, width="stretch", theme=None, config=CONF_GRAF_BARRA)
@@ -2386,20 +2462,21 @@ def vista_analista():
                         "vender o comprar en las horas más caras o más baratas del día, retener o evitar la bolsa "
                         "en las opuestas. Los umbrales deciden en qué temporada conviene la bolsa; el filtro decide "
                         "a qué hora del día actuar."))
-        tabla_metodos, metodo_sugerido, es_valido = comparacion(horizonte, rol, p_bajo, p_alto, inicio, fin, INTRADIA)
+        tabla_metodos, metodo_sugerido, es_valido = comparacion(horizonte, rol, p_bajo, p_alto, inicio, fin, INTRADIA, VENTANA)
         etiqueta = (f"{metodo_sugerido} (sugerido para este rango)" if es_valido
                     else f"{metodo_sugerido} (sugerido, sin método 100% válido en este rango)")
         opciones = ["fijo", "rodante", "banda", "hibrido"]
         metodo = st.selectbox(
             "Método de umbral", opciones, index=opciones.index(metodo_sugerido),
             help=("**fijo**: percentiles del precio histórico 2019-2025.\n\n"
-                  "**rodante**: percentiles con ventana móvil de los 30 días anteriores.\n\n"
+                  f"**rodante**: percentiles con ventana móvil de los {VENTANA} días anteriores.\n\n"
                   "**banda**: percentiles fijos, y «esperar» cuando la banda de incertidumbre es ancha.\n\n"
                   "**hibrido**: umbral rodante con el mismo «esperar» del método banda.\n\n"
                   f"Sugerido por el backtest económico en el rango de fechas elegido: {etiqueta}."),
         )
 
-    base = serie_con_senal(horizonte, rol, metodo, p_bajo, p_alto, intradia=INTRADIA)
+    base = serie_con_senal(horizonte, rol, metodo, p_bajo, p_alto, intradia=INTRADIA, ventana=VENTANA,
+                           contrato=CONTRATO)
     base = base[(base["fecha_hora"].dt.date >= inicio) & (base["fecha_hora"].dt.date <= fin)]
     resultado = evaluar_backtest(base, base["senal"], rol)
 
@@ -2514,8 +2591,8 @@ def vista_metodologia():
                  'Se recalcula solo con cada publicación de XM.</div>', unsafe_allow_html=True)
     periodo = sec.segmented_control("Periodo", ["Últimos 30 días", "Todo 2026"], default="Últimos 30 días",
                                     key="periodo_desempeno", label_visibility="collapsed") or "Últimos 30 días"
-    _, metodo, _ = comparacion_estable("24h", rol, INTRADIA)
-    df = serie_con_senal("24h", rol, metodo, intradia=INTRADIA)
+    _, metodo, _ = comparacion_estable("24h", rol, INTRADIA, VENTANA)
+    df = serie_con_senal("24h", rol, metodo, intradia=INTRADIA, ventana=VENTANA, contrato=CONTRATO)
     df = df[df["real"].notna()].copy()
     df["pre"] = cargar_predespacho_al_corte().reindex(df["fecha_hora"]).to_numpy()   # misma referencia del informe
     if periodo == "Últimos 30 días":
@@ -2569,13 +2646,13 @@ def vista_metodologia():
                            "mes y se combinan por franjas de 6 horas."),
         ("4 · Incertidumbre", "Una banda [q10, q90] por hora, calibrada con los errores recientes para contener el "
                               "precio real el 80 % de las veces."),
-        ("5 · Motor de decisión", "Compara el precio esperado con los umbrales barato y caro y entrega la acción "
-                                  "de cada hora según el rol."),
+        ("5 · Motor de decisión", "Compara el precio esperado con los umbrales barato y caro del último mes "
+                                  "(percentiles 25 y 75 de 30 días) y entrega la acción de cada hora según el rol."),
     ]
     sec2.markdown('<div class="flujo">' + "".join(f'<div class="paso"><div class="n">{a}</div><div class="d">{b}</div></div>'
                                                   for a, b in pasos) + "</div>", unsafe_allow_html=True)
     # todo 2026 hasta el ultimo precio publicado (periodo oficial + operacion), calculado en vivo (Juan, 26-oct)
-    anio = serie_con_senal("24h", rol, metodo, intradia=INTRADIA)
+    anio = serie_con_senal("24h", rol, metodo, intradia=INTRADIA, ventana=VENTANA, contrato=CONTRATO)
     anio = anio[anio["real"].notna()].copy()
     # misma referencia del informe: el predespacho publicado al corte (en la hora 00:00, el de las 23:00 anteriores)
     anio["pre"] = cargar_predespacho_al_corte().reindex(anio["fecha_hora"]).to_numpy()
@@ -2586,7 +2663,9 @@ def vista_metodologia():
     fichas = [
         ("Cómo decide el motor",
          "<ul><li>Umbral barato y caro: percentiles 25 y 75 del precio (fijos sobre 2019-2025 o móviles sobre los "
-         "últimos 30 días, según el método).</li>"
+         f"últimos {VENTANA} días, según el método).</li>"
+         "<li>Filtro de contrato: comprar en bolsa solo por debajo del precio de contrato y vender solo por encima "
+         "(por defecto, el MC de XM).</li>"
          "<li>Filtro de confianza: si la banda de la hora es más ancha que el 75 % de las horas anteriores, espera.</li>"
          "<li>Filtro intradía: vender solo en la mitad más cara del día; retener, en la más barata.</li>"
          f"<li>De los cuatro métodos se usa el más estable en el backtest; hoy, «{metodo}» para el {rol}.</li></ul>"),
@@ -2639,15 +2718,30 @@ def vista_metodologia():
          "el cuantil con corrección (n+1) de la predicción conformal da una cobertura nominal del 80 %. "
          "En escala log la banda nunca baja de cero y crece con el nivel del precio."),
         ("4 · Motor de decisión",
-         [r"U_b = \mathrm{P}_{25}(\text{precio}) \qquad U_a = \mathrm{P}_{75}(\text{precio})",
-          r"\text{acci\'on}_h = \begin{cases} \text{favorable} & \hat{y}_h \text{ del lado bueno de } U \\ "
-          r"\text{desfavorable} & \hat{y}_h \text{ del lado malo de } U \\ \text{esperar} & \text{en otro caso} "
+         [r"U_{b,t} = \mathrm{P}_{25}\{\hat{y}_s : t-720\,\mathrm{h} \le s < t\}",
+          r"U_{a,t} = \mathrm{P}_{75}\{\hat{y}_s : t-720\,\mathrm{h} \le s < t\}",
+          # textos cortos: con la tarjeta en dos columnas, las versiones largas se cortaban por la derecha (6-nov)
+          r"\text{acci\'on}_h = \begin{cases} \text{favorable} & \text{lado bueno de } U \\ "
+          r"\text{desfavorable} & \text{lado malo de } U \\ \text{esperar} & \text{otro caso} "
           r"\end{cases}",
           # en una linea aparte: dentro de cases desbordaba la tarjeta (26-oct)
-          r"\text{esperar también si } \frac{q_{90}-q_{10}}{\hat{y}_h} > \mathrm{P}_{75}(\text{anchos previos})"],
+          r"\text{esperar si } \tfrac{q_{90}-q_{10}}{\hat{y}_h} > \mathrm{P}_{75}(\text{anchos})"],
          "Para el comercializador lo favorable es comprar si ŷ ≤ U<sub>b</sub>; para el generador, vender si "
-         "ŷ ≥ U<sub>a</sub>. Los umbrales son fijos (2019-2025) o móviles (30 días) según el método. El filtro "
-         "intradía deja la acción favorable solo en la mitad del día que el pronóstico pone a su favor."),
+         "ŷ ≥ U<sub>a</sub>. Con el método rodante (el que elige el backtest), los umbrales son los percentiles 25 y "
+         "75 del precio pronosticado en los <b>30 días anteriores</b> a cada hora, y se recalculan hora a hora. Son "
+         "<b>relativos al último mes</b>, no niveles fijos: «barato» quiere decir barato frente a lo que ha costado "
+         "la energía en las últimas semanas. Si el precio viene bajando, la ventana todavía recuerda los días caros "
+         "y casi todo el día queda bajo el umbral caro; si viene subiendo, pasa lo contrario. Así el motor dice en "
+         "qué momento conviene más la bolsa dentro del régimen actual. La ventana de 30 días se eligió por estabilidad "
+         "entre las dos mitades de ene-ago 2026 y se confirmó en la operación de ago-nov: 7 días persigue el ruido "
+         "y 60 o 90 reaccionan tarde y casi dejan de actuar en algún tramo. Quien quiera otra referencia (la última "
+         "semana, el trimestre, el año) la elige en la barra lateral, en «Comparar con los últimos»; todo el tablero "
+         "se recalcula con esa ventana. <b>Filtro de contrato:</b> la recomendación favorable solo se mantiene si "
+         "además conviene frente al precio de contrato (por defecto el MC de XM, el costo promedio de los contratos "
+         "del mercado regulado; cada usuario puede poner el suyo): comprar en bolsa solo si ŷ ≤ contrato y vender "
+         "en bolsa solo si ŷ ≥ contrato. En 2020-2026 nunca empeoró la ganancia frente al contrato y la mejoró en 8 "
+         "de 14 casos (rol × periodo; Diebold-Mariano, p < 0,01). El filtro intradía deja la acción "
+         "favorable solo en la mitad del día que el pronóstico pone a su favor."),
     ]
     # una fila de dos columnas por cada par de bloques: en pantallas angostas se apilan en orden 1, 2, 3, 4
     # (con dos columnas para todo, quedaban 1, 3, 2, 4)
@@ -2665,11 +2759,12 @@ def vista_metodologia():
     v1, v2 = sec3.columns(2, gap="medium")
     val = v1.container(key="form_val")
     val.markdown('<div class="t">Métricas</div>', unsafe_allow_html=True)
-    val.latex(r"\mathrm{MAE} = \frac{1}{N}\sum_{t} |y_t - \hat{y}_t| \qquad "
-              r"\mathrm{MAPE} = \frac{100}{N}\sum_{t} \frac{|y_t - \hat{y}_t|}{y_t}")
+    # una formula por linea: de a dos se cortaban por la derecha (6-nov)
+    val.latex(r"\mathrm{MAE} = \frac{1}{N}\sum_{t} |y_t - \hat{y}_t|")
+    val.latex(r"\mathrm{MAPE} = \frac{100}{N}\sum_{t} \frac{|y_t - \hat{y}_t|}{y_t}")
     val.latex(r"\text{Cobertura} = \frac{1}{N}\sum_{t} \mathbb{1}\left[q_{10,t} \le y_t \le q_{90,t}\right]")
-    val.latex(r"d_t = |e^{\,\mathrm{pre}}_t| - |e^{\,\mathrm{Augur}}_t| \qquad "
-              r"\mathrm{DM} = \frac{\bar{d}}{\sqrt{\hat{\sigma}^2_{\mathrm{HAC}}/N}} \sim \mathcal{N}(0,1)")
+    val.latex(r"d_t = |e^{\,\mathrm{pre}}_t| - |e^{\,\mathrm{Augur}}_t|")
+    val.latex(r"\mathrm{DM} = \frac{\bar{d}}{\sqrt{\hat{\sigma}^2_{\mathrm{HAC}}/N}} \sim \mathcal{N}(0,1)")
     val.markdown("La prueba de Diebold-Mariano dice si la diferencia de error frente al predespacho es real o "
                  "suerte; la varianza HAC corrige que los errores de horas seguidas están correlacionados.")
     pro = v2.container(key="form_prot")

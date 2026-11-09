@@ -149,12 +149,29 @@ def maestro_produccion():
     return m
 
 
+def actualizar_mc():
+    """MC mensual de XM (costo promedio ponderado de los contratos del mercado regulado; API de metricas, metrica "MC").
+    Lo usa el filtro de contrato del dashboard (desde el 9-nov-2026). Se vuelven a pedir los ultimos 3 meses para
+    recoger revisiones; lo demas se conserva."""
+    ruta = PROC / "mc_mensual_xm.csv"
+    viejo = pd.read_csv(ruta) if ruta.exists() else pd.DataFrame(columns=["mes", "mc"])
+    ini = (hoy() - pd.DateOffset(months=3)).replace(day=1) if len(viejo) else pd.Timestamp("2019-01-01")
+    r = requests.post(f"{ad.API}/monthly", timeout=90, json={"MetricId": "MC", "StartDate": f"{ini:%Y-%m-%d}",
+                                                            "EndDate": f"{hoy():%Y-%m-%d}", "Entity": "Sistema"})
+    r.raise_for_status()
+    nuevos = pd.DataFrame([(it["Date"][:7], float(it["MonthlyEntities"][0]["Value"])) for it in r.json().get("Items", [])],
+                          columns=["mes", "mc"])
+    t = pd.concat([viejo[~viejo["mes"].isin(nuevos["mes"])], nuevos]).sort_values("mes")
+    t.to_csv(ruta, index=False)
+    return str(t["mes"].max())
+
+
 def actualizar():
     """Corre las cuatro actualizaciones; un fallo en una fuente no detiene las demas. Devuelve el estado."""
     PROD.mkdir(parents=True, exist_ok=True)
     estado = {}
     pasos = [("oni", lambda: oni_tabla().to_csv(ONI, index=False) or "ok"), ("serie_xm", actualizar_serie),
-             ("predespacho_ideal", actualizar_imar), ("dmar_ddem", actualizar_dmar_ddem)]
+             ("predespacho_ideal", actualizar_imar), ("dmar_ddem", actualizar_dmar_ddem), ("mc", actualizar_mc)]
     for nombre, f in pasos:
         try:
             estado[nombre] = f()
