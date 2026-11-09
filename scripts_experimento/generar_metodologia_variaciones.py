@@ -283,6 +283,9 @@ tabla(["Variación", "Resultado", "Decisión"], [
     ["Promedio, mediana o media recortada de los votantes", "62-87", "No"],
     [f"Combinador de Kalman (pesos que se corrigen hora a hora)", f"Nivel {n(kal['nivel'])}, log {n(kal['log'])}, "
      f"robusto {n(kal['robusto'])} frente a 35,0 (DM p < 0,001)", "No"],
+    ["72 h (días 2 y 3): promedio de los CatBoost sin combinador", "Mejor en 9 de 10 casos históricos (significativo en 3) y "
+     "en 2026 sin significancia, pero significativamente peor en la operación ago-oct (85,2 → 88,3 y 106,2 → 117,4; "
+     "p = 0,03 y < 0,001), con bandas que cubren solo el 71-73 %", "No: el combinador se adapta al régimen reciente"],
     ["Corrección de sesgo con errores ya publicados (global, EWMA, ventanas de 7-30 días)", "Ninguna mejora; las cortas "
      "empeoran (persiguen ruido)", "No"],
     ["Adaptaciones a la CREG 101 127 (sep-2026): más peso a lo reciente; curva de referencia de ofertas hidráulicas",
@@ -330,12 +333,37 @@ tabla(["Variación", "Resultado", "Decisión"], [
 ], [6.5, 6.5, 3.5], "Tabla 8. Incertidumbre, eventos y horizonte de 72 h",
     "Fuente: eventos_realista.csv, eventos_72h/metricas.csv, pronostico_realista_72h.py.")
 
+doc.add_heading("2.7 Pronósticos de 24 h frente a 72 h", 2)
+import horizontes_docs as hd  # noqa: E402
+hz, hr = hd.comparacion()
+P("Para cada hora hay tres pronósticos: el emitido el mismo día (día 1, modelo de 24 h), el de la víspera (día 2) y el de "
+  "dos días antes (día 3); ambos de 72 h. Se comparan en las mismas horas, con corte al 31 de octubre.")
+nom_p = {"2026": "2026 (15-ene a 5-ago)", "operacion": "Operación (6-ago a 31-oct)"}
+tabla(["Periodo", "Día", "MAE", "Sesgo", "Cobertura 80 %", "Persistencia", "DM vs día 1"],
+      [[nom_p[f.periodo] if f.dia == 1 else "", str(f.dia), n(f.MAE), n(f.sesgo), n(f.cobertura) + " %", n(f.MAE_pers),
+        "—" if f.dia == 1 else n(f.DM_t_vs_dia1)] for f in hz.itertuples()],
+      [4, 0.8, 1.2, 1.2, 1.8, 1.6, 1.6], "Tabla 9. Día 1 (24 h) frente a días 2 y 3 (72 h), COP/kWh",
+      f"Coincidencia de las señales del motor con las del día 1: generador {n(hr['senales']['generador']['dia2'], 0)} % (día 2) y "
+      f"{n(hr['senales']['generador']['dia3'], 0)} % (día 3); comercializador {n(hr['senales']['comercializador']['dia2'], 0)} % y "
+      f"{n(hr['senales']['comercializador']['dia3'], 0)} %. Correlación de la curva del día con la del día 1: "
+      f"{n(hr['forma']['dia2']['correlacion'], 2)} y {n(hr['forma']['dia3']['correlacion'], 2)}. Fuente: comparacion_horizontes.py.")
+hh = hd.historico()
+if hh is not None:
+    pv = hh.pivot(index="periodo", columns="dia", values="MAE").reindex(hd.PERIODOS)
+    pp = hh.pivot(index="periodo", columns="dia", values="MAE_pers").reindex(hd.PERIODOS)
+    tabla(["Periodo", "Día 1", "Día 2", "Día 3", "Persist. día 1", "Persist. día 2", "Persist. día 3"],
+          [[x] + [n(pv.loc[x, d]) for d in (1, 2, 3)] + [n(pp.loc[x, d]) for d in (1, 2, 3)] for x in hd.PERIODOS],
+          [2, 1.3, 1.3, 1.3, 1.9, 1.9, 1.9], "Tabla 10. Walk-forward histórico por día de anticipación (MAE, COP/kWh)",
+          "Fuente: realista_validacion_historica_72h.py (días 2 y 3) y realista_validacion_historica_v2.py (día 1).")
+
 doc.add_heading("3. Lecturas para el artículo", 1)
 V("Sin el precio de ayer (información realista), ningún modelo que pronostica desde cero supera de forma consistente a "
   "la persistencia; el predespacho de XM sí, y corregirlo con CatBoost lo mejora en todos los años evaluados.")
 V("Lo que más importa es la pérdida L1 (MAE) y reentrenar cada mes; el resto de variantes forman una meseta.")
 V("El ENSO y la hidrología no mejoran la precisión a 24-72 h, pero sí indican cuándo desconfiar: con El Niño y embalses "
   "bajos el error se triplica (28,5 a 97,1).")
+V("A 72 h el error crece con la anticipación (en 2026, 35 → 57 → 75 COP/kWh del día 1 al 3), pero los tres días le ganan "
+  "a la persistencia y las recomendaciones del motor coinciden con las del día 1 en cerca del 80 % de las horas.")
 V("Un mejor MAE no garantiza mejores decisiones: lo que mejoró al motor fue el filtro intradía y, frente al contrato, "
   "el filtro de precio de contrato.")
 V("Limitaciones: el motor no es una simulación de portafolio ni de almacenamiento (BESS); la CREG 101 127 cambió las "

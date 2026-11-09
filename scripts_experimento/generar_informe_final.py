@@ -881,6 +881,27 @@ t17 = tabla_tras(P("Tabla 17."))
 fila(filas(t17)[0], ["Tramo", "MAE", "MAPE", "MAE persistencia", "MAPE persistencia", "rMAE", "DM (t)"])
 llenar(t17, [[f["tramo"].replace("1-72 h", "Global 1-72 h"), n(f["MAE"], 2), pc(f["MAPE"], 2), n(f["MAE_pers"], 2),
               pc(f["MAPE_pers"], 2), n(f["rMAE"], 3), n(f["DM_t"], 2)] for f in C["tabla72"]])
+# comparacion entre horizontes y walk-forward historico de 72 h (9-nov-2026)
+import horizontes_docs as hd  # noqa: E402
+HZ, HR = hd.comparacion()
+hz = {(r.periodo, r.dia): r for r in HZ.itertuples()}
+HH = hd.historico()
+txt_hist = ""
+if HH is not None:
+    g = HH[HH.dia > 1]
+    txt_hist = (f" En los cinco años históricos, con el mismo protocolo de la Tabla 16, los días 2 y 3 le ganan a la persistencia en "
+                f"{int((g.MAE < g.MAE_pers).sum())} de 10 casos, con un MAE de {n(g[g.dia == 2].MAE.min())} a "
+                f"{n(g[g.dia == 2].MAE.max())} COP/kWh el día 2 y de {n(g[g.dia == 3].MAE.min())} a {n(g[g.dia == 3].MAE.max())} el día 3.")
+despues(t17, P("Horizonte de 72 h."), (
+    "**Comparación entre horizontes.** Con un corte cada día (la Tabla 17 usa uno cada 3 días, por eso sus cifras difieren) y en "
+    "las mismas horas, el pronóstico emitido el mismo día (24 h) tuvo en 2026, desde el 15 de enero, un MAE de "
+    f"{n(hz[('2026', 1)].MAE)} COP/kWh; el de la víspera, {n(hz[('2026', 2)].MAE)}, y el de dos días antes, "
+    f"{n(hz[('2026', 3)].MAE)} (Diebold-Mariano frente al de 24 h: t = {n(hz[('2026', 2)].DM_t_vs_dia1, 1)} y "
+    f"{n(hz[('2026', 3)].DM_t_vs_dia1, 1)}). En la operación hasta el 31 de octubre fueron {n(hz[('operacion', 1)].MAE)}, "
+    f"{n(hz[('operacion', 2)].MAE)} y {n(hz[('operacion', 3)].MAE)}. El error crece porque solo el pronóstico del mismo día "
+    "cuenta con el predespacho de XM de ese día, pero los tres superan a la persistencia y las bandas mantienen una cobertura "
+    f"cercana al 80 % en 2026. Las recomendaciones del motor con dos y tres días de anticipación coinciden con las del día en el "
+    f"{pc(HR['senales']['generador']['dia2'], 0)} y el {pc(HR['senales']['generador']['dia3'], 0)} de las horas para el generador.{txt_hist}"))
 R_("Incertidumbre y costo.", (
     "**Incertidumbre y costo.** La Tabla 18 reúne la cobertura de las bandas y el costo computacional del diseño definitivo en el "
     "mismo equipo."))

@@ -749,6 +749,7 @@ def s9_resultados():
         anchos=[1.6, 1.3, 1.3, 2.2, 1.2, 2], titulo="Tabla 16. Error por tramo de horizonte (2026)",
         fuente="El error crece con el horizonte, como es de esperar, pero a 49-72 h el modelo sigue cometiendo el 61 % del "
                "error de la persistencia.")
+    s9_horizontes()
     H("9.3 Por régimen climático", 2)
     rn, rx = C["regimen_normal_ene_abr"], C["regimen_el_nino_may_ago"]
     tabla(["Periodo", "Augur", "Predespacho", "Persistencia", "DM vs predespacho"], [
@@ -805,6 +806,47 @@ def s9_resultados():
     s9_justificacion()
     s9_enso()
     s9_umbrales()
+
+
+def s9_horizontes():
+    """Comparacion 24 h frente a 72 h y walk-forward historico de 72 h (9-nov-2026)."""
+    import horizontes_docs as hd
+    t, r = hd.comparacion()
+    P("**Comparación entre horizontes.** Para cada hora objetivo hay tres pronósticos: el emitido el mismo día (día 1, el "
+      "modelo de 24 h), el de la víspera (día 2) y el de dos días antes (día 3). La Tabla 16b los compara en las mismas horas, "
+      "con un corte cada día; la Tabla 16 usa uno cada 3 días (los cortes del producto de 72 h), por eso sus cifras difieren.")
+    nombres = {"2026": "2026 (15-ene a 5-ago)", "operacion": "Operación (6-ago a 31-oct)"}
+    tabla(["Periodo", "Día", "MAE", "MAPE", "Sesgo", "Cobertura 80 %", "Ancho", "Persistencia", "DM vs día 1"],
+          [[nombres[f.periodo] if f.dia == 1 else "", str(f.dia), n(f.MAE), pc(f.MAPE), n(f.sesgo), pc(f.cobertura),
+            n(f.ancho, 0), n(f.MAE_pers), "—" if f.dia == 1 else n(f.DM_t_vs_dia1, 1)] for f in t.itertuples()],
+          anchos=[3.2, 0.8, 1.1, 1.1, 1.0, 1.6, 1.0, 1.5, 1.4], tam=8.5,
+          titulo="Tabla 16b. Pronósticos de 24 h (día 1) y 72 h (días 2 y 3) en las mismas horas (COP/kWh)",
+          fuente="DM positivo = el día 2 o 3 se equivoca más que el día 1 (diferencia diaria, varianza HAC); todos con p < 0,001. "
+                 "Persistencia: el último precio publicado al corte de ese pronóstico.")
+    f2, f3 = r["forma"]["dia2"], r["forma"]["dia3"]
+    sg, sc = r["senales"]["generador"], r["senales"]["comercializador"]
+    P(f"Pronosticar más lejos cuesta precisión, porque solo el día 1 tiene el predespacho de XM de ese mismo día: el error "
+      f"sube cerca de dos tercios en el día 2 y se duplica en el día 3, y la banda se ensancha en proporción, con cobertura "
+      f"cercana al 80 % en 2026. Aun así, los tres le ganan con amplitud a la persistencia. El día 3 subestimó en 2026 "
+      f"({n(t[(t.periodo == '2026') & (t.dia == 3)].sesgo.iloc[0])} COP/kWh en promedio), porque su referencia, el "
+      f"predespacho del día del corte, se quedó atrás mientras el precio subía con El Niño. La forma del día se conserva "
+      f"(correlación de la curva con la del día 1: {n(f2['correlacion'], 2)} y {n(f3['correlacion'], 2)}) y las "
+      f"recomendaciones del motor coinciden con las del día 1 en el {pc(sg['dia2'], 0)} y el {pc(sg['dia3'], 0)} de las horas "
+      f"para el generador, y en el {pc(sc['dia2'], 0)} y el {pc(sc['dia3'], 0)} para el comercializador: planear con dos o tres "
+      f"días de anticipación da casi las mismas decisiones, y conviene confirmarlas la víspera.")
+    h = hd.historico()
+    if h is not None:
+        pv = h.pivot(index="periodo", columns="dia", values="MAE").reindex(hd.PERIODOS)
+        pp = h.pivot(index="periodo", columns="dia", values="MAE_pers").reindex(hd.PERIODOS)
+        tabla(["Periodo", "Día 1", "Día 2", "Día 3", "Persistencia día 1", "Persistencia día 2", "Persistencia día 3"],
+              [[per] + [n(pv.loc[per, d]) for d in (1, 2, 3)] + [n(pp.loc[per, d]) for d in (1, 2, 3)] for per in hd.PERIODOS],
+              anchos=[2, 1.3, 1.3, 1.3, 2.1, 2.1, 2.1], tam=8.5,
+              titulo="Tabla 16c. Walk-forward histórico: MAE (COP/kWh) por día de anticipación, 2020-21 a 2024-25",
+              fuente="Mismo protocolo que la validación histórica de 24 h (15 de julio a 30 de junio, reentreno mensual, solo "
+                     "información publicada al corte). Día 1: la versión de tres CatBoost del modelo de 24 h.")
+        gana = int((h[h.dia > 1].MAE < h[h.dia > 1].MAE_pers).sum())
+        P(f"En los cinco años históricos, los días 2 y 3 le ganan a la persistencia en {gana} de 10 casos, y el error crece "
+          "con la anticipación igual que en 2026.")
 
 
 def s9_justificacion():
