@@ -196,8 +196,10 @@ Todos parten de dos percentiles del precio (por defecto p25/p75) y comparan `q50
 
 - **`fijo`**: percentiles calculados una sola vez sobre el precio histórico de entrenamiento
   (2019-2025). Simple, reproducible, fácil de explicar.
-- **`rodante`**: percentiles con ventana móvil **causal** de 30 días (usa solo información pasada,
-  `shift(1)` antes de la ventana para no incluir la propia hora) — se adapta al régimen reciente.
+- **`rodante`**: percentiles con ventana móvil **causal** de 30 días por defecto (usa solo información pasada,
+  `shift(1)` antes de la ventana para no incluir la propia hora) — se adapta al régimen reciente. La ventana es el
+  parámetro `ventana_dias` de `generar_senales()`; en el dashboard la elige el usuario con los botones «Comparar con
+  los últimos» (7, 14, 30, 60, 90, 180 o 365 días; 30 es la validada, ver la bitácora del README del 6 y el 9-nov).
 - **`banda`**: igual que `fijo`, pero fuerza la señal a `esperar` cuando el ancho de la banda
   `[q10,q90]` está en el percentil 75 o más alto de anchos históricos — es decir, cuando el
   pronóstico tiene poca confianza, el motor prefiere no actuar en vez de arriesgarse.
@@ -218,6 +220,17 @@ promedio se vea bien) y se elige el de mayor ventaja entre los válidos.
 | `comercializador` | `comprar` | precio bajo — oportunidad de comprar en bolsa |
 | | `evitar_compra` | precio alto — usar contratos bilaterales en vez de bolsa |
 | | `esperar` | precio en rango medio, o poca confianza |
+
+### Filtro de precio de contrato (dashboard, desde el 9-nov-2026)
+
+Después de elegir el método y generar las señales, `dashboard/app.py` (`serie_con_senal(..., contrato=...)`) aplica un
+filtro económico: la señal favorable solo se mantiene si además conviene frente al precio de contrato — `comprar` solo
+si `q50 <= contrato` y `vender` solo si `q50 >= contrato`; si no, pasa a `esperar` (columna `por_contrato = True`). Por
+defecto el contrato es el **MC** de XM (costo promedio ponderado de los contratos del mercado regulado; el del mes
+anterior desde el día 10), que la corrida diaria descarga en `data/processed/mc_mensual_xm.csv`
+(`produccion_datos.actualizar_mc`). El usuario puede apagarlo o poner su propio precio en la barra lateral. Va después
+de la selección por estabilidad porque en regímenes caros es correcto que el comprador casi no actúe en bolsa.
+Validación: `scripts_experimento/realista_motor_umbrales_alternativos.py`.
 
 ## 8. Limitaciones conocidas (léelas antes de confiar en un resultado)
 
