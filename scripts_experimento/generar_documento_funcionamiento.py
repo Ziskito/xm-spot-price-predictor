@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Documento de referencia "Augur: funcionamiento del sistema" (docs/Funcionamiento_Augur.docx), 19-oct-2026.
+Documento de referencia "Augur: funcionamiento del sistema" (docs/Funcionamiento_Augur.docx), 19-oct-2026; version
+del 5-nov-2026: cifras en vivo de todo 2026 y de la operacion hasta el ultimo precio publicado (vivo()), seccion 9.8
+(cuanto aportan el ENSO y la hidrologia), demanda incompleta del ultimo dia y limitaciones de almacenamiento y SOI.
 Explica el sistema tal como corre hoy: datos y calendario de publicacion, las 66 variables, los modelos finales, el
 motor de decision, las metricas de calidad (que son y por que se usan), los resultados, la comparacion con otros
 trabajos, la operacion diaria y las limitaciones. Las cifras salen de informe_final_assets/cifras.json (las mismas
@@ -34,8 +36,12 @@ FIG.mkdir(exist_ok=True)
 C = json.loads((FIG_INF / "cifras.json").read_text(encoding="utf-8"))
 HASTA = int(sys.argv[sys.argv.index("--hasta") + 1]) if "--hasta" in sys.argv else 99
 
-AZUL, GRIS, TINTA = RGBColor(0x1F, 0x4E, 0x79), RGBColor(0x59, 0x59, 0x59), RGBColor(0x1A, 0x1A, 0x1A)
-FONDO_ENC, FONDO_NOTA = "1F4E79", "EAF1F8"
+# identidad de la pagina web (dashboard/app.py, TEMAS["claro"]): tinta, acento ambar y gris; solo en portada, titulos
+# y pie. Tablas y notas sin relleno de color (pedido de Juan, 5-nov-2026).
+MARCA_TINTA, MARCA_ACENTO, MARCA_GRIS, MARCA_TENUE = "#0B1F3A", "#D97706", "#5B6B82", "#94A3B8"
+AZUL, GRIS, TINTA = RGBColor(0x0B, 0x1F, 0x3A), RGBColor(0x5B, 0x6B, 0x82), RGBColor(0x1A, 0x1A, 0x1A)
+ACENTO = RGBColor(0xD9, 0x77, 0x06)
+BORDE = "8C8C8C"
 
 
 # ------------------------------------------------------------------------------------------------ formato de numeros
@@ -72,11 +78,43 @@ for nivel, tam, antes in ((1, 17, 18), (2, 13, 12), (3, 11.5, 9)):
 ANCHO = sec.page_width - sec.left_margin - sec.right_margin
 
 
-def sombra(celda, color):
-    tcpr = celda._tc.get_or_add_tcPr()
-    s = OxmlElement("w:shd")
-    s.set(qn("w:val"), "clear"), s.set(qn("w:color"), "auto"), s.set(qn("w:fill"), color)
-    tcpr.append(s)
+def logo_png(ruta, px=600, alfa=1.0):
+    """Logo de Augur (dashboard/assets/augur_logo_claro.svg: tres ondas gris, tinta y ambar) dibujado a PNG."""
+    from matplotlib.path import Path as MPath
+    from matplotlib.patches import PathPatch
+    ondas = [((5.90, 36), (7.60, 32.60), (9.72, 32.60), (11, 36.85), (12.28, 32.60), (14.40, 32.60), (16.10, 36), MARCA_TENUE, 2.8),
+             ((16.90, 26), (19.10, 21.60), (21.85, 21.60), (23.5, 27.10), (25.15, 21.60), (27.90, 21.60), (30.10, 26), MARCA_TINTA, 3.4),
+             ((27.70, 14.5), (30.30, 9.30), (33.55, 9.30), (35.5, 15.80), (37.45, 9.30), (40.70, 9.30), (43.30, 14.5), MARCA_ACENTO, 3.8)]
+    dpi = 100
+    fig = plt.figure(figsize=(px / dpi, px / dpi), dpi=dpi)
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, 48); ax.set_ylim(48, 0); ax.axis("off")
+    for *pts, col, ancho in ondas:
+        cod = [MPath.MOVETO] + [MPath.CURVE4] * 6
+        ax.add_patch(PathPatch(MPath(pts, cod), fill=False, edgecolor=col, lw=ancho * px / 48 * 72 / dpi,
+                               capstyle="round", joinstyle="round", alpha=alfa))
+    fig.savefig(ruta, transparent=True); plt.close(fig)
+    return ruta
+
+
+def bordes_tabla(t, color=BORDE, tam=4):
+    """Bordes finos grises en toda la tabla (sin relleno)."""
+    tblpr = t._tbl.tblPr
+    b = OxmlElement("w:tblBorders")
+    for lado in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        e = OxmlElement(f"w:{lado}")
+        e.set(qn("w:val"), "single"), e.set(qn("w:sz"), str(tam)), e.set(qn("w:color"), color)
+        b.append(e)
+    tblpr.append(b)
+
+
+def borde_par(par, lado, color, tam=8, espacio=4):
+    ppr = par._p.get_or_add_pPr()
+    b = ppr.find(qn("w:pBdr"))
+    if b is None:
+        b = OxmlElement("w:pBdr"); ppr.append(b)
+    e = OxmlElement(f"w:{lado}")
+    e.set(qn("w:val"), "single"), e.set(qn("w:sz"), str(tam)), e.set(qn("w:space"), str(espacio)), e.set(qn("w:color"), color)
+    b.append(e)
 
 
 def runs(par, texto, tam=None, color=None):
@@ -120,34 +158,31 @@ def H(texto, nivel=1):
 
 
 def nota(texto, titulo="Por qué importa"):
-    t = doc.add_table(rows=1, cols=1)
-    t.alignment = WD_TABLE_ALIGNMENT.CENTER
-    c = t.cell(0, 0)
-    sombra(c, FONDO_NOTA)
-    p = c.paragraphs[0]
+    """Nota destacada sin relleno: linea gris a la izquierda y sangria."""
+    p = doc.add_paragraph()
     runs(p, f"**{titulo}.** {texto}", tam=10)
-    p.paragraph_format.space_after = Pt(2)
-    doc.add_paragraph().paragraph_format.space_after = Pt(0)
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p.paragraph_format.left_indent = Cm(0.4)
+    p.paragraph_format.space_before, p.paragraph_format.space_after = Pt(4), Pt(8)
+    borde_par(p, "left", BORDE, tam=12, espacio=8)
 
 
 def tabla(enc, filas, anchos=None, tam=9, titulo=None, fuente=None):
     if titulo:
         p = doc.add_paragraph()
-        runs(p, f"**{titulo}**", tam=10, color=AZUL)
+        runs(p, f"**{titulo}**", tam=10)
         p.paragraph_format.space_after, p.paragraph_format.keep_with_next = Pt(3), True
     t = doc.add_table(rows=1, cols=len(enc))
     t.style = "Table Grid"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    bordes_tabla(t)
     for j, e in enumerate(enc):
         c = t.rows[0].cells[j]
-        sombra(c, FONDO_ENC)
-        runs(c.paragraphs[0], f"**{e}**", tam=tam, color=RGBColor(0xFF, 0xFF, 0xFF))
-    for i, f in enumerate(filas):
+        runs(c.paragraphs[0], f"**{e}**", tam=tam)
+    for f in filas:
         cs = t.add_row().cells
         for j, v in enumerate(f):
             runs(cs[j].paragraphs[0], str(v), tam=tam)
-            if i % 2 == 1:
-                sombra(cs[j], "F3F6FA")
     for fila in t.rows:
         for c in fila.cells:
             for p in c.paragraphs:
@@ -236,7 +271,7 @@ def fig_comparacion():
              (6, "Ensamble de 6"), (7, "Predespacho XM"), (10, "Augur (definitivo)")]
     vals, etq = [C["tabla24"][i]["MAE"] for i, _ in orden], [e for _, e in orden]
     fig, ax = plt.subplots(figsize=(9, 3.6), dpi=170)
-    cols = ["#95a5a6"] * 7 + ["#27ae60", "#1f4e79"]
+    cols = ["#B8C2D0"] * 7 + [MARCA_GRIS, MARCA_TINTA]
     ax.barh(range(len(vals))[::-1], vals, color=cols)
     for i, v in enumerate(vals):
         ax.text(v + 1.5, len(vals) - 1 - i, n(v), va="center", fontsize=9)
@@ -249,32 +284,79 @@ def fig_comparacion():
     return ruta
 
 
+LOGO = logo_png(FIG / "augur_logo.png")
+
+
 # ================================================================================================== contenido
 K = C["contrato24"]
 T24 = C["tabla24"]
 T72 = {f["tramo"]: f for f in C["tabla72"]}
 OP = C["operacion"]
+VERSION = "5 de noviembre de 2026"
+
+
+def vivo():
+    """Todo 2026 y la operacion (desde el 5-ago) hasta el ultimo precio publicado, con el contrato de 24 h en produccion,
+    el predespacho disponible al corte y la persistencia realista (misma hora de D-4; 120 h para la 00:00)."""
+    import numpy as np
+    import pandas as pd
+    import statsmodels.api as sm
+    res = RAIZ / "data/processed/resultados"
+    c = pd.read_csv(res / "pronostico_realista_bandas_24h_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")
+    c = c.dropna(subset=["real"])
+    c["pre"] = pd.read_csv(res / "ensamble_24h_realista_2026.csv", parse_dates=["fecha_hora"]).set_index("fecha_hora")["Predespacho"]
+    precio = pd.concat([pd.read_csv(RAIZ / "data/processed" / f, usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])
+                        for f in ("dataset_maestro_2019_2025.csv", "dataset_maestro_2026.csv")]
+                       + [pd.read_csv(RAIZ / "data/produccion/serie_xm.csv", usecols=["fecha_hora", "precio_bolsa"], parse_dates=["fecha_hora"])]
+                       ).drop_duplicates("fecha_hora", keep="last").set_index("fecha_hora").sort_index()["precio_bolsa"]
+    c["pers"] = precio.reindex(c.index - pd.to_timedelta(np.where(c.index.hour == 0, 120, 96), unit="h")).to_numpy()
+
+    def bloque(x):
+        e = x["real"] - x["q50"]
+        d = (x["pre"] - x["real"]).abs() - e.abs()                 # > 0: Augur se equivoca menos
+        t = sm.OLS(d.to_numpy(), np.ones(len(d))).fit(cov_type="HAC", cov_kwds={"maxlags": 23}).tvalues[0]
+        return {"desde": x.index.min(), "hasta": x.index.max(), "horas": len(x), "MAE": e.abs().mean(),
+                "RMSE": float(np.sqrt((e ** 2).mean())), "MAPE": float((e.abs() / x["real"]).mean() * 100),
+                "MAE_pre": (x["pre"] - x["real"]).abs().mean(), "MAE_pers": (x["pers"] - x["real"]).abs().mean(),
+                "cobertura": float(((x["real"] >= x["q10"]) & (x["real"] <= x["q90"])).mean() * 100), "DM_vs_pre": float(t),
+                "mensual": {k: float(g.abs().mean()) for k, g in e.groupby(e.index.to_period("M").astype(str))}}
+    return bloque(c), bloque(c[c.index >= "2026-08-05 01:00"])
+
+
+ANIO, OPV = vivo()
+MESES = {"01": "enero", "02": "febrero", "03": "marzo", "04": "abril", "05": "mayo", "06": "junio", "07": "julio",
+         "08": "agosto", "09": "septiembre", "10": "octubre", "11": "noviembre", "12": "diciembre"}
+fecha = lambda t: f"{t.day} de {MESES[f'{t.month:02d}']}"  # noqa: E731
+corta = lambda t: f"{t.day}-{MESES[f'{t.month:02d}'][:3]}"  # noqa: E731
 mejora_pers = 100 * (1 - K["MAE"] / K["MAE_pers"])
 mejora_pre = 100 * (1 - K["MAE"] / K["MAE_pre"])
 
 
 def s0_portada():
-    for _ in range(5):
+    """Portada con la identidad de la pagina web: logo, Augur en tinta, linea ambar y textos en el gris del sitio."""
+    for _ in range(3):
         doc.add_paragraph()
-    p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    r = p.add_run("Augur"); r.bold = True; r.font.size = Pt(40); r.font.color.rgb = AZUL
+    p = doc.add_paragraph(); p.add_run().add_picture(str(LOGO), width=Cm(3.2))
+    p.paragraph_format.space_after = Pt(0)
     p = doc.add_paragraph()
-    r = p.add_run("Funcionamiento del sistema"); r.font.size = Pt(22); r.font.color.rgb = TINTA
+    r = p.add_run("Augur"); r.bold = True; r.font.size = Pt(44); r.font.color.rgb = AZUL
+    p.paragraph_format.space_after = Pt(0)
+    p = doc.add_paragraph()
+    r = p.add_run("Funcionamiento del sistema"); r.font.size = Pt(22); r.font.color.rgb = AZUL
+    p.paragraph_format.space_after = Pt(10)
+    borde_par(p, "bottom", MARCA_ACENTO.lstrip("#"), tam=18, espacio=10)
     p = doc.add_paragraph()
     runs(p, "Pronóstico del precio de bolsa de energía en Colombia y motor de decisión: datos, variables, modelos, "
             "métricas de calidad, resultados y operación", tam=12.5, color=GRIS)
-    for _ in range(9):
+    for _ in range(10):
         doc.add_paragraph()
-    for linea in ("**Juan David Barceló Barraza · Rafael Andrés Dede Perdomo**",
-                  "Ingeniería Electrónica · Universidad del Norte",
-                  "Documento de referencia técnica · versión del 19 de octubre de 2026",
-                  "Dashboard: augurpredictor.streamlit.app"):
+    p = doc.add_paragraph(); runs(p, "**Juan David Barceló Barraza · Rafael Andrés Dede Perdomo**", tam=11.5, color=AZUL)
+    p.paragraph_format.space_after = Pt(2)
+    for linea in ("Ingeniería Electrónica · Universidad del Norte",
+                  "Documento de referencia técnica"):
         p = doc.add_paragraph(); runs(p, linea, tam=11, color=GRIS); p.paragraph_format.space_after = Pt(2)
+    p = doc.add_paragraph(); r = p.add_run("augurpredictor.streamlit.app"); r.bold = True; r.font.size = Pt(11)
+    r.font.color.rgb = ACENTO
     salto()
     H("Contenido", 1)
     for i, t in enumerate(["Resumen: qué hace Augur y cifras clave", "El mercado y qué se pronostica",
@@ -311,7 +393,9 @@ def s1_resumen():
         ["MAE a 72 h (pasos 1 a 72)", f"{n(T72['1-72 h']['MAE'])} COP/kWh", f"25-48 h: {n(T72['25-48 h']['MAE'])} · 49-72 h: {n(T72['49-72 h']['MAE'])}"],
         ["Cobertura de la banda del 80 %", pc(K["cobertura"]), "objetivo 80 %; ancho medio " + n(K["ancho"], 0) + " COP/kWh"],
         ["Detección de picos (AUC)", n(C["eventos"][5]["AUC"], 2), "desplomes: AUC " + n(C["eventos"][2]["AUC"], 2)],
-        ["Operación en vivo (5-ago a 11-oct)", f"MAE {n(OP['MAE'])} COP/kWh", f"predespacho {n(OP['MAE_pre'])}; incluye el cambio de reglas de sep-2026"],
+        [f"Todo 2026 con la operación (1-ene a {corta(ANIO['hasta'])})", f"MAE {n(ANIO['MAE'])} COP/kWh",
+         f"{n(ANIO['horas'], 0)} h; predespacho {n(ANIO['MAE_pre'])}, persistencia {n(ANIO['MAE_pers'])}; MAPE {pc(ANIO['MAPE'])}"],
+        [f"Operación en vivo (5-ago a {corta(OPV['hasta'])})", f"MAE {n(OPV['MAE'])} COP/kWh", f"predespacho {n(OPV['MAE_pre'])}; incluye el cambio de reglas de sep-2026"],
         ["Validación histórica (5 años, 2020-2025)", "gana al predespacho en 5 de 5", "y a la versión simple en 3 de 5 (empata en 2)"],
     ]
     tabla(["Indicador", "Valor", "Contexto"], filas, anchos=[4.2, 2.6, 5.2], titulo="Tabla 1. Cifras clave del sistema",
@@ -372,6 +456,12 @@ def s3_datos():
                "entrenamiento. Las ofertas de precio de los generadores (OFEI) no se usan: XM agrega los precios al mes "
                "siguiente, así que usarlas sería fuga de información.")
     figura(fig_calendario(), 16, "Figura 2. Qué información existe en el momento del pronóstico (corte a las 00:00 del día D).")
+    P("**Demanda del último día publicado.** XM publica el último día de demanda incompleto (en promedio un 26 % del valor "
+      "final, en las 21 corridas revisadas de octubre de 2026) y lo completa al día siguiente. Ese día entra en las variables "
+      "de demanda del pronóstico, así que desde el 5 de noviembre la operación lo reemplaza por la generación del mismo día, "
+      "escalada por la razón demanda/generación de los 30 días anteriores (las dos series tienen correlación horaria de "
+      "0,996). En el backtest de 2026, la demanda incompleta empeora el CatBoost de 36,8 a 38,0 COP/kWh (significativo) y "
+      "el arreglo lo devuelve a 36,8; en el pronóstico final el combinador ya compensaba casi todo el sesgo (35,16 frente a 35,20).")
     P("Series del proyecto: un dataset maestro horario sincronizado de enero de 2019 a agosto de 2026 (66.576 horas) y "
       "una serie de operación que se actualiza todos los días con lo nuevo de XM y NOAA. El año 2026 se reservó como "
       "prueba fuera de muestra; 2019-2025 sirve para entrenar y para la validación histórica.")
@@ -526,7 +616,8 @@ def s6_motor():
     ], anchos=[2.4, 3.5, 3.2, 3.2], titulo="Tabla 13. Señales del motor")
     tabla(["Método", "Cómo calcula los umbrales"], [
         ["fijo", "Percentiles del precio histórico 2019-2025, calculados una sola vez"],
-        ["rodante", "Percentiles de los últimos 30 días, causales (solo pasado); se adaptan al régimen"],
+        ["rodante", "Percentiles del pronóstico de los días anteriores (30 por defecto; el usuario puede elegir de 7 a "
+                    "365), causales (solo pasado); se adaptan al régimen"],
         ["banda", "Como fijo, pero fuerza \"esperar\" cuando la banda q10-q90, relativa al precio, está por encima de su percentil 75 histórico (poca confianza)"],
         ["híbrido", "Umbral rodante + el filtro de confianza de banda"],
     ], anchos=[1.8, 10.2], titulo="Tabla 14. Los cuatro métodos de umbral")
@@ -537,6 +628,18 @@ def s6_motor():
       "en ambas mitades actúa entre el 10 % y el 40 % de las horas y su ventaja no es negativa. Entre los estables se elige "
       "el de mejor **peor mitad**, es decir, el que rinde mejor en su mitad más difícil (criterio conservador). Con los "
       "datos de 2026 el método elegido es el **rodante** para los dos roles y los dos horizontes.")
+    P("**Umbrales relativos y ventana de comparación.** Con el método rodante, «caro» y «barato» son relativos a los días "
+      "anteriores, no niveles fijos. Si el precio viene bajando, la ventana todavía recuerda los días caros y casi todo el "
+      "día queda por debajo del umbral caro; si viene subiendo, pasa lo contrario. La ventana de 30 días es la escala con "
+      "la que el mercado colombiano compara el precio (la tarifa regulada traslada el precio de bolsa del mes anterior, "
+      "Resolución CREG 119 de 2007, y XM compara cada mes la bolsa con el MC). En el dashboard se puede elegir otra (7, 14, "
+      "60, 90, 180 o 365 días) con los botones «Comparar con los últimos»; la de 30 días queda marcada como validada.")
+    P("**Filtro de precio de contrato.** La recomendación favorable solo se mantiene si además conviene frente al precio "
+      "de contrato: el comercializador compra en bolsa solo si el precio esperado está por debajo del contrato, y el "
+      "generador vende en bolsa solo si está por encima. Si no, la señal pasa a «esperar» (usar el contrato). Por defecto "
+      "el contrato es el **MC** de XM, el costo promedio ponderado de los contratos del mercado regulado, el del mes "
+      "anterior desde el día 10; cada usuario puede poner el suyo. El filtro se aplica después de elegir el método por "
+      "estabilidad, porque en los regímenes caros es correcto que el comprador casi no actúe en bolsa.")
 
 
 def s7_metricas():
@@ -659,12 +762,22 @@ def s9_resultados():
         fuente="Augur gana al predespacho en los cinco años. DM negativo = la versión v2 (tres CatBoost) se equivoca menos "
                "que la simple (un CatBoost); significativa en los orígenes 1 a 3.")
     H("9.5 Operación en vivo", 2)
-    om = OP["mensual"]
+    om = OPV["mensual"]
     P(
-      f"Desde el 5 de agosto el sistema corre solo todos los días. Entre esa fecha y el 11 de octubre (último precio "
-      f"publicado al cierre de esta versión, {n(OP['horas'], 0)} horas) el MAE fue {n(OP['MAE'])} COP/kWh frente a "
-      f"{n(OP['MAE_pre'])} del predespacho, y la cobertura de la banda {pc(OP['cobertura'])}. Por mes: agosto "
-      f"{n(om['2026-08'])}, septiembre {n(om['2026-09'])} y octubre {n(om['2026-10'])}.")
+      f"Desde el 5 de agosto el sistema corre solo todos los días. Entre esa fecha y el {fecha(OPV['hasta'])} (último precio "
+      f"publicado al cierre de esta versión, {n(OPV['horas'], 0)} horas) el MAE fue {n(OPV['MAE'])} COP/kWh frente a "
+      f"{n(OPV['MAE_pre'])} del predespacho, y la cobertura de la banda {pc(OPV['cobertura'])}. Por mes: "
+      + ", ".join(f"{MESES[k[5:]]} {n(v)}" for k, v in om.items()) + ".")
+    tabla(["Periodo", "Horas", "Augur", "Predespacho", "Persistencia", "MAPE", "Cobertura 80 %"], [
+        [f"Todo 2026 (1 de enero al {fecha(ANIO['hasta'])})", n(ANIO["horas"], 0), n(ANIO["MAE"]), n(ANIO["MAE_pre"]),
+         n(ANIO["MAE_pers"]), pc(ANIO["MAPE"]), pc(ANIO["cobertura"])],
+        [f"Operación (5 de agosto al {fecha(OPV['hasta'])})", n(OPV["horas"], 0), n(OPV["MAE"]), n(OPV["MAE_pre"]),
+         n(OPV["MAE_pers"]), pc(OPV["MAPE"]), pc(OPV["cobertura"])],
+    ], anchos=[4.4, 1.2, 1.3, 1.8, 1.8, 1.3, 1.9], tam=8.5,
+        titulo="Tabla 18b. MAE (COP/kWh) del pronóstico de 24 h publicado, hasta el último precio de XM",
+        fuente="Mismas horas para los tres pronósticos. Persistencia: misma hora de D-4, el último precio publicado al corte. "
+               f"Diebold-Mariano de todo 2026 frente al predespacho: t = {n(ANIO['DM_vs_pre'], 1)} (positivo = Augur se "
+               "equivoca menos).")
     P("El salto de septiembre coincide con la activación de la Resolución CREG 101 127 (9 de septiembre): el error del "
       "predespacho de XM se duplicó en las mismas fechas, lo que indica un cambio en cómo se forma el precio y no una falla "
       "del modelo. Se probaron dos adaptaciones: dar más peso a los datos recientes (empeora) y agregar como variable una "
@@ -687,6 +800,8 @@ def s9_resultados():
         fuente=f"Precio medio del periodo: {n(m24['precio_medio'])} COP/kWh. Las mitades se dividen el "
                f"{m24['corte_mitades']}. La ventaja no es una simulación de portafolio (sección 12).")
     s9_justificacion()
+    s9_enso()
+    s9_umbrales()
 
 
 def s9_justificacion():
@@ -744,6 +859,93 @@ def s9_justificacion():
                  "(pico y desplome) y el pico de los días 2 y 3.")
 
 
+def s9_enso():
+    """Cuanto aportan el ENSO y la hidrologia a 24-72 h (ablacion, estratificacion, caracterizacion; 5-nov-2026)."""
+    import pandas as pd
+    res = RAIZ / "data/processed/resultados"
+    H("9.8 Cuánto aportan el ENSO y la hidrología", 2)
+    P("El ONI que usa Augur es la media móvil de tres meses de la anomalía de temperatura superficial del mar en la región "
+      "Niño 3.4, con el rezago con que NOAA la publica (valor de hace dos meses). La pregunta no es solo si se incluye, "
+      "sino cuánto mejora el pronóstico de 24 a 72 h. Se midió de tres formas.")
+    a = pd.read_csv(res / "ablacion_logo_multisemilla.csv")
+    nombres = {"precio (rezagos e historia)": "Precio (rezagos e historia)", "calendario": "Calendario", "festivos": "Festivos",
+               "hidrologia (actual)": "Hidrología (embalses y aportes)", "demanda y generacion": "Demanda y generación", "ONI": "ONI"}
+    tabla(["Grupo quitado", "Cambio del MAE", "Desviación entre semillas", "Lectura"], [
+        [nombres[r.grupo], f"{'+' if r.delta_media > 0 else ''}{n(r.delta_media, 2)}", n(r.delta_std, 2),
+         "aporta" if r.veredicto == "APORTA" else "ruido (el signo cambia)"] for r in a.itertuples() if r.grupo in nombres],
+        anchos=[4.2, 2.2, 2.8, 3.3], tam=8.5,
+        titulo="Tabla 23b. Ablación por grupos: cuánto empeora el MAE (COP/kWh) al quitar cada grupo de variables",
+        fuente="CatBoost directo a 24 h, tres semillas, prueba en 2026 (MAE base 59,4 ± 0,9). Positivo = el grupo ayuda. Un "
+               "efecto menor que la variación entre semillas no es interpretable.")
+    P("**1. Como predictor a 24-72 h, el ONI no mejora la precisión.** Quitarlo, igual que quitar la hidrología o la "
+      "demanda, deja el error dentro de la variación entre semillas; solo el precio pasado y el calendario aportan. Es lo "
+      "mismo que encontró un estudio del mercado nórdico, también hidro-dominado. A ese plazo, el estado hidrológico ya "
+      "está en el precio reciente y, sobre todo, en el predespacho, que se arma con las ofertas de los generadores.")
+    e = pd.read_csv(res / "estratificacion_regimen_24h.csv").set_index("embalse")
+    tabla(["Embalse", "El Niño (ONI alto)", "Neutral o La Niña"], [
+        ["Alto", n(e.loc["alto"].iloc[0]), n(e.loc["alto"].iloc[1])], ["Bajo", n(e.loc["bajo"].iloc[0]), n(e.loc["bajo"].iloc[1])]],
+        anchos=[3, 3.5, 3.5], titulo="Tabla 23c. MAE (COP/kWh) por régimen hidroclimático",
+        fuente="Las dos variables están correlacionadas (El Niño seca los embalses), así que los efectos se confunden en parte.")
+    P("**2. Sí sirve para saber cuándo desconfiar del pronóstico.** Con El Niño y embalses bajos el error se triplica "
+      "(de 28,5 a 97,1 COP/kWh). Augur no lo usa como regla aparte: las bandas conformes se abren solas cuando los "
+      "errores recientes crecen, que es lo que ocurre en esos regímenes, y el indicador de confianza del dashboard sale "
+      "del ancho de la banda.")
+    P("**3. Es una señal de meses, no de días.** En la caracterización de 2019-2026 el ONI anticipa los aportes en unos "
+      "3 meses (correlación −0,33) y los embalses en unos 8 meses (−0,60), y el embalse se comporta como la integral de "
+      "unos 180 días de aportes. Con eso se probaron en el modelo de producción tres variables nuevas: anomalía del "
+      "embalse frente a su nivel normal de la época, aportes de 180 días y el ONI con 3 y 8 meses más de rezago. Mejoran "
+      "unos 1,4 COP/kWh en mayo-agosto (El Niño), empeoran en enero-abril y ninguna es significativa (Diebold-Mariano, "
+      "p de 0,19 a 0,71), así que no se adoptaron. El SOI no se probó: mide el mismo fenómeno desde la presión atmosférica "
+      "y, dado el resultado del ONI, no se espera que cambie la conclusión a 24-72 h.")
+    nota("En un horizonte de 24 a 72 horas, el ENSO y la hidrología valen más como indicadores de riesgo que como "
+         "predictores. En horizontes de meses, donde no hay predespacho, es donde deberían pesar más; Augur no evalúa "
+         "ese horizonte.",
+         "Lectura")
+    P("**Otras pruebas sin ganancia (5 de noviembre).** Un combinador de Kalman, con pesos que se corrigen hora a hora, es "
+      "peor que el QRA diario en todas sus versiones (la mejor, 38,2 frente a 35,0): minimiza errores cuadráticos y los "
+      "picos lo descuadran. En el motor, distinguir días laborables de fines de semana no agrega nada que el pronóstico no "
+      "traiga ya.")
+
+
+def s9_umbrales():
+    """Ventana de los umbrales y filtro de contrato (realista_motor_umbrales_alternativos.py, 6 a 9-nov-2026)."""
+    import pandas as pd
+    t = pd.read_csv(RAIZ / "data/processed/resultados/escenario_realista/mejoras/motor_umbrales_alternativos.csv")
+    H("9.9 Ventana de los umbrales y filtro de contrato", 2)
+    P("Se compararon las reglas del motor en los cinco años históricos (15 de julio a 30 de junio, 2020-21 a 2024-25), en "
+      "2026 y en la operación (6 de agosto en adelante), siempre con el pronóstico realista y el filtro intradía. Para la "
+      "ventana se probaron 7, 14, 30, 60 y 90 días, combinaciones de una ventana corta y una larga (como recomienda la "
+      "literatura de ventanas de calibración) y una ventana que se corta en el último cambio de nivel del precio.")
+    v = ["R30 (vigente)", "R7", "R14", "R60", "R90", "C(7,90)", "C(14,60)", "C(30,365)", "PC(T=5)"]
+    nom = {"R30 (vigente)": "30 días (vigente)", "R7": "7 días", "R14": "14 días", "R60": "60 días", "R90": "90 días",
+           "C(7,90)": "7 + 90 días", "C(14,60)": "14 + 60 días", "C(30,365)": "30 + 365 días",
+           "PC(T=5)": "Corte en el último cambio de nivel"}
+    est = t.groupby(["variante", "rol"])["estable"].sum().unstack()
+    tabla(["Ventana", "Generador: periodos estables", "Comercializador: periodos estables"],
+          [[nom[x], f"{int(est.loc[x, 'generador'])} de 7", f"{int(est.loc[x, 'comercializador'])} de 7"] for x in v],
+          anchos=[5.5, 3.5, 3.5], tam=8.5, titulo="Tabla 23d. Estabilidad de cada ventana (7 periodos)",
+          fuente="Estable = actúa entre el 10 % y el 40 % de las horas y con ventaja no negativa en las dos mitades del "
+                 "periodo. 7 y 14 días también son estables, pero con menos ventaja que 30 días en casi todos los periodos.")
+    P("Treinta días es la única ventana estable en los siete periodos para los dos roles que, a la vez, no pierde ventaja "
+      "frente a las cortas. Las largas y las combinaciones ganan en algunos años, pero en otros casi dejan de actuar. La "
+      "ventana que se corta en los cambios de nivel casi nunca se acorta y, cuando lo hace, empata o empeora.")
+    per = ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2026", "operación ago-nov"]
+    filas = []
+    for rol in ("comercializador", "generador"):
+        x = t[t["rol"] == rol].pivot(index="variante", columns="periodo", values="vs_MC_por_hora")
+        for var, etq in (("R30 (vigente)", "sin filtro"), ("R30+MC", "con filtro de contrato")):
+            filas.append([f"{rol.capitalize()}, {etq}"] + [n(x.loc[var, c]) for c in per])
+    tabla(["Rol y regla", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2026", "Operación"], filas,
+          anchos=[4.2] + [1.15] * 7, tam=8, titulo="Tabla 23e. Ganancia frente al contrato (MC), COP/kWh por hora del periodo",
+          fuente="Comercializador: (MC − precio real) en las horas de comprar; generador: (precio real − MC) en las de vender. "
+                 "Con el filtro nunca empeora y mejora de forma significativa en 8 de 14 casos (Diebold-Mariano por día, "
+                 "p < 0,01).")
+    P("El caso más claro es la operación de agosto a noviembre: sin el filtro, el motor le recomendaba al comercializador "
+      "comprar en bolsa horas «baratas para el último mes» que costaban más que su contrato. El MC es un promedio del "
+      "mercado: cada empresa tiene su propio precio de contrato, y para una generadora hidráulica el costo de oportunidad del "
+      "agua no es el MC; por eso el dashboard deja poner un precio propio.")
+
+
 def s10_comparacion():
     H("10. Comparación con otros trabajos")
     P("La comparación numérica directa es difícil porque cada trabajo usa otra resolución (diaria, mensual u horaria), "
@@ -780,6 +982,8 @@ def s11_operacion():
                            "Recalcula el motor de decisión y sube los resultados al repositorio.",
                            "Streamlit Community Cloud detecta el cambio y redespliega el dashboard."], 1):
         p = doc.add_paragraph(style="List Number"); runs(p, t); p.paragraph_format.space_after = Pt(2)
+    P("Si XM todavía tiene incompleto el último día de demanda, la corrida lo completa con la generación de ese día "
+      "(sección 3) y lo deja anotado en el registro.")
     P("La corrida del mediodía ya tiene el predespacho del día siguiente; las de la tarde lo recalculan con el despacho "
       "programado. Solo se congelan los días que ya empezaron.")
     P("**Dashboard (augurpredictor.streamlit.app).** Tiene tres vistas: **Operador** (recomendación de la hora elegida, "
@@ -803,8 +1007,12 @@ def s12_limitaciones():
         "el error de todos los pronósticos, incluido el del predespacho de XM. Las dos adaptaciones probadas (más peso a lo "
         "reciente y una aproximación de la curva de ofertas de la resolución) no pasaron la validación histórica.",
         "**PBN y PTB.** Augur pronostica el PBN; en horas de escasez el precio de liquidación (PTB) puede ser menor.",
-        "**El motor no es una simulación de portafolio.** La ventaja compara precios promedio; no modela contratos firmados, "
-        "capacidad de almacenamiento, costos de transacción ni la secuencia real de decisiones.",
+        "**El motor no es una simulación de portafolio ni un despacho de almacenamiento.** La ventaja compara precios "
+        "promedio; no modela contratos firmados, costos de transacción ni la secuencia real de decisiones. Para un sistema "
+        "de baterías (BESS) faltan el estado de carga, la potencia y la capacidad, la eficiencia de carga y descarga, la "
+        "degradación y el costo de oportunidad de la energía almacenada. El pronóstico horario con bandas está pensado "
+        "para alimentar una optimización de ese tipo, que queda como trabajo futuro.",
+        "**Variables climáticas.** Del ENSO solo se usa el ONI; el SOI no se probó (sección 9.8).",
         "**Rampas.** El modelo acierta la dirección de los cambios intradía mejor que su magnitud; el error se concentra en las "
         "horas de rampa (MAE ~117 COP/kWh en esas horas).",
         "**Picos y desplomes a 2 y 3 días.** Solo el detector de pico supera a la climatología en esos días, y no en todos los "
@@ -844,7 +1052,8 @@ for i, f in enumerate(SECCIONES):
 # pie de pagina con numero
 pie = sec.footer.paragraphs[0]
 pie.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = pie.add_run("Augur · funcionamiento del sistema · página ")
+pie.add_run().add_picture(str(LOGO), height=Cm(0.45))
+r = pie.add_run("  Augur · funcionamiento del sistema · página ")
 r.font.size, r.font.color.rgb = Pt(8.5), GRIS
 for tipo, txt in (("begin", None), (None, "PAGE"), ("end", None)):
     rr = pie.add_run(); rr.font.size = Pt(8.5)

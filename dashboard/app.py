@@ -1546,7 +1546,8 @@ def vista_reciente(fig, df, tk, dias=30):
 
 
 NOMBRE_CORTO = {"Banda [q10, q90]": "Banda", "Pronóstico (q50)": "Pronóstico",
-                "Posibilidad de desplome": "Pos. desplome", "Posibilidad de pico": "Pos. pico"}
+                "Posibilidad de desplome": "Pos. desplome", "Posibilidad de pico": "Pos. pico",
+                "Precio de contrato": "Contrato"}     # en dos columnas, el nombre largo se cortaba (9-nov)
 
 
 def valores_y(tr):
