@@ -667,7 +667,12 @@ R_("Motor de decisión (cuatro métodos", (
     "que el pronóstico ubica más cara (generador) o más barata (comercializador), y la desfavorable solo en la mitad opuesta: los "
     "umbrales deciden en qué temporada conviene la bolsa y el filtro, a qué hora del día actuar. (4) El método activo se elige "
     "por backtesting: solo son admisibles los que actúan entre 10 % y 40 % de las horas y, entre ellos, gana el de mayor ventaja "
-    "en la mitad más débil del periodo (criterio maximin [33]), no el de mayor ventaja promedio."))
+    "en la mitad más débil del periodo (criterio maximin [33]), no el de mayor ventaja promedio. (5) Con «rodante», «caro» y "
+    "«barato» son relativos a los días anteriores: 30 días es la escala con que la regulación traslada el precio de bolsa a la "
+    "tarifa (el del mes anterior) [44], y en el dashboard el usuario puede elegir otra ventana, de 7 a 365 días. (6) Desde el 9 de "
+    "noviembre, un filtro de precio de contrato mantiene la señal favorable solo si además conviene frente al contrato: comprar en "
+    "bolsa solo por debajo de él y vender solo por encima; por defecto se usa el MC de XM, el costo promedio de los contratos del "
+    "mercado regulado [44], y cada usuario puede poner su propio precio. El filtro se aplica después de elegir el método."))
 R_("La Figura 3 muestra el motor", (
     "La Figura 3 muestra el motor en operación durante una semana de julio de 2026 con el método que elige el criterio de "
     "estabilidad para el generador («rodante»). Cuando la mediana del pronóstico supera el umbral alto en la mitad cara del día, "
@@ -687,7 +692,10 @@ R_("Dashboard.", (
     "mapa de calor día-hora, tres indicadores del backtest y la semana de referencia, cada imagen con sus metadatos (unidad en "
     "COP/kWh, periodo, confianza y versión del modelo). Cada gráfica y la franja se exportan en JPG o PDF con la identidad de "
     "Augur, y la vista genera dos reportes en PDF: el del día (recomendación, gráfica, franja y tabla de las 24 horas) y uno "
-    "completo que agrega el mapa de calor, los indicadores y la semana, con figuras y tablas numeradas y notas metodológicas. La vista Analista permite fijar el método, "
+    "completo que agrega el mapa de calor, los indicadores y la semana, con figuras y tablas numeradas y notas metodológicas. "
+    "En la barra lateral, comunes a las tres vistas, se eligen la ventana de comparación de los umbrales (7 a 365 días; 30 por "
+    "defecto, marcada como validada) y el filtro de precio de contrato, con la línea del contrato en la gráfica del día y una "
+    "explicación en la tarjeta cuando el filtro cambia la recomendación. La vista Analista permite fijar el método, "
     "los percentiles, el rango de fechas y el filtro intradía, y la vista Metodología muestra el desempeño en vivo del "
     "pronóstico frente al predespacho de XM y explica el flujo, las fórmulas y la validación. La presentación se rediseñó el 15 "
     "de octubre con la retroalimentación del equipo (tarjetas, tema oscuro y diseño adaptable a pantallas angostas) y el 19 de "
@@ -941,7 +949,14 @@ R_("Sensibilidad de los umbrales.", (
     f"{n(B['35/65']['ventaja'])} en el {pc(B['35/65']['frec'])} con 35/65), y el par 25/75 queda en un punto intermedio "
     f"({n(B['25/75']['ventaja'])} COP/kWh, {pc(B['25/75']['frec'])}). En el barrido de la bitácora también se probaron ventanas "
     "rodantes de 7 a 90 días, percentiles del filtro de ancho de 60 a 90, histéresis y lógica difusa: ninguna configuración "
-    "ajustada en una mitad de 2026 mejoró a la actual en la otra, por lo que se conservaron los valores por defecto."))
+    "ajustada en una mitad de 2026 mejoró a la actual en la otra, por lo que se conservaron los valores por defecto. En noviembre "
+    "se repitió la comparación en los cinco años históricos, en 2026 y en la operación, con el pronóstico realista: 30 días es la "
+    "única ventana estable en los siete periodos para los dos roles sin perder ventaja frente a 7 y 14 días, y ni combinar una "
+    "ventana corta con una larga, como recomienda la literatura de ventanas de calibración [45], ni cortar la ventana en los "
+    "cambios de nivel del precio la mejoraron. El filtro de precio de contrato nunca empeoró la ganancia frente al MC y la mejoró "
+    "de forma significativa en 8 de 14 combinaciones de rol y periodo (Diebold-Mariano, p < 0,01); en la operación de agosto a "
+    "noviembre, por ejemplo, el comercializador pasó de −46,8 a +0,6 COP/kWh por hora, porque sin el filtro el motor le "
+    "recomendaba comprar en bolsa horas baratas frente al último mes pero más caras que su contrato."))
 imagen("Figura 9.", "barrido_percentiles.png")
 R_("Figura 9.", f"**Figura 9.** Ventaja frente a frecuencia de acción para seis pares de percentiles (método "
                  f"{met(MO['barrido']['metodo'])}, generador, 24 h).")
@@ -1118,7 +1133,12 @@ for ref in (
         "[42]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 178 de 2015, por la cual se establecen medidas para "
         "garantizar la prestación del servicio público de energía eléctrica,\" Bogotá, Colombia, 27 de octubre de 2015.",
         "[43]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 140 de 2017, por la cual se define el precio marginal "
-        "de escasez del Cargo por Confiabilidad y se hacen modificaciones a la Resolución CREG 071 de 2006,\" Bogotá, Colombia, 2017."):
+        "de escasez del Cargo por Confiabilidad y se hacen modificaciones a la Resolución CREG 071 de 2006,\" Bogotá, Colombia, 2017.",
+        "[44]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 119 de 2007, por la cual se aprueba la fórmula "
+        "tarifaria general que permite a los comercializadores minoristas de electricidad establecer los costos de prestación del "
+        "servicio a usuarios regulados en el Sistema Interconectado Nacional,\" Bogotá, Colombia, 2007.",
+        "[45]\tG. Marcjasz, T. Serafin y R. Weron, \"Selection of calibration windows for day-ahead electricity price "
+        "forecasting,\" Energies, vol. 11, n.º 9, art. 2364, 2018, doi: 10.3390/en11092364."):
     ultima = despues(ultima, ultima, ref)
 R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Ziskito/xm-spot-price-predictor): formulación en docs/, "

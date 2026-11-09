@@ -188,7 +188,15 @@ SECCIONES = [
         ("L", "J. Nasiadka, W. Nitka y R. Weron, \"Calibration window selection based on change-point detection for "
               "forecasting electricity prices,\" en Computational Science – ICCS 2022, LNCS, Springer, 2022, pp. 278–284.",
          "doi: 10.1007/978-3-031-08757-8_24 · arXiv:2204.00872",
-         "Selección de ventana por puntos de cambio, implementada en ventana_calibracion_not_24h.py."),
+         "Selección de ventana por puntos de cambio, implementada en ventana_calibracion_not_24h.py. También se probó, en "
+         "versión simple (corte en el último cambio de nivel), como ventana de los umbrales del motor (9-nov): casi nunca se "
+         "acorta y no mejora a la de 30 días (realista_motor_umbrales_alternativos.py)."),
+        ("C", "G. Marcjasz, T. Serafin y R. Weron, \"Selection of calibration windows for day-ahead electricity price "
+              "forecasting,\" Energies, vol. 11, no. 9, art. 2364, 2018.",
+         "doi: 10.3390/en11092364",
+         "En el informe (Sensibilidad de los umbrales): mezclar ventanas cortas y largas le gana a una sola ventana de "
+         "calibración; con esa idea se probaron combinaciones de ventanas (7+90, 14+60 y 30+365 días) para los umbrales del "
+         "motor, que no superaron a la de 30 días en estabilidad."),
         ("L", "R. Baranowski, Y. Chen y P. Fryzlewicz, \"Narrowest-over-threshold detection of multiple change-points and "
               "change-point-like features,\" J. R. Stat. Soc. Ser. B, vol. 81, no. 3, pp. 649–672, 2019.",
          "doi: 10.1111/rssb.12322 · paquete R: cran.r-project.org/package=not",
@@ -376,6 +384,13 @@ SECCIONES = [
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0140_2017.htm",
          "Precio marginal de escasez, vigente desde el 1-dic-2017: cambió la regla que activa la condición crítica y pone "
          "techo al precio que paga la demanda. En el informe (Ventana de datos), segunda razón para empezar la serie en 2019."),
+        ("C", "CREG, \"Resolución CREG 119 de 2007, por la cual se aprueba la fórmula tarifaria general que permite a los "
+              "comercializadores minoristas de electricidad establecer los costos de prestación del servicio a usuarios "
+              "regulados en el Sistema Interconectado Nacional,\" Bogotá, 2007.",
+         "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0119_2007.htm",
+         "Componente G de la tarifa: el precio de bolsa promedio del mes anterior y el MC, costo promedio ponderado de los "
+         "contratos del mercado regulado. En el informe (Motor de decisión): justifica la ventana de 30 días de los umbrales y "
+         "el filtro de precio de contrato, que usa el MC de XM por defecto."),
         ("L", "CREG, Resoluciones 071 de 2006 y 101 066 de 2024: precio de escasez y precio de transacciones en bolsa (PTB).",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0071_2006.htm",
          "Limitación: el PTB fue menor que el PBN en 360 horas de 2026."),
