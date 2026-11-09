@@ -72,7 +72,7 @@ from motor_decision import (  # noqa: E402
     generar_senales, evaluar_backtest, comparar_metodos, elegir_mejor_metodo,
     comparar_metodos_estable, elegir_mejor_metodo_estable,
     cargar_fuente_pronostico, umbrales_fijos, umbrales_rodantes,
-    horas_sin_umbral, precio_previo_ventana, ancho_relativo,
+    horas_sin_umbral, precio_previo_ventana, ancho_relativo, banda_ancha,
 )
 
 st.set_page_config(
@@ -2080,10 +2080,22 @@ def vista_operador():
                else f"alto para los últimos {VENTANA} días, pero sigue por debajo")
             + f" del precio de contrato ({es(ref_c)} COP/kWh). En esta hora conviene más el contrato que la bolsa."
         )
-    elif senal == "esperar" and metodo in ("banda", "hibrido") and crudo != "normal":
+    elif senal == "esperar" and crudo != "normal" and metodo in ("banda", "hibrido") and bool(banda_ancha(df).loc[idx]):
         frase = (
             f"El precio esperado está {crudo}, pero el pronóstico de esta hora es muy incierto "
             "(banda ancha). El motor prefiere esperar antes que arriesgarse con una señal poco confiable."
+        )
+    elif senal == "esperar" and crudo != "normal" and INTRADIA:
+        # el filtro intradia quito la senal: el precio esta fuera del rango normal, pero la hora esta en la mitad del dia
+        # que no le corresponde a esa accion (Juan, 10-nov: decia «rango normal» con la aguja en la zona roja)
+        dia_f = df["fecha_hora"].dt.normalize()
+        cara = bool(df["q50"].groupby(dia_f).rank(pct=True).loc[idx] > 0.5)
+        accion = {("generador", "bajo"): "retener generación", ("generador", "alto"): "despachar y vender",
+                  ("comercializador", "bajo"): "comprar en bolsa", ("comercializador", "alto"): "evitar la bolsa"}[(rol, crudo)]
+        frase = (
+            f"El precio esperado está {crudo}, pero según el pronóstico esta hora está entre las "
+            f"{'más caras' if cara else 'más baratas'} del día. El motor deja «{accion}» para las horas "
+            f"{'más baratas' if cara else 'más caras'} del día (filtro intradía), así que en esta hora espera."
         )
     else:
         frase = FRASE[senal]
