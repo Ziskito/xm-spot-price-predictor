@@ -373,7 +373,7 @@ fila(filas(t4)[-1], ["Este proyecto", "Colombia, horaria 2019-2026, solo informa
                      "Depende de que XM publique el predespacho la víspera"])
 p = P("Ninguno de los tres trabajos colombianos")
 reescribir(p, texto_de(p).strip() + " Además, ninguno aprovecha la información que el operador del mercado publica antes del día "
-                                    "de despacho, como el predespacho ideal de XM [39].")
+                                    "de despacho, como el predespacho ideal de XM [4].")
 
 # ================================================================================================== 6.1 a 6.3
 p = P("El diseño resuelve esa ausencia")
@@ -381,7 +381,7 @@ despues(p, p, (
     "La disponibilidad de los datos es parte del problema. A las 00:00 del día D, cuando se emite el pronóstico, la API pública "
     "de XM solo tiene el precio, la demanda y la generación hasta las 23:00 de D-4 (unos tres días de rezago), los embalses y "
     "aportes hasta D-2 y el ONI con unos dos meses de rezago. En cambio, el predespacho ideal del día D, que XM calcula con las "
-    "ofertas de los generadores, se publica hacia las 10:30 de D-1 en la biblioteca pública de su portal [39]. Un diseño que "
+    "ofertas de los generadores, se publica hacia las 10:30 de D-1 en la biblioteca pública de su portal [4]. Un diseño que "
     "suponga conocido el precio del día anterior no se puede operar con fuentes públicas; por eso el diseño definitivo se evaluó "
     "en este escenario realista."))
 t5 = tabla_tras(P("Tabla 5."))
@@ -532,7 +532,7 @@ R_("Definición de variables.", (
     "la caracterización de OE1 o de la evaluación fuera de muestra (Tabla 11)."))
 p = P("De las fuentes públicas se descargaron")
 reescribir(p, texto_de(p).strip() + (
-    " Para el diseño definitivo se descargaron además, de la biblioteca pública del portal de XM [39], 3.192 archivos diarios del "
+    " Para el diseño definitivo se descargaron además, de la biblioteca pública del portal de XM [4], 3.192 archivos diarios del "
     "predespacho ideal (enero de 2018 a agosto de 2026) y los del costo marginal y la demanda del despacho programado (dMAR y "
     "dDEM), con su fecha de creación y de modificación para verificar que cada uno estuviera disponible antes del corte."))
 despues(p, p, (
@@ -573,7 +573,7 @@ R_("Definición de modelos.", (
 R_("Tabla 12.", "**Tabla 12.** Componentes del diseño definitivo: fundamento, configuración y ajuste.")
 t12 = tabla_tras(P("Tabla 12."))
 llenar(t12, [
-    ["Predespacho ideal", "Estimación del precio del día siguiente que publica XM [39]",
+    ["Predespacho ideal", "Estimación del precio del día siguiente que publica XM [4]",
      "Costo marginal hora a hora de D, publicado hacia las 10:30 de D-1; la hora 00:00 de D+1 usa la de las 23:00 de D",
      "Solo archivos creados y modificados antes de las 23:00 de D-1; si falta, el del día anterior"],
     ["CatBoost R+P", "Árboles con gradiente ordenado [38]", "1.500 árboles, profundidad 6, tasa 0,05, pérdida MAE; objetivo "
@@ -606,7 +606,7 @@ R_("Modelos evaluados y descartados.", (
     "**Modelos evaluados y descartados.** Con solo la información pública, los seis modelos del diseño inicial pierden su "
     "ventaja (Tabla 14): XGBoost, ARX+GARCH y GARCH-ged quedan apenas por debajo de la persistencia y las dos redes neuronales, "
     "por encima. Antes ya se habían descartado, por no mejorar a la persistencia o al ensamble, CatBoost sobre el precio, un "
-    "modelo hurdle, Markov-Switching, mínimos cuadrados recursivos, TFT, LSTM, LightGBM y Prophet. Sobre el predespacho tampoco "
+    "modelo hurdle, Markov-Switching, mínimos cuadrados recursivos, TFT, LSTM, LightGBM [49] y Prophet. Sobre el predespacho tampoco "
     "mejoraron: XGBoost (MAE de 38 a 46 COP/kWh), el LEAR por hora (40,8), las redes neuronales con el predespacho como variable "
     "futura (58), los precios de oferta por planta (las ofertas OFEI, que XM completa después del corte y serían fuga de "
     "información), un votante especialista en días baratos (35,07 frente a 35,01) ni reducir la amplitud de los picos del "
@@ -788,7 +788,8 @@ R_("El plan se ejecutó en el orden previsto", (
 p = P("OE1 — Datos y caracterización.")
 reescribir(p, "**OE1 — Datos y caracterización.**" + texto_de(p).strip()[len("OE1 — Datos y caracterización."):].replace(
     "(Figura 10)", "(Figura 7)") + (
-    " Una comparación posterior con un filtro de Butterworth de fase cero, el suavizador de Kalman y wavelets confirmó la "
+    " Una comparación posterior con un filtro de Butterworth de fase cero [39], el suavizador de Kalman [46], [47] y wavelets "
+    "[48] confirmó la "
     "elección: a igual suavizado, Butterworth y Kalman dejan un residuo algo menor (111 frente a 118 COP/kWh), pero llegan "
     "después a la subida (382 y 407 h frente a 348 h)."))
 R_("Figura 7.", "**Figura 7.** Periodograma del precio de bolsa sin tendencia. Líneas rojas: períodos de 12, 24 y 168 h.")
@@ -1002,7 +1003,8 @@ x = despues(cap10, plant, (
     f"**Operación posterior al periodo del proyecto.** Desde el 6 de agosto el sistema opera con los datos que XM publica cada "
     f"día. Hasta el 31 de octubre ({n(OP['horas'], 0)} horas con precio publicado), el MAE fue {n(OP['MAE'])} COP/kWh (MAPE "
     f"{pc(OP['MAPE'])}), frente a {n(OP['MAE_pre'])} del predespacho solo; por mes, {n(OP['mensual']['2026-08'])} en agosto, "
-    f"{n(OP['mensual']['2026-09'])} en septiembre y {n(OP['mensual']['2026-10'])} en octubre, meses más volátiles. "
+    f"{n(OP['mensual']['2026-09'])} en septiembre y {n(OP['mensual']['2026-10'])} en octubre, meses más volátiles tras las medidas "
+    "transitorias de la Resolución CREG 101 127 de 2026 [50], que cambiaron las reglas de oferta desde septiembre. "
     f"La banda cubrió el {pc(OP['cobertura'])} de las horas, por debajo del objetivo, porque se calibra con los 60 días "
     "anteriores y el precio se volvió más volátil en septiembre y octubre. Sumando el periodo del proyecto y la operación, "
     f"en todo 2026 hasta el 31 de octubre ({n(TODO26['horas'], 0)} horas) el MAE es {n(TODO26['MAE'])} COP/kWh (MAPE "
@@ -1091,7 +1093,7 @@ R_("Reentrenar el ensamble de 24 h toma", (
     "venta puede favorecer un uso más eficiente del recurso hídrico en épocas secas."))
 R_("Solo se usa información pública de XM/SIMEM", (
     "Solo se usa información pública de XM/SIMEM [21], incluido el predespacho ideal que XM publica sin restricción en su portal "
-    "[39]; no se recolectan datos personales [22] y no se ejecutan transacciones. El pronóstico con predespacho se presenta para "
+    "[4]; no se recolectan datos personales [22] y no se ejecutan transacciones. El pronóstico con predespacho se presenta para "
     "decisiones posteriores a su publicación (10:30 de D-1), no para formular ofertas, que cierran a las 08:00 [41]. Ante "
     "intervenciones transitorias de la CREG en la formación del precio, los modelos se reentrenan cada mes de forma automática y "
     "cada imagen indica la versión del modelo."))
@@ -1146,8 +1148,7 @@ ultima = P("[37]")
 for ref in (
         "[38]\tL. Prokhorenkova, G. Gusev, A. Vorobev, A. V. Dorogush y A. Gulin, \"CatBoost: unbiased boosting with categorical "
         "features,\" en Adv. Neural Inf. Process. Syst. 31 (NeurIPS 2018), Montreal, Canadá, 2018.",
-        "[39]\tXM S.A. E.S.P., \"Informes de despacho: predespacho ideal y despacho programado,\" biblioteca pública del portal "
-        "xm.com.co. Consultado: oct. 2026.",
+        "[39]\tS. Butterworth, \"On the theory of filter amplifiers,\" Wireless Engineer, vol. 7, pp. 536–541, 1930.",
         "[40]\tV. Vovk, A. Gammerman y G. Shafer, Algorithmic Learning in a Random World, 2.ª ed. Cham, Suiza: Springer, 2022.",
         "[41]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 025 de 1995, por la cual se establece el Código de "
         "Redes,\" Bogotá, Colombia, 1995.",
@@ -1159,8 +1160,22 @@ for ref in (
         "tarifaria general que permite a los comercializadores minoristas de electricidad establecer los costos de prestación del "
         "servicio a usuarios regulados en el Sistema Interconectado Nacional,\" Bogotá, Colombia, 2007.",
         "[45]\tG. Marcjasz, T. Serafin y R. Weron, \"Selection of calibration windows for day-ahead electricity price "
-        "forecasting,\" Energies, vol. 11, n.º 9, art. 2364, 2018, doi: 10.3390/en11092364."):
+        "forecasting,\" Energies, vol. 11, n.º 9, art. 2364, 2018, doi: 10.3390/en11092364.",
+        "[46]\tR. E. Kalman, \"A new approach to linear filtering and prediction problems,\" J. Basic Eng., vol. 82, n.º 1, "
+        "pp. 35–45, 1960, doi: 10.1115/1.3662552.",
+        "[47]\tH. E. Rauch, F. Tung y C. T. Striebel, \"Maximum likelihood estimates of linear dynamic systems,\" AIAA J., "
+        "vol. 3, n.º 8, pp. 1445–1450, 1965, doi: 10.2514/3.3166.",
+        "[48]\tS. G. Mallat, \"A theory for multiresolution signal decomposition: The wavelet representation,\" IEEE Trans. "
+        "Pattern Anal. Mach. Intell., vol. 11, n.º 7, pp. 674–693, 1989, doi: 10.1109/34.192463.",
+        "[49]\tG. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye y T.-Y. Liu, \"LightGBM: A highly efficient gradient "
+        "boosting decision tree,\" en Adv. Neural Inf. Process. Syst. 30 (NIPS 2017), Long Beach, CA, EE. UU., 2017.",
+        "[50]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 101 127 de 2026, por la cual se adoptan medidas "
+        "transitorias para asegurar el abastecimiento de energía eléctrica ante el fenómeno de El Niño 2026-2027,\" Bogotá, "
+        "Colombia, 2026."):
     ultima = despues(ultima, ultima, ref)
+R_("[4]", "[4]\tXM S.A. E.S.P., \"API de datos del Sistema de Información del Mercado de Energía Mayorista,\" "
+   "servapibi.xm.com.co, e \"Informes de despacho: predespacho ideal y despacho programado,\" biblioteca pública del portal "
+   "xm.com.co. Consultado: oct. 2026.")
 R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Ziskito/xm-spot-price-predictor): formulación en docs/, "
     "código fuente en notebooks/, src/, dashboard/ y scripts_experimento/, y datos y predicciones en data/. El anexo 2 corresponde "

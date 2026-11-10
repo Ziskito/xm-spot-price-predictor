@@ -56,7 +56,7 @@ SECCIONES = [
          "doi: 10.1145/2939672.2939785",
          "Votante del ensamble de la primera etapa (notebook 06) y uno de los modelos del benchmark del escenario realista. En el "
          "informe, Solución 1 (ensamble de seis modelos)."),
-        ("S", "G. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye y T.-Y. Liu, \"LightGBM: A highly efficient "
+        ("C", "G. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye y T.-Y. Liu, \"LightGBM: A highly efficient "
               "gradient boosting decision tree,\" en Adv. Neural Inf. Process. Syst. 30 (NIPS 2017), 2017.",
          "proceedings.neurips.cc (NIPS 2017)",
          "LightGBM en el benchmark (empata con CatBoost) y base del HistGradientBoosting del detector de picos de 72 h."),
@@ -92,23 +92,6 @@ SECCIONES = [
          "doi: 10.2307/2938260",
          "Introduce el EGARCH y la distribución de error generalizada (GED): base del votante GARCH-GED del ensamble de la "
          "primera etapa (en el informe, Solución 1) y de las variantes EGARCH-t y EGARCH-skewt probadas después."),
-        ("S", "S. J. Taylor y B. Letham, \"Forecasting at scale,\" Am. Stat., vol. 72, no. 1, pp. 37–45, 2018.",
-         "doi: 10.1080/00031305.2017.1380080",
-         "Prophet (notebook 04), el modelo más débil; descartado."),
-        ("L", "B. Uniejewski, R. Weron y F. Ziel, \"Variance stabilizing transformations for electricity spot price "
-              "forecasting,\" IEEE Trans. Power Syst., vol. 33, no. 2, pp. 2219–2229, 2018.",
-         "doi: 10.1109/TPWRS.2017.2734563",
-         "Transformación asinh. Probada: empeora 6-16 % en Colombia (los picos son cambios de nivel sostenidos)."),
-        ("L", "B. Uniejewski, \"Variance stabilizing transformations for electricity price forecasting in periods of increased "
-              "volatility,\" Electr. Power Syst. Res., vol. 257, art. 112992, 2026.",
-         "doi: 10.1016/j.epsr.2026.112992",
-         "asinh parametrizado con promediado AVGroll sobre el Ridge directo: mejora de solo 0,7 %. Su combinación por hora "
-         "del día inspiró aplicar el combinador por franja."),
-        ("L", "G. Dutot, M. Zaffran, O. Féron y Y. Goude, \"Adaptive probabilistic forecasting of French electricity spot "
-              "prices,\" preprint, 2024.",
-         "arXiv:2405.15359",
-         "Agregación adaptativa de expertos (BOA). Probada con pesos móviles de 30-60 días: peor que la ventana "
-         "expansiva (p < 0,01)."),
     ]),
     ("2. Evaluación, validación e incertidumbre", [
         ("C", "F. X. Diebold y R. S. Mariano, \"Comparing predictive accuracy,\" J. Bus. Econ. Stat., vol. 13, no. 3, "
@@ -161,7 +144,7 @@ SECCIONES = [
         ("S", "H. Hewamalage, K. Ackermann y C. Bergmeir, \"Forecast evaluation for data scientists: Common pitfalls and "
               "best practices,\" Data Min. Knowl. Discov., vol. 37, no. 2, pp. 788–832, 2023.",
          "doi: 10.1007/s10618-022-00894-5",
-         "Conocido a través de Albani et al. (no se leyó el original): respalda que los modelos complejos no siempre ganan de "
+         "No se leyó el original: respalda que los modelos complejos no siempre ganan de "
          "forma significativa."),
         ("C", "S. M. Lundberg y S.-I. Lee, \"A unified approach to interpreting model predictions,\" en Adv. Neural Inf. "
               "Process. Syst. 30 (NIPS 2017), 2017.",
@@ -184,31 +167,13 @@ SECCIONES = [
          "doi: 10.1016/j.ijepes.2025.110865",
          "Metodología que se siguió para la prueba de Granger sobre la serie diaria."),
     ]),
-    ("3. Cambio de régimen, puntos de cambio y decisión", [
-        ("L", "J. Nasiadka, W. Nitka y R. Weron, \"Calibration window selection based on change-point detection for "
-              "forecasting electricity prices,\" en Computational Science – ICCS 2022, LNCS, Springer, 2022, pp. 278–284.",
-         "doi: 10.1007/978-3-031-08757-8_24 · arXiv:2204.00872",
-         "Selección de ventana por puntos de cambio, implementada en ventana_calibracion_not_24h.py. También se probó, en "
-         "versión simple (corte en el último cambio de nivel), como ventana de los umbrales del motor (9-nov): casi nunca se "
-         "acorta y no mejora a la de 30 días (realista_motor_umbrales_alternativos.py)."),
+    ("3. Ventanas de calibración, cambio de distribución y decisión", [
         ("C", "G. Marcjasz, T. Serafin y R. Weron, \"Selection of calibration windows for day-ahead electricity price "
               "forecasting,\" Energies, vol. 11, no. 9, art. 2364, 2018.",
          "doi: 10.3390/en11092364",
          "En el informe (Sensibilidad de los umbrales): mezclar ventanas cortas y largas le gana a una sola ventana de "
          "calibración; con esa idea se probaron combinaciones de ventanas (7+90, 14+60 y 30+365 días) para los umbrales del "
          "motor, que no superaron a la de 30 días en estabilidad."),
-        ("L", "R. Baranowski, Y. Chen y P. Fryzlewicz, \"Narrowest-over-threshold detection of multiple change-points and "
-              "change-point-like features,\" J. R. Stat. Soc. Ser. B, vol. 81, no. 3, pp. 649–672, 2019.",
-         "doi: 10.1111/rssb.12322 · paquete R: cran.r-project.org/package=not",
-         "Detector NOT reimplementado en Python (not_changepoint.py) y validado con series sintéticas."),
-        ("L", "R. Huisman y R. Mahieu, \"Regime jumps in electricity prices,\" Energy Econ., vol. 25, no. 5, "
-              "pp. 425–434, 2003.",
-         "doi: 10.1016/S0140-9883(03)00041-0",
-         "Modelo de tres regímenes; origen de la línea de regímenes en EPF."),
-        ("L", "A. Das, S. Schlüter y L. Schneider, \"Regime-aware conditional neural processes with multi-criteria decision support for "
-              "operational electricity price forecasting,\" Energy Econ., vol. 157, art. 109233, 2026.",
-         "doi: 10.1016/j.eneco.2026.109233 · arXiv:2508.00040",
-         "Regímenes con HMM en el mercado alemán; confirma que un régimen minoritario (como El Niño) es el caso difícil."),
         ("C", "J. Gama, I. Žliobaitė, A. Bifet, M. Pechenizkiy y A. Bouchachia, \"A survey on concept drift adaptation,\" "
               "ACM Comput. Surv., vol. 46, no. 4, art. 44, 2014.",
          "doi: 10.1145/2523813",
@@ -222,25 +187,6 @@ SECCIONES = [
          "doi: 10.1007/978-3-642-24412-4_16",
          "Trabajo futuro del informe: evaluar el criterio de estabilidad del motor con una formulación de bandits no "
          "estacionarios."),
-        ("L", "G. A. Singh, \"Regime-aware deep learning for financial forecasting: an adaptive short-term bias "
-              "compensation framework for the Warsaw Stock Exchange,\" Expert Syst. Appl., vol. 332, art. 133584, 2027.",
-         "doi: 10.1016/j.eswa.2026.133584",
-         "STBC por régimen (fuera de energía). Probado fielmente: λ = 0 en validación; no aporta."),
-        ("S", "R. I. Chang, C. H. Wang, L. C. Wei y Y. F. Lu, \"LSTM with short-term bias compensation to determine "
-              "trading strategy under black swan events of Taiwan ETF50 stock,\" Appl. Sci., vol. 14, no. 18, art. 8576, 2024.",
-         "doi: 10.3390/app14188576",
-         "STBC original (λ fijo); conocido a través de Singh (no se leyó el original)."),
-        ("L", "V. Le Guen y N. Thome, \"Shape and time distortion loss for training deep time series forecasting "
-              "models,\" en Adv. Neural Inf. Process. Syst. 32 (NeurIPS 2019), 2019.",
-         "arXiv:1909.09020",
-         "Pérdida de forma DILATE, probada contra el amortiguamiento en las rampas: recupera la amplitud pero pasa el error a "
-         "la forma (49 % del error cuadrático), así que no se adoptó."),
-        ("S", "R. J. Hyndman y M. S. Ullah, \"Robust forecasting of mortality and fertility rates: A functional data "
-              "approach,\" Comput. Stat. Data Anal., vol. 51, no. 10, pp. 4942–4956, 2007.",
-         "doi: 10.1016/j.csda.2006.07.028",
-         "Método del análisis funcional de la curva diaria (fpca_hyndman_24h.py, vía Gallón y Barrientos): curva media más "
-         "componentes principales funcionales cuyos pesos se pronostican. Probado como votante: peso cero, pero empata al "
-         "ensamble en rampa fuerte."),
     ]),
     ("4. Procesamiento de señales (enfoque de Ingeniería Electrónica)", [
         ("C", "A. Savitzky y M. J. E. Golay, \"Smoothing and differentiation of data by simplified least squares "
@@ -252,18 +198,18 @@ SECCIONES = [
               "2010.",
          "—",
          "Periodograma de la serie sin tendencia (Ecuación 6 del informe): identifica los periodos dominantes (fs = 1 muestra/h)."),
-        ("S", "S. Butterworth, \"On the theory of filter amplifiers,\" Wireless Engineer, vol. 7, pp. 536–541, 1930.",
+        ("C", "S. Butterworth, \"On the theory of filter amplifiers,\" Wireless Engineer, vol. 7, pp. 536–541, 1930.",
          "—",
          "Butterworth de fase cero y causal en la comparación de filtros (comparar_filtros_tendencia.py)."),
-        ("S", "R. E. Kalman, \"A new approach to linear filtering and prediction problems,\" J. Basic Eng., vol. 82, "
+        ("C", "R. E. Kalman, \"A new approach to linear filtering and prediction problems,\" J. Basic Eng., vol. 82, "
               "no. 1, pp. 35–45, 1960.",
          "doi: 10.1115/1.3662552",
          "Filtro de Kalman en la misma comparación."),
-        ("S", "H. E. Rauch, F. Tung y C. T. Striebel, \"Maximum likelihood estimates of linear dynamic systems,\" "
+        ("C", "H. E. Rauch, F. Tung y C. T. Striebel, \"Maximum likelihood estimates of linear dynamic systems,\" "
               "AIAA J., vol. 3, no. 8, pp. 1445–1450, 1965.",
          "doi: 10.2514/3.3166",
          "Suavizador RTS (Kalman fuera de línea) de la comparación."),
-        ("S", "S. G. Mallat, \"A theory for multiresolution signal decomposition: The wavelet representation,\" IEEE "
+        ("C", "S. G. Mallat, \"A theory for multiresolution signal decomposition: The wavelet representation,\" IEEE "
               "Trans. Pattern Anal. Mach. Intell., vol. 11, no. 7, pp. 674–693, 1989.",
          "doi: 10.1109/34.192463",
          "Tendencia por wavelet (sym8) de la comparación."),
@@ -276,34 +222,10 @@ SECCIONES = [
          "En el informe: ninguno de sus 33 modelos baja de MASE 1 (mejor 1,26), mientras Augur supera a su referencia ingenua "
          "en todos los años; se presenta como «superar al ingenuo en una tarea más difícil», no como comparación directa "
          "(transforman con Box-Cox y pronostican precio diario)."),
-        ("L", "G. Kapoor, N. Wichitaksorn y W. Zhang, \"Analyzing and forecasting electricity price using regime-switching "
-              "models: The case of New Zealand market,\" J. Forecast., vol. 42, no. 8, pp. 2011–2026, 2023.",
-         "doi: 10.1002/for.3004",
-         "Regímenes de Markov y EVT; más regímenes no mejoran el pronóstico."),
         ("L", "M. T. D. Phan, T. T. Truong, H. P. Ha y D. T. Nguyen, \"Electricity price forecasting across Norway's five "
               "bidding zones in the post-crisis era,\" preprint, 2026.",
          "arXiv:2604.26634",
          "Referencia noruega con LightGBM; comparación de sMAPE y R²."),
-        ("L", "A. Brigatto, A. Street y J. Dias Garcia, \"How optimistic inflow forecasts distort dispatch, prices, and "
-              "contracts in hydro-dominated power systems: evidence from Brazil,\" preprint, 2026.",
-         "arXiv:2607.00504",
-         "Idea de «memoria hidrológica» (anomalía acumulada de aportes). Probada: no significativa (p = 0,52)."),
-        ("L", "M. B. B. Dias, G. R. S. Lira y V. M. E. Freire, \"Methodology for multi-step forecasting of electricity spot "
-              "prices based on neural networks applied to the Brazilian energy market,\" Energies, vol. 17, no. 8, art. 1864, "
-              "2024.",
-         "doi: 10.3390/en17081864",
-         "Poda por multicolinealidad: probada, no funciona y es riesgosa si se implementa literal; referencia brasileña de "
-         "pronóstico multipaso."),
-        ("L", "E. A. Nunes, V. H. Ferreira y A. da Costa Pinho, \"Information theoretic learning applied to daily streamflow "
-              "forecast and its impact on the Brazilian hourly energy spot prices,\" J. Control Autom. Electr. Syst., vol. 35, "
-              "no. 5, pp. 949–959, 2024.",
-         "doi: 10.1007/s40313-024-01110-z",
-         "Pérdida MCC (correntropía), probada en mcc_perdida_robusta_24h.py."),
-        ("L", "V. V. L. Albani, R. T. Marcavillaca, P. S. E. Moreira et al., \"Short-term forecasting of forward prices in "
-              "the Brazilian electricity market with a hybrid stochastic-neural network model,\" Energy Econ., vol. 148, "
-              "art. 108651, 2025.",
-         "doi: 10.1016/j.eneco.2025.108651",
-         "Compuerta por régimen hidrológico; probada en qra_por_regimen.py: no sirve."),
     ]),
     ("6. Antecedentes en Colombia", [
         ("C", "J. D. Barceló Barraza y R. A. Dede Perdomo, \"Anexo 1 — Formulación del proyecto: Diseño de una plataforma "
@@ -350,20 +272,8 @@ SECCIONES = [
               "del sector eléctrico y económicas,\" tesis de maestría, Univ. Nacional de Colombia, Medellín, 2025.",
          "repositorio.unal.edu.co/items/05583774-4f00-4fb1-8cfa-ecf426497670",
          "Respalda corregir el predespacho en vez de modelar desde cero (el precio lo fija la oferta marginal)."),
-        ("L", "J. D. Becerra Pulido, \"Pronóstico del precio diario de bolsa en el mercado eléctrico colombiano usando "
-              "modelos autorregresivos,\" proyecto de grado, Ing. Electrónica, Univ. Santo Tomás, Bogotá, 2025.",
-         "repository.usta.edu.co/items/d8dd82e6-6d1c-418d-915d-f035cef594d9",
-         "El trabajo más comparable (mismo programa). Usa el precio del día anterior, que XM no publica a tiempo."),
-        ("L", "L. Herrera-Mejía, C. D. Hoyos, D. La Rotta, Y. Mejía y J. Castillo, \"Forecasting day-ahead hydropower bids in "
-              "the Colombian electricity market: A two-stage machine learning framework,\" Smart Energy, vol. 21, art. 100221, "
-              "2026.",
-         "doi: 10.1016/j.segy.2025.100221",
-         "Inspiró el clasificador de régimen alto (precio > percentil 80) con regresores por régimen."),
         ("C", "International Energy Agency, \"Colombia 2023 – Energy Policy Review,\" IEA, París, 2023.",
          "https://www.iea.org/reports/colombia-2023", "Matriz mayoritariamente hidroeléctrica: cerca del 72 % de la generación."),
-        ("V", "Low Carbon Power, \"Electricity in Colombia,\" 2025.",
-         "https://lowcarbonpower.org/region/Colombia",
-         "Participación hidroeléctrica (70-74 %). Se citaba en un borrador anterior del informe; el final usa la IEA."),
     ]),
     ("7. Regulación (CREG) y normas", [
         ("C", "CREG, \"Resolución CREG 025 de 1995, por la cual se establece el Código de Redes,\" Bogotá, 1995.",
@@ -383,7 +293,7 @@ SECCIONES = [
         ("L", "CREG, Resoluciones 101 056 y 101 059 de 2024 (precio de oferta ajustado; modifican la CREG 026 de 2014).",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_101-59_2024.htm",
          "Cambios de regla dentro del periodo de entrenamiento (sep-oct 2024)."),
-        ("L", "CREG, Resolución 101 127 de 2026 y Documento 901 431 de 2026, \"Medidas transitorias para asegurar el "
+        ("C", "CREG, Resolución 101 127 de 2026 y Documento 901 431 de 2026, \"Medidas transitorias para asegurar el "
               "abastecimiento de energía ante el fenómeno de El Niño 2026-2027\".",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/originales/Resoluci%C3%B3n_CREG_101_127_2026/",
          "Cambió la formación del precio desde sep-2026; explica el mayor error de sep-oct 2026."),
@@ -429,28 +339,26 @@ SECCIONES = [
          "Honorarios del presupuesto del proyecto (Anexo 1)."),
     ]),
     ("8. Datos: XM y otras fuentes", [
-        ("C", "XM S.A. E.S.P., \"API de datos del Sistema de Información del Mercado de Energía Mayorista\" "
-              "(servapibi.xm.com.co).",
-         "https://servapibi.xm.com.co · librería pydataxm: github.com/EquipoAnaliticaXM/API_XM",
-         "Fuente principal. Métricas usadas: PrecBolsNaci (precio de bolsa), DemaReal y DemaCome (demanda), Gene por "
-         "recurso y GeneIdea (generación), AporEner y AporEnerMediHist (aportes), VoluUtilDiarEner, PorcVoluUtilDiar y "
-         "CapaUtilDiarEner (embalse), PrecOferDesp y MaxPrecOferNal (ofertas), PrecEscaMarg y PrecEsca (escasez), "
-         "PrecTransBolsa, RestAliv, ImpoEner, ExpoEner, PerdidasEner; catálogos ListadoMetricas y ListadoRecursos."),
-        ("C", "XM S.A. E.S.P., \"Informes de despacho: predespacho ideal y despacho programado,\" biblioteca pública del "
-              "portal xm.com.co.",
-         "https://www.xm.com.co/generacion/informes-despacho · archivos iMAR/dMAR vía "
-         "api-portalxm.xm.com.co/administracion-archivos",
-         "Insumo central del modelo en producción: el predespacho ideal que XM publica el día anterior."),
-        ("L", "XM S.A. E.S.P., ofertas de precio (archivos OFEI).", "Biblioteca del portal XM",
-         "Probadas como variable: los precios no se publican a tiempo (sería fuga de información)."),
-        ("L", "XM S.A. E.S.P., Sinergox: tablero del Precio de Bolsa Nacional.", "https://sinergox.xm.com.co",
-         "Escala de color del mapa de calor por precio esperado."),
-        ("L", "XM S.A. E.S.P., \"Resolución CREG 101 127 de 2026 — condición del sistema\".",
+        ("C", "XM S.A. E.S.P., datos públicos del mercado de energía mayorista colombiano: API del Sistema de "
+              "Información del Mercado de Energía Mayorista (SIMEM), informes de despacho (predespacho ideal y despacho "
+              "programado), ofertas de precio (OFEI), tablero Sinergox y página de la Resolución CREG 101 127 de 2026 "
+              "(condición del sistema; nivel ENFICC probabilístico, NEP, y nivel de probabilidad de vertimiento, NPV, por "
+              "embalse).",
+         "https://servapibi.xm.com.co (librería pydataxm: github.com/EquipoAnaliticaXM/API_XM) · "
+         "https://www.xm.com.co/generacion/informes-despacho (archivos iMAR/dMAR) · https://sinergox.xm.com.co · "
          "https://www.xm.com.co/resoluciones/operacion-y-mercado/resolucion-creg-101-127-de-2026-condicion-del-sistema",
-         "Seguimiento de la activación de las medidas de El Niño."),
-        ("C", "NOAA Climate Prediction Center, \"Cold & Warm Episodes by Season — Oceanic Niño Index (ONI)\".",
-         "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
-         "Índice ONI (El Niño / La Niña) como variable y para definir los orígenes del walk-forward."),
+         "Fuente principal de datos. API: PrecBolsNaci (precio de bolsa), DemaReal y DemaCome (demanda), Gene y GeneIdea "
+         "(generación), AporEner y AporEnerMediHist (aportes), VoluUtilDiarEner, PorcVoluUtilDiar y CapaUtilDiarEner "
+         "(embalse agregado y por embalse), PrecOferDesp y MaxPrecOferNal (ofertas), PrecEscaMarg y PrecEsca (escasez), MC "
+         "(costo de los contratos del mercado regulado, filtro de contrato del motor), PrecTransBolsa, RestAliv, ImpoEner, "
+         "ExpoEner y PerdidasEner. Predespacho ideal del día anterior: insumo central del modelo en producción. Ofertas "
+         "OFEI: sus precios no se publican a tiempo, por eso no se usan. Sinergox: escala de color del mapa de calor. "
+         "Condición del sistema, NEP y NPV: activación de las medidas de El Niño y curva de oferta por planta."),
+        ("C", "NOAA Climate Prediction Center, índices climáticos: Oceanic Niño Index (ONI), anomalías semanales y "
+              "mensuales de temperatura del mar en Niño 3.4 y Niño 1+2, e Índice de Oscilación del Sur (SOI).",
+         "https://www.cpc.ncep.noaa.gov/data/indices/ (oni.ascii.txt, wksst9120.for, sstoi.indices, soi)",
+         "ONI (El Niño / La Niña) como variable del modelo y para definir los orígenes del walk-forward. Niño 3.4 y 1+2 "
+         "semanal y mensual y SOI: pruebas del 10-nov-2026 sobre cómo representar el ENSO; ninguna mejora el pronóstico."),
         ("L", "Paquete holidays (Python): festivos de Colombia.", "https://github.com/vacanza/holidays",
          "Variable de calendario (festivos)."),
     ]),
@@ -474,16 +382,6 @@ SECCIONES = [
          "bolsa superó el precio de escasez el 61,4 % de los días (hasta 2.821 COP/kWh), y el PME rige desde el 1-dic-2017. "
          "Cautela: atribuye a la Res. CREG 088 de 2016 un ajuste del precio de escasez, pero esa resolución trata de la "
          "oferta de GLP; no citarla."),
-        ("L", "Globalsyde, \"Software para comercializadoras de energía\" (plataforma en la nube), España.",
-         "https://globalsyde.com",
-         "Anexo 1, justificación (2): herramienta comercial para comercializadoras minoristas españolas (contratación, "
-         "tarificación y facturación), que no aplica al mercado mayorista colombiano."),
-        ("L", "Enexpa, \"Servicios para comercializadoras de electricidad y gas en España\".",
-         "https://www.enexpa.es",
-         "Anexo 1, justificación (2), por la misma razón que Globalsyde."),
-        ("V", "SIGE Comercialización, ERP para comercializadoras y distribuidoras de electricidad y gas, España.",
-         "asest.es/story/sige-erp-electridad-gas/",
-         "Anexo 1, justificación (2). Fabricante y página oficial sin confirmar (un directorio lo atribuye a Grupo Audinfor)."),
     ]),
 ]
 
@@ -514,17 +412,14 @@ LIBRERIAS = [
     ("PyTorch / Lightning", "2.14.0 / 2.5.6", "Motor de las redes de neuralforecast",
      "A. Paszke et al., \"PyTorch: An imperative style, high-performance deep learning library,\" NeurIPS, 2019.",
      "BSD-3 / Apache 2.0"),
-    ("Prophet (+ CmdStan)", "1.3.0", "Modelo Prophet (descartado)", "Taylor y Letham (2018), sección 1", "MIT"),
     ("SHAP", "0.52.0", "Explicabilidad de XGBoost", "Lundberg y Lee (2017), sección 2", "MIT"),
-    ("Optuna", "4.9.0", "Búsqueda de hiperparámetros (armónicos XGBoost/CatBoost)",
-     "T. Akiba et al., \"Optuna: A next-generation hyperparameter optimization framework,\" KDD, 2019.", "MIT"),
     ("PyWavelets", "1.8.0", "Filtro wavelet de la comparación de filtros",
      "G. R. Lee et al., \"PyWavelets: A Python package for wavelet analysis,\" JOSS, vol. 4, no. 36, p. 1237, 2019.",
      "MIT"),
     ("pydataxm", "0.3.17", "Descarga de la API de XM", "Equipo de Analítica de XM, github.com/EquipoAnaliticaXM/API_XM",
      "MIT"),
     ("holidays", "0.102", "Festivos de Colombia", "github.com/vacanza/holidays", "MIT"),
-    ("requests", "2.33.1", "Descarga del predespacho y del ONI", "—", "Apache 2.0"),
+    ("requests", "2.33.1", "Descarga del predespacho y de los índices de NOAA", "—", "Apache 2.0"),
     ("Matplotlib / seaborn", "3.10.8 / 0.13.2", "Figuras del informe y de los notebooks",
      "J. D. Hunter, \"Matplotlib: A 2D graphics environment,\" Comput. Sci. Eng., vol. 9, no. 3, pp. 90–95, 2007; "
      "M. L. Waskom, \"seaborn,\" JOSS, vol. 6, no. 60, p. 3021, 2021.", "PSF / BSD-3"),
@@ -539,7 +434,9 @@ LIBRERIAS = [
 HERRAMIENTAS = [
     ("Python 3.12", "Lenguaje de todo el proyecto."),
     ("Git y GitHub (github.com/Ziskito/xm-spot-price-predictor)", "Control de versiones y repositorio público."),
-    ("GitHub Actions", "Actualización diaria automática del pronóstico (hacia las 12:00, 15:40 y 18:40)."),
+    ("GitHub Actions", "Ejecuta la actualización diaria del pronóstico y la visita que mantiene despierta la app."),
+    ("cron-job.org", "Dispara a tiempo esas ejecuciones (11:20, 14:50 y 18:00, hora de Colombia, y una visita cada hora), "
+                     "porque el programador propio de GitHub se retrasaba de 4 a 6 horas."),
     ("Streamlit Community Cloud", "Publicación del dashboard; cada cambio en main se redespliega."),
     ("Playwright (Microsoft)", "Pruebas del dashboard en navegador y grabación de las tomas del video."),
     ("HyperFrames (HeyGen)", "Edición del video explicativo (HTML renderizado a video)."),
@@ -548,7 +445,6 @@ HERRAMIENTAS = [
     ("FFmpeg", "Conversión de las tomas del video."),
     ("Canva", "Presentación del proyecto."),
     ("Microsoft Forms", "Encuestas de validación con usuarios (OE4-2)."),
-    ("LibreOffice", "Conversión de los informes a PDF."),
     ("Claude Code (Anthropic)", "Asistente de programación usado durante el desarrollo."),
 ]
 
