@@ -35,7 +35,7 @@ if __name__ == "__main__":
     sets = conjuntos(d)
     extra = [c for c in d.columns if c.startswith("asinh_")]
     sets = {"R+P": sets["R+P"] + extra, "R+P+D": sets["R+P+D"] + extra}
-    tr = d.loc[INI_TR:FIN_TR].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:FIN_TR].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     te = d.loc[INI_TE:FIN_TE].dropna(subset=["precio_bolsa", "pre_obj"])
     preds = pd.DataFrame({"real": te["precio_bolsa"]})
     for nom, cols in sets.items():

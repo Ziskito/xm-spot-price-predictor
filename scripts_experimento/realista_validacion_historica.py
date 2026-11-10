@@ -39,11 +39,11 @@ if __name__ == "__main__":
         desde, hasta = pd.Timestamp(h["desde"]), pd.Timestamp(h["hasta"]) + pd.Timedelta(hours=24)
         partes = []
         for mes in pd.date_range((desde - pd.Timedelta(days=60)).replace(day=1), hasta, freq="MS"):
-            tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+            tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
             te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), hasta)].dropna(subset=["pre_obj"])
             partes.append(catboost(tr, te, cols))
         cat = pd.concat(partes)
-        p = pd.DataFrame({"real": d["precio_bolsa"], "Predespacho": pre, "CatBoost": cat, "Persistencia": d["precio_lag24h"]}).loc[cat.index].dropna()
+        p = pd.DataFrame({"real": d["precio_bolsa"], "Predespacho": pre, "CatBoost": cat, "Persistencia": d["precio_lag96h"]}).loc[cat.index].dropna()
         p["dia"], p["g4"] = (p.index - pd.Timedelta(hours=1)).normalize(), p.index.hour // 6
         vacia = p.iloc[:0]
         p["Pre+Cat"] = causal(p, vacia, ["Predespacho", "CatBoost"], "g4", objetivo="mae")

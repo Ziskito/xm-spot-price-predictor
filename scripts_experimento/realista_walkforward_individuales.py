@@ -43,7 +43,7 @@ def correr(clave, df):
     serie = df.set_index("fecha_hora")
     idx = pd.DatetimeIndex(df.loc[(df["fecha_hora"] > er.CORTE) & (df["fecha_hora"] <= er.FIN), "fecha_hora"])
     pred = pd.DataFrame(index=idx)
-    pred["real"], pred["Persistencia"] = serie["precio_bolsa"], serie["precio_lag24h"]
+    pred["real"], pred["Persistencia"] = serie["precio_bolsa"], serie["precio_lag96h"]
     pred["XGBoost"] = er.xgboost(df)
     pred["ARX+GARCH"] = er.arx_garch(df)
     pred["GARCH-ged"] = er.garch_ged(df)

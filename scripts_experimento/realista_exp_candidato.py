@@ -38,7 +38,7 @@ def modelo(tr, te, cols, semillas):
 
 
 def limpio(x):
-    return x.dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    return x.dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
 
 
 if __name__ == "__main__":

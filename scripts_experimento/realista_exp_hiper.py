@@ -47,7 +47,7 @@ if __name__ == "__main__":
     d = rc.tabla_realista().set_index("fecha_hora")
     s = conjuntos(d)
     cols = s["R+P"] + [c for c in d.columns if c.startswith("prog_") or c == "n_termicas"]
-    tr0 = d.loc["2019-02-15":"2025-12-31 23:00"].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr0 = d.loc["2019-02-15":"2025-12-31 23:00"].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     te = d.loc["2026-01-15":"2026-08-05 00:00"].dropna(subset=["precio_bolsa", "pre_obj"])
     lp = lambda x: np.log(x["pre_obj"].clip(lower=1))
     edad = ((pd.Timestamp("2026-01-01") - tr0.index) / pd.Timedelta(days=365)).to_numpy()

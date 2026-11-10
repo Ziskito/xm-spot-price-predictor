@@ -31,7 +31,7 @@ if __name__ == "__main__":
     f = pd.read_csv(rc.MEJ / "frecuencia_predicciones.csv", parse_dates=[0], index_col=0)
     pan = f[["real", "dia", "Predespacho", "ens7_realista", "CatBoost_semanal", "Pre+Cat semanal"]].copy()
     pan["dia"] = pd.to_datetime(pan["dia"])
-    tr = d.loc[INI_TR:"2025-12-31 23:00"].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:"2025-12-31 23:00"].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     for nom, cols in (("CatBoost_fijo R+P", RP), ("CatBoost_fijo R+P+G", RPG)):
         pan[nom] = catboost(tr, d.loc[pan.index], cols).reindex(pan.index)
         print(f"  {nom}: MAE {np.abs(pan[nom] - pan['real']).mean():.2f} ({(time.time() - t0) / 60:.1f} min)", flush=True)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     from ensamble_con_predespacho_24h import imar
     previa = origen5()
     previa["Predespacho"] = imar().reindex(previa.index).to_numpy()
-    trp = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    trp = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     tep = d.loc["2024-07-01":"2025-06-30 23:00"].dropna(subset=["pre_obj"])
     previa["CatBoost_semanal"] = catboost(trp, tep, RP).reindex(previa.index)
     previa["CatBoost_semanal G"] = catboost(trp, tep, RPG).reindex(previa.index)

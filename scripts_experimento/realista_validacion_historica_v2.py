@@ -48,7 +48,7 @@ if __name__ == "__main__":
         desde, hasta = pd.Timestamp(h["desde"]), pd.Timestamp(h["hasta"]) + pd.Timedelta(hours=24)
         cats = {k: [] for k in sets}
         for mes in pd.date_range((desde - pd.Timedelta(days=60)).replace(day=1), hasta, freq="MS"):
-            tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+            tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
             te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), hasta)].dropna(subset=["pre_obj"])
             for k, cols in sets.items():
                 cats[k].append(catboost(tr, te, cols))

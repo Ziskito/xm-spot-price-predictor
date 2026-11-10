@@ -11,7 +11,8 @@ dia (D-1, ~10:30).
 
 Aqui se rehace todo el ensamble de 24 h de 2026 con solo lo publico a las 00:00 de D:
   * variables de precio y demanda: "hace 24 h" pasa a "hace 96 h" (120 h para la hora 00:00 del dia
-    siguiente), y los promedios moviles se desplazan igual; precio_lag168h no cambia
+    siguiente), y los promedios moviles se desplazan igual; precio_lag168h no cambia. Desde el 10-nov-2026 las
+    columnas llevan el nombre verdadero (RENOMBRE: precio_lag96h, precio_media_24h_hasta96h, demanda_lag96h, ...)
   * embalses y aportes: valor diario de D-2 y sus derivados diarios; ONI(M-2) (auditoria_oni_causal.py)
   * Persistencia = mismo valor de hace 96 h (120 h para la hora 00:00)
   * XGBoost, ARX+GARCH: misma configuracion que el proyecto con las variables realistas
@@ -42,6 +43,31 @@ CORTE = pd.Timestamp("2026-01-01")
 FIN = pd.Timestamp("2026-08-05 00:00")
 OCULTO = 73                                  # horas sin publicar antes del corte (precio y demanda)
 VOT6 = ["Persistencia", "XGBoost", "ARX+GARCH", "N-BEATSx", "N-HiTS", "GARCH-ged"]
+
+# Nombres verdaderos (10-nov-2026). Las variables se calculan con el mismo esquema del escenario ideal del proyecto
+# (notebook 02b), pero desplazadas por el rezago de publicacion de XM: "hace 24 h" es en realidad hace 96 h (120 h para
+# la hora 00:00, ultima de la ventana) y las ventanas moviles terminan 96 h antes de la hora objetivo. En el pronostico
+# de 72 h, el dia D+k usa la fila del dia D: a cada rezago se le suman 24k horas. precio_lag168h ya era verdadero.
+RENOMBRE = {
+    "precio_lag24h": "precio_lag96h",
+    "precio_media_24h": "precio_media_24h_hasta96h", "precio_media_7d": "precio_media_7d_hasta96h",
+    "precio_media_30d": "precio_media_30d_hasta96h",
+    "precio_std_24h": "precio_std_24h_hasta96h", "precio_std_7d": "precio_std_7d_hasta96h",
+    "precio_rango_24h": "precio_rango_24h_hasta96h",
+    "demanda_lag24h": "demanda_lag96h", "demanda_lag48h": "demanda_lag120h", "demanda_lag72h": "demanda_lag144h",
+    "demanda_media_24h": "demanda_media_24h_hasta96h",
+    "demanda": "demanda_lag73h", "generacion": "generacion_lag73h",
+}
+INVERSO = {v: k for k, v in RENOMBRE.items()}
+
+
+def nombre_real(cols):
+    """Traduce una lista de nombres del escenario ideal a los nombres verdaderos del escenario realista."""
+    return [RENOMBRE.get(c, c) for c in cols]
+
+
+EXCLUIR = nombre_real(EXCLUIR)
+EXOG_CORTE, HIST_EXOG_DL = nombre_real(EXOG_CORTE), nombre_real(HIST_EXOG_DL)
 
 
 def por_hora(serie, horas_dia, k=96):
@@ -102,7 +128,7 @@ def features_realistas(produccion=False, hasta=None):
         from actualizar_datos_oct2026 import features
         f = features(m).set_index("fecha_hora")
         d.loc[falta, cal] = f.loc[d.loc[falta, "fecha_hora"], cal].to_numpy()
-    return d[actual.columns.tolist()].sort_values("fecha_hora").reset_index(drop=True)
+    return d[actual.columns.tolist()].sort_values("fecha_hora").reset_index(drop=True).rename(columns=RENOMBRE)
 
 
 def xgboost(df):
@@ -122,7 +148,7 @@ def arx_garch(df):
     te = df[(df["fecha_hora"] >= CORTE) & (df["fecha_hora"] <= FIN)].copy()
     cx = REGRESORAS_ARX + ["lp"]
     for x in (tr, te):
-        x["lp"] = np.log(x["precio_lag24h"])
+        x["lp"] = np.log(x["precio_lag96h"])
     yl = np.log(tr["precio_bolsa"])
     ym, ys = yl.mean(), yl.std()
     xm, xs = tr[cx].mean(), tr[cx].std().replace(0, 1)
@@ -255,7 +281,7 @@ if __name__ == "__main__":
     pred = pd.DataFrame(index=pd.DatetimeIndex(df.loc[(df["fecha_hora"] > CORTE) & (df["fecha_hora"] <= FIN), "fecha_hora"]))
     serie = df.set_index("fecha_hora")
     pred["real"] = serie["precio_bolsa"]
-    pred["Persistencia"] = serie["precio_lag24h"]
+    pred["Persistencia"] = serie["precio_lag96h"]
     pred["XGBoost"] = xgboost(df); print(f"  XGBoost ({(time.time() - t0) / 60:.1f} min)", flush=True)
     pred["ARX+GARCH"] = arx_garch(df); print(f"  ARX+GARCH ({(time.time() - t0) / 60:.1f} min)", flush=True)
     pred["GARCH-ged"] = garch_ged(df); print(f"  GARCH-ged ({(time.time() - t0) / 60:.1f} min)", flush=True)

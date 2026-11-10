@@ -39,7 +39,7 @@ def mensual(d, cols, ini, fin):
     for mes in pd.date_range(pd.Timestamp(ini).normalize().replace(day=1), fin, freq="MS"):
         # la ventana del dia D (01:00 D a 00:00 D+1) usa lo publicado hasta las 00:00 de D menos 73 h
         corte = mes - MARGEN
-        tr = d.loc[INI_TR:corte].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+        tr = d.loc[INI_TR:corte].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
         te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), pd.Timestamp(fin))].dropna(subset=["pre_obj"])
         partes.append(catboost(tr, te, cols))
         print(f"    mes {mes:%Y-%m}: {len(tr)} h de entrenamiento", flush=True)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     previa["Predespacho"] = imar().reindex(previa.index).to_numpy()
     previa = previa.dropna(subset=["Predespacho"])
     # CatBoost en la previa (entrenado antes de la previa)
-    tr = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     te = d.loc["2024-07-01":"2025-06-30 23:00"].dropna(subset=["pre_obj"])
     previa["CatBoost"] = catboost(tr, te, cols).reindex(previa.index)
     previa = previa.dropna(subset=["CatBoost"])
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # 2026
     pan = ref.dropna(subset=er.VOT6 + ["real", "Predespacho"]).copy()
     pan["dia"], pan["g4"] = (pan.index - pd.Timedelta(hours=1)).normalize(), pan.index.hour // 6
-    tr = d.loc[INI_TR:"2025-12-31 23:00"].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:"2025-12-31 23:00"].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     pan["CatBoost_fijo"] = catboost(tr, d.loc[pan.index], cols).reindex(pan.index)
     print(f"  CatBoost fijo ({(time.time() - t0) / 60:.1f} min)", flush=True)
     pan["CatBoost_mensual"] = mensual(d, cols, pan.index.min(), pan.index.max()).reindex(pan.index)

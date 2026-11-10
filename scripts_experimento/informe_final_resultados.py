@@ -77,7 +77,7 @@ def boot_media(x, bloque=7, n=4000, semilla=0):
 # ------------------------------------------------------------------------------------------------------------------
 t0 = time.time()
 tab = rc.tabla_realista().set_index("fecha_hora")
-pers_real = tab["precio_lag24h"]                       # realista: 96 h (120 h para la hora 00:00)
+pers_real = tab["precio_lag96h"]                       # realista: 96 h (120 h para la hora 00:00)
 pers_opt = tab["precio_bolsa"].shift(24)               # la del informe de avance (precio de ayer, no publico al corte)
 esc = pd.read_csv(RES / "escenario_realista" / "predicciones.csv", parse_dates=[0], index_col=0)
 prod = pd.read_csv(RES / "ensamble_24h_realista_2026.csv", parse_dates=["fecha_hora", "dia"]).set_index("fecha_hora")
@@ -206,8 +206,8 @@ pers_hist = {}
 for o, (a, b) in {"Origen 1": ("2020-07-15 01:00", "2021-07-01 00:00"), "Origen 2": ("2021-07-15 01:00", "2022-07-01 00:00"),
                   "Origen 3": ("2022-07-15 01:00", "2023-07-01 00:00"), "Origen 4": ("2023-07-15 01:00", "2024-07-01 00:00"),
                   "Origen 5": ("2024-07-15 01:00", "2025-07-01 00:00")}.items():
-    s = tab.loc[a:b, ["precio_bolsa", "precio_lag24h"]].dropna()
-    pers_hist[o] = float(np.abs(s.precio_bolsa - s.precio_lag24h).mean())
+    s = tab.loc[a:b, ["precio_bolsa", "precio_lag96h"]].dropna()
+    pers_hist[o] = float(np.abs(s.precio_bolsa - s.precio_lag96h).mean())
 R["persistencia_realista_historica"] = pers_hist
 mb = pd.read_csv(RES / "motor_backtest_historico.csv")
 col = [c for c in mb.columns if c.startswith("elegida_por_estabilidad")][0]
@@ -316,7 +316,7 @@ from realista_exp_votantes import INI_TR, MARGEN, catboost  # noqa: E402
 d = tab.copy()
 cols = conjuntos(d)["R+P"]
 mes = pd.Timestamp("2026-08-01")
-tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
 te = d.loc[mes + pd.Timedelta(hours=1):FIN_OFICIAL].dropna(subset=["pre_obj"])
 t1 = time.time()
 catboost(tr, te, cols)

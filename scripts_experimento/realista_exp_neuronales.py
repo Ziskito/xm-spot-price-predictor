@@ -19,7 +19,8 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 sys.path.insert(0, str(Path(__file__).parent))
 import realista_comun as rc  # noqa: E402
-from reentrenar_tras_fix_demanda import FUTR_EXOG_BIN, FUTR_EXOG_CONT, HIST_EXOG_DL  # noqa: E402
+from reentrenar_tras_fix_demanda import FUTR_EXOG_BIN, FUTR_EXOG_CONT  # noqa: E402
+from escenario_realista_24h import HIST_EXOG_DL  # noqa: E402  (nombres verdaderos)
 
 CORTE, FIN, OCULTO = pd.Timestamp("2026-01-01"), pd.Timestamp("2026-08-05 00:00"), 73
 

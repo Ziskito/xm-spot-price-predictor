@@ -27,7 +27,7 @@ from realista_exp_votantes import INI_TR, MARGEN, catboost  # noqa: E402
 def reentrenado(d, cols, inicios, fin, semillas=(42,)):
     partes = []
     for k, ini in enumerate(inicios):
-        tr = d.loc[INI_TR:ini - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+        tr = d.loc[INI_TR:ini - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
         hasta = inicios[k + 1] if k + 1 < len(inicios) else pd.Timestamp(fin)
         te = d.loc[ini + pd.Timedelta(hours=1):hasta].dropna(subset=["pre_obj"])
         if len(te):
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     from ensamble_con_predespacho_24h import imar
     previa = origen5()
     previa["Predespacho"] = imar().reindex(previa.index).to_numpy()
-    tr = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     previa["Cat"] = catboost(tr, d.loc["2024-07-01":"2025-06-30 23:00"].dropna(subset=["pre_obj"]), cols).reindex(previa.index)
     previa = previa.dropna(subset=["Predespacho", "Cat"])
     previa["CatBoost_semanal"] = previa["CatBoost_mensual_3s"] = previa["Cat"]

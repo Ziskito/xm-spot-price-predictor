@@ -51,7 +51,7 @@ def correr(clave):
     pre = pd.Series(rc.alinear(d.index, imar_con_respaldo(imar(), d.index.max())), index=d.index)
     cats = {(v, k): [] for v in variantes for k in ("RP", "RPFC", "RPE")}
     for mes in pd.date_range((desde - pd.Timedelta(days=60)).replace(day=1), hasta, freq="MS"):
-        tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+        tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
         te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), hasta)].dropna(subset=["pre_obj"])
         for v, extra in variantes.items():
             for k, cols in (("RP", RP), ("RPFC", RP + F + C), ("RPE", RP + E)):

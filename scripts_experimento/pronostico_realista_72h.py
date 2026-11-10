@@ -75,7 +75,7 @@ def catboost(tr, te, cols, semilla=42):
 
 
 def limpio(x):
-    return x.dropna(subset=["precio", "ref", "precio_lag24h"])
+    return x.dropna(subset=["precio", "ref", "precio_lag96h"])
 
 
 def mensual(X, cols, ini, fin):

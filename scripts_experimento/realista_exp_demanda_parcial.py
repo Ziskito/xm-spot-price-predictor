@@ -3,7 +3,7 @@
 Backtest de la demanda incompleta del ultimo dia publicado (5-nov-2026).
 
 En produccion, XM publica el ultimo dia de demanda con ~25 % del valor (se completa al dia siguiente). Ese dia es D-4
-para la ventana del dia D, y entra en demanda_lag24h (todas las horas) y en demanda_media_24h (en parte). El CatBoost se
+para la ventana del dia D, y entra en demanda_lag96h (todas las horas) y en demanda_media_24h_hasta96h (en parte). El CatBoost se
 entrena con demanda completa (las corridas posteriores la corrigen), asi que solo el dato de prediccion esta mal.
 Se simulan, sobre 15-ene a 5-ago-2026 (CatBoost R+P reentrenado cada mes + combinador QRA vigente con el predespacho):
   completa    lo ideal (el dataset oficial)
@@ -56,7 +56,7 @@ def razon_observada():
 
 
 def variables_demanda(dem, gen, fechas, modo, perfil):
-    """demanda_lag24h y demanda_media_24h de cada hora objetivo con el dia D-4 modificado segun `modo`."""
+    """demanda_lag96h y demanda_media_24h_hasta96h de cada hora objetivo con el dia D-4 modificado segun `modo`."""
     fechas = pd.DatetimeIndex(fechas)
     src = fechas - pd.to_timedelta(np.where(fechas.hour == 0, 120, 96), unit="h")   # como er.por_hora
     dia_p = src.normalize()                                                           # D-4: el dia incompleto
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     ini, fin = pd.Timestamp("2026-01-01 01:00"), pd.Timestamp("2026-08-05 00:00")
     pred = {k: [] for k in ("completa", "parcial", "completada")}
     for mes in pd.date_range(ini.normalize(), fin, freq="MS"):
-        tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+        tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
         te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), fin)].dropna(subset=["pre_obj"])
         from catboost import CatBoostRegressor
         mod = CatBoostRegressor(iterations=1500, depth=6, learning_rate=0.05, loss_function="MAE", random_seed=42,
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         for k in pred:
             x = te[cols].copy()
             if k != "completa":
-                x["demanda_lag24h"], x["demanda_media_24h"] = variables_demanda(m["demanda"], m["generacion"], te.index, k, perfil)
+                x["demanda_lag96h"], x["demanda_media_24h_hasta96h"] = variables_demanda(m["demanda"], m["generacion"], te.index, k, perfil)
             pred[k].append(pd.Series(np.exp(mod.predict(x) + np.log(te["pre_obj"].clip(lower=1))), index=te.index))
         print(f"  mes {mes:%Y-%m} ({(time.time() - t0) / 60:.1f} min)", flush=True)
     pred = {k: pd.concat(v) for k, v in pred.items()}
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     from ensamble_con_predespacho_24h import imar
     previa = origen5()
     previa["Predespacho"] = imar().reindex(previa.index).to_numpy()
-    tr = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     previa["Cat"] = catboost(tr, d.loc["2024-07-01":"2025-06-30 23:00"].dropna(subset=["pre_obj"]), cols).reindex(previa.index)
     previa = previa.dropna(subset=["Predespacho", "Cat"])
     previa["g4"] = previa.index.hour // 6

@@ -32,7 +32,8 @@ INI_TE, FIN_TE = "2026-01-15", "2026-08-05 00:00"
 
 
 def conjuntos(d):
-    base = [c for c in pd.read_csv(rc.RAIZ / "data/processed/dataset_features_2026.csv", nrows=1).columns if c not in EXCLUIR]
+    from escenario_realista_24h import nombre_real
+    base = nombre_real([c for c in pd.read_csv(rc.RAIZ / "data/processed/dataset_features_2026.csv", nrows=1).columns if c not in EXCLUIR])
     P = ["pre_obj", "log_pre", "pre_media", "pre_min", "pre_max", "pre_rel", "pre_rango_rel", "pre_lag24", "pre_cambio24"]
     D = ["delta_d4", "delta_7d", "delta_30d"]
     H = [c for c in d.columns if c.startswith("h_")]
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     t0 = time.time()
     d = rc.tabla_realista()
     d = d.set_index("fecha_hora")
-    tr = d.loc[INI_TR:FIN_TR].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    tr = d.loc[INI_TR:FIN_TR].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     te = d.loc[INI_TE:FIN_TE].dropna(subset=["precio_bolsa", "pre_obj"])
     print(f"entrenamiento {len(tr)} h, prueba {len(te)} h", flush=True)
     preds = pd.DataFrame({"real": te["precio_bolsa"]})

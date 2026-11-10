@@ -35,7 +35,7 @@ if __name__ == "__main__":
     from ensamble_con_predespacho_24h import imar
     previa = origen5()
     previa["Predespacho"] = imar().reindex(previa.index).to_numpy()
-    trp = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    trp = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     previa["CatBoost_mensual"] = catboost(trp, d.loc["2024-07-01":"2025-06-30 23:00"].dropna(subset=["pre_obj"]), conjuntos(d)["R+P"]).reindex(previa.index)
     previa = previa.dropna(subset=["Predespacho", "CatBoost_mensual"])
     for p in (m, previa):

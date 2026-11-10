@@ -85,7 +85,7 @@ def entrenar(nombre):
     fin = d["precio_bolsa"].last_valid_index()
     partes = []
     for mes in pd.date_range(INICIO, fin, freq="MS"):
-        tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+        tr = d.loc[INI_TR:mes - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
         te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), fin)].dropna(subset=["pre_obj"])
         y = np.log(tr["precio_bolsa"].clip(lower=1)) - np.log(tr["pre_obj"].clip(lower=1))
         m = ajustar(nombre, tr[cols], y)
@@ -113,7 +113,7 @@ def evaluar():
     from multiprocessing import Pool
     d = rc.tabla_realista(produccion=True).set_index("fecha_hora")
     p = pd.concat([pd.read_csv(SAL / f"pred_{m}.csv", index_col=0, parse_dates=True).iloc[:, 0] for m in MODELOS], axis=1)
-    p["real"], p["Predespacho"], p["Persistencia"] = d["precio_bolsa"], d["pre_obj"], d["precio_lag24h"]
+    p["real"], p["Predespacho"], p["Persistencia"] = d["precio_bolsa"], d["pre_obj"], d["precio_lag96h"]
     p = p.dropna(subset=MODELOS + ["Predespacho"]).sort_index()
     p["dia"], p["g4"] = (p.index - pd.Timedelta(hours=1)).normalize(), p.index.hour // 6
     arboles = ["CatBoost", "LightGBM", "XGBoost"]

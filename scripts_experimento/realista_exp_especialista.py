@@ -38,7 +38,7 @@ INI, FIN = pd.Timestamp("2026-01-01 01:00"), pd.Timestamp("2026-08-05 00:00")
 
 
 def limpio(x):
-    return x.dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    return x.dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
 
 
 def mensual_bajo(d, cols):

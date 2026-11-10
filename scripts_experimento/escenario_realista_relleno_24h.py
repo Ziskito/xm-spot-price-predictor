@@ -61,7 +61,8 @@ def suma_hibrida(cP, cI, a, b, frontera):
 
 
 def features_relleno(df):
-    d = df.copy()
+    # el relleno reconstruye el rezago de 24 h con la serie hibrida: ahi los nombres del escenario ideal son verdaderos
+    d = df.rename(columns=er.INVERSO)
     P, I = series(d)
     n = len(d)
     c = corte_de(d["fecha_hora"])
