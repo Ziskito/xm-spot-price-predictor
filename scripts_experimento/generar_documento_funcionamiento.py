@@ -2,7 +2,7 @@
 """
 Documento de referencia "Augur: funcionamiento del sistema" (docs/Funcionamiento_Augur.docx), 19-oct-2026; version
 del 5-nov-2026: cifras en vivo de todo 2026 y de la operacion hasta el ultimo precio publicado (vivo()), seccion 9.8
-(cuanto aportan el ENSO y la hidrologia), demanda incompleta del ultimo dia y limitaciones de almacenamiento y SOI.
+(cuanto aportan el ENSO y la hidrologia), demanda incompleta del ultimo dia y limitaciones de almacenamiento y SOI (probado el 10-nov; no se adopta).
 Explica el sistema tal como corre hoy: datos y calendario de publicacion, las 66 variables, los modelos finales, el
 motor de decision, las metricas de calidad (que son y por que se usan), los resultados, la comparacion con otros
 trabajos, la operacion diaria y las limitaciones. Las cifras salen de informe_final_assets/cifras.json (las mismas
@@ -229,37 +229,48 @@ def salto():
 
 # ------------------------------------------------------------------------------------------------ figuras nuevas
 def fig_calendario():
+    """Barra = horas que describe cada dato; rombo = cuando se publica (rediseño del 10-nov-2026)."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
     ruta = FIG / "calendario_publicacion.png"
     fuentes = [
-        ("Precio de bolsa, demanda y generación (API XM)", -4.6, -3, "#c0392b", "hasta 23:00 de D-4"),
-        ("Embalses y aportes (API XM)", -4.6, -1, "#2e86c1", "valor diario de D-2"),
-        ("Ofertas de precio de los generadores (cierre 08:00)", -1, -1 + 8 / 24, "#7f8c8d", "no públicas a tiempo"),
-        ("Predespacho ideal de XM para D", -1, -1 + 10.5 / 24, "#27ae60", "D-1 ~10:30"),
-        ("Despacho programado (dMAR, dDEM) para D", -1, -1 + 14.5 / 24, "#16a085", "D-1 ~14:30"),
+        ("Precio de bolsa, demanda y generación", -4.6, -3, None, "#c0392b", "lo último es D-4 23:00", True),
+        ("Embalses y aportes", -4.6, -1, None, "#2e86c1", "lo último es el día D-2", True),
+        ("Ofertas de precio de los generadores", 0, 1, -1 + 8 / 24, "#95a5a6", "cierran D-1 08:00, pero sus\nprecios no se publican a tiempo", False),
+        ("Predespacho ideal de XM", 0, 1, -1 + 10.5 / 24, "#27ae60", "publicado D-1 ~10:30", True),
+        ("Despacho programado (dMAR, dDEM)", 0, 1, -1 + 14.5 / 24, "#16a085", "publicado D-1 ~14:30", True),
     ]
-    fig, ax = plt.subplots(figsize=(10, 3.4), dpi=170)
-    for i, (nom, ini, fin, col, txt) in enumerate(fuentes[::-1]):
-        if ini == fin or nom.startswith("Ofertas") or nom.startswith("Predespacho") or nom.startswith("Despacho"):
-            ax.plot([fin], [i], marker="o", ms=9, color=col)
-            ax.text(1.08, i, txt, va="center", fontsize=8.5, color=col)
+    fig, ax = plt.subplots(figsize=(10.5, 3.6), dpi=170)
+    n_f = len(fuentes)
+    ax.axvspan(0, 1, color="#f5b041", alpha=0.15, zorder=0)
+    for i, (nom, ini_, fin_, pub, col, txt, usa) in enumerate(fuentes[::-1]):
+        if usa:
+            ax.barh(i, fin_ - ini_, left=ini_, height=0.42, color=col, alpha=0.85, zorder=2)
         else:
-            ax.barh(i, fin - ini, left=ini, height=0.45, color=col, alpha=0.85)
-            ax.text(ini + 0.05, i + 0.33, "datos conocidos", fontsize=7.5, color=col)
-            ax.text(1.08, i, txt, va="center", fontsize=8.5, color=col)
-    ax.set_yticks(range(len(fuentes)))
+            ax.barh(i, fin_ - ini_, left=ini_, height=0.42, facecolor="white", edgecolor=col, hatch="///", lw=1, zorder=2)
+        if pub is not None:
+            ax.plot([pub, ini_], [i, i], color=col, lw=1, ls=":", zorder=1)
+            ax.plot([pub], [i], marker="D", ms=8, color=col, zorder=3, mec="white", mew=0.8)
+        ax.text(1.12, i, txt, va="center", fontsize=8.3, color="#333333" if usa else "#7f8c8d")
+    ax.set_yticks(range(n_f))
     ax.set_yticklabels([f[0] for f in fuentes[::-1]], fontsize=9)
-    ax.axvline(0, color="black", lw=1.6)
-    ax.axvspan(0, 1, color="#f5b041", alpha=0.18)
-    ax.text(0.5, len(fuentes) - 0.35, "Día pronosticado D\n(01:00 a 00:00)", ha="center", va="center", fontsize=8.5)
-    ax.text(0.03, -0.7, "Corte: 00:00 de D", fontsize=8.5, fontweight="bold")
-    ax.set_xlim(-4.6, 2.3)
-    ax.set_ylim(-1, len(fuentes))
+    ax.axvline(0, color="black", lw=1.6, zorder=4)
+    ax.text(0.04, n_f - 0.45, "Día que se pronostica (D)", ha="left", va="center", fontsize=8.5, color="#7e5109")
+    ax.text(-0.04, -0.8, "Corte: 00:00 de D", ha="right", va="center", fontsize=8.5, fontweight="bold")
+    ax.set_xlim(-4.6, 3.1)
+    ax.set_ylim(-1.35, n_f - 0.1)
     ax.set_xticks([-4, -3, -2, -1, 0, 1])
     ax.set_xticklabels(["D-4", "D-3", "D-2", "D-1", "D", "D+1"])
-    for s in ("top", "right", "left"):
-        ax.spines[s].set_visible(False)
+    for lado in ("top", "right", "left"):
+        ax.spines[lado].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    fig.tight_layout()
+    ax.legend(handles=[Patch(color="#555555", alpha=0.85, label="horas que describe el dato"),
+                       Line2D([], [], marker="D", ls="", color="#555555", ms=7, label="cuándo se publica"),
+                       Patch(facecolor="white", edgecolor="#95a5a6", hatch="///", label="existe, pero no se usa")],
+              loc="lower center", bbox_to_anchor=(0.5, -0.30), ncol=3, frameon=False, fontsize=8.3)
+    fig.text(0.5, 0.005, "Cada marca del eje es el inicio del día (00:00). Todo lo que está a la izquierda de la línea negra "
+             "ya se conoce al pronosticar.", ha="center", fontsize=8, color="#555555")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig.savefig(ruta)
     plt.close(fig)
     return ruta
@@ -376,7 +387,7 @@ def s1_resumen():
       "una banda de incertidumbre del 80 % (q10 a q90) y la probabilidad de que ocurra un **pico** o un **desplome** de "
       "precio. Sobre ese pronóstico, un **motor de decisión** traduce los números en una recomendación por hora para dos "
       "tipos de usuario: el generador (vender, retener o esperar) y el comercializador (comprar, evitar la compra o "
-      "esperar). Todo se muestra en un dashboard web público que se actualiza solo tres veces al día.")
+      "esperar). Todo se muestra en un dashboard web público que se actualiza automáticamente tres veces al día.")
     P("La idea central del diseño definitivo es sencilla: **no se pronostica el precio desde cero, se corrige el "
       "predespacho ideal que XM publica el día anterior**. El predespacho ya contiene las ofertas de los generadores y la "
       "demanda esperada, que son las que fijan el precio; lo que Augur aprende es en qué condiciones el predespacho se "
@@ -482,9 +493,9 @@ def s4_variables():
       "predespacho**, log(precio / predespacho). Las variables se agrupan en ocho familias. La notación de los conjuntos "
       "es la de los modelos: **R** = realistas (lo público al corte), **P** = predespacho, **F** = forma intradía del "
       "predespacho, **C** = despacho programado y **E** = error reciente del predespacho.")
-    P("Un detalle importante en las variables de precio y demanda: como XM publica con ~3 días de rezago, lo que en el "
-      "código se llama \"hace 24 h\" es en realidad **hace 96 h** (120 h para la hora 00:00, la última de la ventana). Se "
-      "conservaron los nombres originales del proyecto para no romper el código, pero el valor ya está desplazado.")
+    P("Las variables de precio y demanda llevan el nombre de su rezago real: como XM publica con ~3 días de atraso, el "
+      "precio más reciente de cada hora es el de **hace 96 h** (120 h para la hora 00:00, la última de la ventana), y las "
+      "ventanas móviles terminan 96 h antes de la hora pronosticada (sufijo _hasta96h).")
     fam = [
         ("Tabla 4. Hidrología y clima (R) · 14 variables", [
             ["volumen_embalses", "Volumen útil de los embalses del SIN (valor diario de D-2)", "El agua guardada es el principal determinante del precio en un sistema hidro-dominado"],
@@ -492,20 +503,20 @@ def s4_variables():
             ["…_delta_1d, …_delta_7d", "Cambio del embalse o de los aportes en 1 y 7 días", "Tendencia: un embalse que baja rápido encarece la energía"],
             ["…_media_7d, …_media_30d", "Promedio móvil de 7 y 30 días", "Nivel de referencia sin el ruido diario"],
             ["…_vs_media30d", "Valor actual / media de 30 días", "Si el sistema está más seco o más húmedo que en el último mes"],
-            ["oni", "Índice Oceánico El Niño (NOAA), valor de hace dos meses", "El Niño reduce lluvias en Colombia y sube el precio con meses de anticipación"],
+            ["oni", "Índice Oceánico El Niño (NOAA), promedio de los dos últimos trimestres publicados", "El Niño reduce lluvias en Colombia y sube el precio con meses de anticipación"],
             ["es_pandemia", "1 en el periodo de restricciones COVID-19 (2020)", "Aísla la caída atípica de la demanda"],
         ]),
         ("Tabla 5. Precio pasado (R) · 9 variables", [
-            ["precio_lag24h", "Precio de la misma hora hace 96 h (120 h para la 00:00)", "El precio más reciente publicado de esa hora"],
+            ["precio_lag96h", "Precio de la misma hora hace 96 h (120 h para la 00:00)", "El precio más reciente publicado de esa hora"],
             ["precio_lag168h", "Precio de la misma hora una semana antes", "Patrón semanal (laboral contra fin de semana)"],
-            ["precio_media_24h / 7d / 30d", "Promedios móviles del precio publicado", "Nivel reciente del mercado en tres escalas"],
-            ["precio_std_24h / 7d", "Desviación estándar móvil", "Volatilidad reciente"],
-            ["precio_rango_24h", "Máximo menos mínimo de 24 h", "Amplitud del último día publicado"],
+            ["precio_media_24h / 7d / 30d_hasta96h", "Promedios móviles del precio publicado, hasta 96 h antes", "Nivel reciente del mercado en tres escalas"],
+            ["precio_std_24h / 7d_hasta96h", "Desviación estándar móvil, hasta 96 h antes", "Volatilidad reciente"],
+            ["precio_rango_24h_hasta96h", "Máximo menos mínimo de 24 h, hasta 96 h antes", "Amplitud del último día publicado"],
             ["ratio_volatilidad", "std 24 h / std 7 d", "Si la volatilidad está subiendo o bajando"],
         ]),
         ("Tabla 6. Demanda (R) · 4 variables", [
-            ["demanda_lag24h / 48h / 72h", "Demanda de la misma hora hace 96, 120 y 144 h", "Más demanda exige plantas más caras"],
-            ["demanda_media_24h", "Promedio móvil de 24 h de la demanda publicada", "Nivel de consumo reciente"],
+            ["demanda_lag96h / 120h / 144h", "Demanda de la misma hora hace 96, 120 y 144 h", "Más demanda exige plantas más caras"],
+            ["demanda_media_24h_hasta96h", "Promedio móvil de 24 h de la demanda publicada, hasta 96 h antes", "Nivel de consumo reciente"],
         ]),
         ("Tabla 7. Calendario (R) · 13 variables", [
             ["hora_sin, hora_cos", "Hora del día en forma circular (seno y coseno)", "La hora 23 queda cerca de la 0; el precio tiene picos de mañana y noche"],
@@ -546,9 +557,6 @@ def s4_variables():
     ]
     for tit, filas in fam:
         tabla(["Variable", "Definición", "Por qué se incluye"], filas, anchos=[3.3, 4.6, 4.6], tam=8.5, titulo=tit)
-    nota("La familia P (predespacho) es la que más aporta: sin ella, con solo lo publicado al corte, el mejor ensamble del "
-         "informe de avance apenas mejora a la persistencia (rMAE 0,93). El precio lo fija la oferta de la planta marginal, "
-         "y el predespacho es el único dato público a tiempo que ya trae esas ofertas.", "Qué variables pesan más")
 
 
 def s5_modelos():
@@ -909,8 +917,10 @@ def s9_enso():
     import pandas as pd
     res = RAIZ / "data/processed/resultados"
     H("9.8 Cuánto aportan el ENSO y la hidrología", 2)
-    P("El ONI que usa Augur es la media móvil de tres meses de la anomalía de temperatura superficial del mar en la región "
-      "Niño 3.4, con el rezago con que NOAA la publica (valor de hace dos meses). La pregunta no es solo si se incluye, "
+    P("Augur usa el ONI de NOAA, la media móvil de tres meses de la anomalía de temperatura superficial del mar en la "
+      "región Niño 3.4. NOAA publica cada trimestre en los primeros días del mes siguiente a su cierre (el de agosto a "
+      "octubre de 2026 salió el 3 de noviembre), y para cada mes el modelo usa el promedio de los dos últimos trimestres "
+      "disponibles (en noviembre, julio-septiembre y agosto-octubre). La pregunta no es solo si se incluye, "
       "sino cuánto mejora el pronóstico de 24 a 72 h. Se midió de tres formas.")
     a = pd.read_csv(res / "ablacion_logo_multisemilla.csv")
     nombres = {"precio (rezagos e historia)": "Precio (rezagos e historia)", "calendario": "Calendario", "festivos": "Festivos",
@@ -940,8 +950,15 @@ def s9_enso():
       "unos 180 días de aportes. Con eso se probaron en el modelo de producción tres variables nuevas: anomalía del "
       "embalse frente a su nivel normal de la época, aportes de 180 días y el ONI con 3 y 8 meses más de rezago. Mejoran "
       "unos 1,4 COP/kWh en mayo-agosto (El Niño), empeoran en enero-abril y ninguna es significativa (Diebold-Mariano, "
-      "p de 0,19 a 0,71), así que no se adoptaron. El SOI no se probó: mide el mismo fenómeno desde la presión atmosférica "
-      "y, dado el resultado del ONI, no se espera que cambie la conclusión a 24-72 h.")
+      "p de 0,19 a 0,71), así que no se adoptaron. También se probó el SOI (índice de oscilación del "
+      "sur, que mide el mismo fenómeno desde la presión atmosférica entre Tahití y Darwin), solo y con 3 y 8 meses más de "
+      "rezago: ninguna versión mejora con significancia (2026: 36,9 frente a 36,6, p = 0,59; operación: 51,4 frente a 52,1, "
+      "p = 0,41) y la versión con rezagos empeora en enero-abril (p = 0,015), así que tampoco se adoptó. Se probaron "
+      "además otras formas de representar el ENSO con datos más frescos o más cercanos a Colombia: la anomalía semanal y "
+      "la mensual de Niño 3.4 (con una semana y un mes de rezago, frente a uno a dos meses del ONI), la región costera "
+      "Niño 1+2, la tendencia y el acumulado de 12 meses, y la fase con su duración. Ninguna mejora con significancia "
+      "(Diebold-Mariano, p de 0,15 a 0,86 en 2026 y en la operación), y quitar el ENSO del todo tampoco cambia el error "
+      "de forma significativa: se mantiene el ONI.")
     nota("En un horizonte de 24 a 72 horas, el ENSO y la hidrología valen más como indicadores de riesgo que como "
          "predictores. En horizontes de meses, donde no hay predespacho, es donde deberían pesar más; Augur no evalúa "
          "ese horizonte.",
@@ -1059,7 +1076,7 @@ def s12_limitaciones():
         "de baterías (BESS) faltan el estado de carga, la potencia y la capacidad, la eficiencia de carga y descarga, la "
         "degradación y el costo de oportunidad de la energía almacenada. El pronóstico horario con bandas está pensado "
         "para alimentar una optimización de ese tipo, que queda como trabajo futuro.",
-        "**Variables climáticas.** Del ENSO solo se usa el ONI; el SOI no se probó (sección 9.8).",
+        "**Variables climáticas.** Del ENSO solo se usa el ONI; el SOI se probó y no mejora el pronóstico (sección 9.8).",
         "**Rampas.** El modelo acierta la dirección de los cambios intradía mejor que su magnitud; el error se concentra en las "
         "horas de rampa (MAE ~117 COP/kWh en esas horas).",
         "**Picos y desplomes a 2 y 3 días.** Solo el detector de pico supera a la climatología en esos días, y no en todos los "

@@ -604,7 +604,8 @@ doc.add_paragraph(
     "Este documento reúne, en un solo lugar, los papers, la regulación, las fuentes de datos, las librerías y las "
     "herramientas que se usaron en Augur, la plataforma de pronóstico horario del precio de bolsa colombiano con motor "
     "de decisión. Cada entrada trae la cita en formato IEEE, el enlace o DOI y una línea sobre para qué se usó en el "
-    "proyecto, para que se pueda decidir rápido qué citar y dónde.")
+    "proyecto, para que se pueda decidir rápido qué citar y dónde. Todas las entradas (referencias, librerías, "
+    "herramientas y material propio) llevan un número corrido para poder aprobarlas o descartarlas por número.")
 doc.add_paragraph("Cada entrada lleva una marca de estado:")
 for marca, desc in (("C", "citada en el informe final del proyecto (datos verificados contra Crossref)."),
                     ("L", "leída o usada en el proyecto, todavía no citada en el informe."),
@@ -624,15 +625,18 @@ for titulo, entradas in SECCIONES:
     for estado, cita, enlace, uso in entradas:
         n += 1
         p = doc.add_paragraph()
-        p.paragraph_format.left_indent = Cm(1.1)
-        p.paragraph_format.first_line_indent = Cm(-1.1)
+        p.paragraph_format.left_indent = Cm(1.9)
+        p.paragraph_format.first_line_indent = Cm(-1.9)
         p.paragraph_format.space_after = Pt(1)
+        r = p.add_run(f"{n}.\t")
+        r.bold = True
         r = p.add_run(f"[{estado}]\t")
         r.bold, r.font.color.rgb = True, AMBAR
         p.add_run(cita)
-        p.paragraph_format.tab_stops.add_tab_stop(Cm(1.1))
+        p.paragraph_format.tab_stops.add_tab_stop(Cm(0.9))
+        p.paragraph_format.tab_stops.add_tab_stop(Cm(1.9))
         d = doc.add_paragraph()
-        d.paragraph_format.left_indent = Cm(1.1)
+        d.paragraph_format.left_indent = Cm(1.9)
         d.paragraph_format.space_after = Pt(7)
         r = d.add_run(enlace + "\n")
         r.font.size, r.font.color.rgb = Pt(9), GRIS
@@ -645,25 +649,31 @@ doc.add_paragraph(
     "Versiones fijadas en requirements.txt (modelado), requirements-produccion.txt (actualización diaria) y "
     "dashboard/requirements.txt (app). Para el paper basta citar las que hacen el trabajo central: pandas, NumPy, "
     "SciPy, scikit-learn, statsmodels, CatBoost y Streamlit.")
-tabla = doc.add_table(rows=1, cols=5)
+tabla = doc.add_table(rows=1, cols=6)
 tabla.style = "Table Grid"
 tabla.alignment = WD_TABLE_ALIGNMENT.CENTER
-anchos = (Cm(3.0), Cm(2.0), Cm(4.6), Cm(5.6), Cm(2.0))
-for i, enc in enumerate(("Librería", "Versión", "Para qué en Augur", "Cita sugerida", "Licencia")):
+anchos = (Cm(1.0), Cm(2.8), Cm(1.8), Cm(4.3), Cm(5.4), Cm(1.9))
+for i, enc in enumerate(("N.º", "Librería", "Versión", "Para qué en Augur", "Cita sugerida", "Licencia")):
     c = tabla.rows[0].cells[i]
     texto_celda(c, enc, negrita=True, tam=9)
-    sombrear(c, "F3EBDB")
 for fila in LIBRERIAS:
+    n += 1
     celdas = tabla.add_row().cells
+    texto_celda(celdas[0], f"{n}.", negrita=True)
     for i, valor in enumerate(fila):
-        texto_celda(celdas[i], valor, negrita=(i == 0))
+        texto_celda(celdas[i + 1], valor, negrita=(i == 0))
 for fila in tabla.rows:
     for i, c in enumerate(fila.cells):
         c.width = anchos[i]
 
 doc.add_heading("11. Herramientas e infraestructura", level=1)
 for nombre, uso in HERRAMIENTAS:
-    p = doc.add_paragraph(style="List Bullet")
+    n += 1
+    p = doc.add_paragraph()
+    p.paragraph_format.left_indent = Cm(0.9)
+    p.paragraph_format.first_line_indent = Cm(-0.9)
+    p.paragraph_format.tab_stops.add_tab_stop(Cm(0.9))
+    p.add_run(f"{n}.\t").bold = True
     p.add_run(nombre + ": ").bold = True
     p.add_run(uso)
 
@@ -680,16 +690,22 @@ for nombre, uso in (
         ("Video explicativo", "docs/video/demo_final.mp4 (3:53) con subtítulos y guion."),
         ("Formulación", "J. D. Barceló Barraza y R. A. Dede Perdomo, Anexo 1 – Formulación del proyecto, Universidad "
                         "del Norte, 2026.")):
-    p = doc.add_paragraph(style="List Bullet")
+    n += 1
+    p = doc.add_paragraph()
+    p.paragraph_format.left_indent = Cm(0.9)
+    p.paragraph_format.first_line_indent = Cm(-0.9)
+    p.paragraph_format.tab_stops.add_tab_stop(Cm(0.9))
+    p.add_run(f"{n}.\t").bold = True
     p.add_run(nombre + ": ").bold = True
     p.add_run(uso)
 
 pie = doc.add_paragraph()
 pie.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = pie.add_run(f"{n} referencias bibliográficas, regulatorias y de datos · {len(LIBRERIAS)} librerías · "
-                f"{len(HERRAMIENTAS)} herramientas")
+n_ref = sum(len(e) for _, e in SECCIONES)
+r = pie.add_run(f"{n} entradas numeradas: {n_ref} referencias bibliográficas, regulatorias y de datos (1-{n_ref}) · "
+                f"{len(LIBRERIAS)} librerías · {len(HERRAMIENTAS)} herramientas · 7 materiales propios")
 r.font.size, r.font.color.rgb = Pt(9), GRIS
 
 DESTINO.parent.mkdir(exist_ok=True)
 doc.save(str(DESTINO))
-print("Guardado:", DESTINO, "|", n, "referencias")
+print("Guardado:", DESTINO, "|", n, "entradas numeradas")

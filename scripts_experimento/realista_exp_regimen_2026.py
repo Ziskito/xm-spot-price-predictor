@@ -45,7 +45,10 @@ VARIANTES = {"base": {}, "rec365": {"vida": 365}, "rec120": {"vida": 120},
              # 10-nov (pedido de Juan): la curva solo existe con la regla; antes de la activacion las variables valen 0
              "regla50": {"curva": 0.50, "solo_regla": True}, "regla82": {"curva": 0.82, "solo_regla": True},
              # 10-nov, segunda ronda: solo el indicador de la medida; y la curva con mas peso para los pocos dias con la regla
-             "medida": {"solo_indicador": True}, "regla50w": {"curva": 0.50, "solo_regla": True, "peso_regla": 5}}
+             "medida": {"solo_indicador": True}, "regla50w": {"curva": 0.50, "solo_regla": True, "peso_regla": 5},
+             # 10-nov, tercera ronda: la curva planta por planta (X = NEP de cada planta, tercer punto en su NPV)
+             "planta": {"planta": True},
+             "ambas": {"curva": 0.50, "solo_regla": True, "planta": True}}
 
 
 def catboost(tr, te, cols, vida=None, semilla=42, peso_regla=None):
@@ -90,6 +93,51 @@ def variables_curva(d, x):
     out["curva_ref"] = curva
     out["curva_log_vs_pre"] = np.log(curva / d["pre_obj"].clip(lower=1).to_numpy())
     out["medida_101127"] = (dia >= ACTIVACION).astype(int)
+    return out
+
+
+def variables_planta(d):
+    """Curva de la CREG 101 127 planta por planta (10-nov-2026), como la define el Documento CREG 901 431 de 2026:
+    1,10 x PES en el minimo tecnico, PES + 0,01 en el X % del volumen util y los otros costos variables en el Nivel de
+    Probabilidad de Vertimiento (NPV) de cada embalse. X = Nivel ENFICC Probabilistico (NEP) de cada planta y mes, que el
+    documento senala como la referencia probable (el valor definitivo lo fija la CREG por circular). NEP y NPV: archivos
+    de XM (NEP oct-2026 actualizacion 1, NPV jul-2026); volumen y capacidad util diarios por embalse: API de XM, con el
+    mismo rezago que el agregado (D-2). Variables diarias, iguales para las 24 horas:
+      curva_planta_pond  promedio de las curvas ponderado por capacidad util
+      curva_planta_min   la curva mas baja (la oferta hidraulica de referencia mas barata)
+      frac_bajo_nep      fraccion de la capacidad util con el embalse por debajo de su NEP (curva >= PES)
+      log de las dos curvas frente al predespacho"""
+    esc = pd.read_csv(rc.RAIZ / "data" / "raw" / "escasez_capacidad_xm.csv", parse_dates=[0], index_col=0)
+    emb = pd.read_csv(rc.RAIZ / "data" / "raw" / "embalses_por_embalse_xm.csv", parse_dates=["fecha"])
+    par = pd.read_csv(rc.RAIZ / "data" / "raw" / "creg101127_nep_npv_xm.csv")
+    emb = emb[emb["embalse"].isin(par["embalse"].unique())].copy()
+    emb["pct"] = (emb["volumen_util_kwh"] / emb["capacidad_util_kwh"]).clip(0, 1)
+    emb["mes"] = emb["fecha"].dt.month
+    emb = emb.merge(par, on=["embalse", "mes"], how="left")
+    pes_s = esc["PrecEscaMarg"].ffill()
+    pes_s = pes_s / 1000 if pes_s.max() > 1e4 else pes_s
+    emb["pes"] = pes_s.reindex(emb["fecha"], method="ffill").to_numpy()
+    emb["ocv"] = cere_mes_anterior(emb["fecha"])
+    p, x, n, pes, ocv = (emb[c].to_numpy(float) for c in ("pct", "nep", "npv", "pes", "ocv"))
+    x = np.minimum(x, n)
+    p1, p2 = 1.10 * pes, pes + 0.01
+    tramo1 = np.where(x > 0, p1 + (p2 - p1) * p / np.where(x > 0, x, 1), p2)
+    tramo2 = p2 + (ocv - p2) * (p - x) / np.where(n - x > 0, n - x, 1)
+    emb["curva"] = np.where(p >= n, ocv, np.where(p <= x, tramo1, tramo2))
+    emb["bajo_nep"] = (p < x).astype(float)
+    g = emb.groupby("fecha")
+    diario = pd.DataFrame({
+        "curva_planta_pond": g.apply(lambda z: np.average(z["curva"], weights=z["capacidad_util_kwh"])),
+        "curva_planta_min": g["curva"].min(),
+        "frac_bajo_nep": g.apply(lambda z: np.average(z["bajo_nep"], weights=z["capacidad_util_kwh"]))})
+    idx = pd.DatetimeIndex(d.index)
+    dia_dato = (idx - pd.Timedelta(hours=1)).normalize() - pd.Timedelta(days=2)       # valor de D-2 (como el agregado)
+    out = diario.reindex(dia_dato).set_axis(d.index)
+    activa = ((idx - pd.Timedelta(hours=1)).normalize() >= ACTIVACION).astype(int)
+    pre = d["pre_obj"].clip(lower=1).to_numpy()
+    out["curva_planta_pond_log_vs_pre"] = np.log(out["curva_planta_pond"].to_numpy() / pre)
+    out["curva_planta_min_log_vs_pre"] = np.log(out["curva_planta_min"].to_numpy() / pre)
+    out = out.mul(activa, axis=0).fillna(0.0)                     # 0 antes de la medida (y sin dato por embalse)
     return out
 
 
@@ -142,6 +190,10 @@ def main(nombre):
             V["curva_log_vs_pre"] = V["curva_log_vs_pre"] * V["medida_101127"]
         d = d.join(V)
         extra = list(V.columns)
+    if conf.get("planta"):
+        V = variables_planta(d)
+        d = d.join(V)
+        extra = extra + list(V.columns)
     if conf.get("solo_indicador"):
         d["medida_101127"] = ((d.index - pd.Timedelta(hours=1)).normalize() >= ACTIVACION).astype(int)
         extra = ["medida_101127"]
