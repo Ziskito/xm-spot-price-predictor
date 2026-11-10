@@ -41,10 +41,14 @@ SAL = rc.MEJ.parent / "regimen_2026"
 INI = pd.Timestamp("2026-01-01 01:00")
 ACTIVACION = pd.Timestamp("2026-09-10")      # anunciada el 9-sep; al corte de las 00:00 del 10 ya era publica
 VARIANTES = {"base": {}, "rec365": {"vida": 365}, "rec120": {"vida": 120},
-             "curva50": {"curva": 0.50}, "curva82": {"curva": 0.82}}
+             "curva50": {"curva": 0.50}, "curva82": {"curva": 0.82},
+             # 10-nov (pedido de Juan): la curva solo existe con la regla; antes de la activacion las variables valen 0
+             "regla50": {"curva": 0.50, "solo_regla": True}, "regla82": {"curva": 0.82, "solo_regla": True},
+             # 10-nov, segunda ronda: solo el indicador de la medida; y la curva con mas peso para los pocos dias con la regla
+             "medida": {"solo_indicador": True}, "regla50w": {"curva": 0.50, "solo_regla": True, "peso_regla": 5}}
 
 
-def catboost(tr, te, cols, vida=None, semilla=42):
+def catboost(tr, te, cols, vida=None, semilla=42, peso_regla=None):
     from catboost import CatBoostRegressor
     m = CatBoostRegressor(iterations=1500, depth=6, learning_rate=0.05, loss_function="MAE", random_seed=semilla, verbose=0,
                           thread_count=4)
@@ -52,18 +56,21 @@ def catboost(tr, te, cols, vida=None, semilla=42):
     if vida:
         edad = (tr.index.max() - tr.index) / pd.Timedelta(days=1)
         peso = 0.5 ** (np.asarray(edad, float) / vida)
+    if peso_regla:
+        # las horas con la medida activa cuentan peso_regla veces (son pocas frente a 7 años sin ella)
+        peso = np.where((tr.index - pd.Timedelta(hours=1)).normalize() >= ACTIVACION, float(peso_regla), 1.0)
     m.fit(tr[cols], np.log(tr["precio_bolsa"]) - np.log(tr["pre_obj"].clip(lower=1)), sample_weight=peso)
     return pd.Series(np.exp(m.predict(te[cols]) + np.log(te["pre_obj"].clip(lower=1))), index=te.index)
 
 
-def mensual(d, cols, ini, fin, vida=None):
+def mensual(d, cols, ini, fin, vida=None, peso_regla=None):
     partes = []
     for mes in pd.date_range(pd.Timestamp(ini).normalize().replace(day=1), fin, freq="MS"):
         corte = mes - MARGEN
-        tr = d.loc[INI_TR:corte].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+        tr = d.loc[INI_TR:corte].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
         te = d.loc[mes + pd.Timedelta(hours=1):min(mes + pd.offsets.MonthBegin(1), pd.Timestamp(fin))].dropna(subset=["pre_obj"])
         if len(te):
-            partes.append(catboost(tr, te, cols, vida))
+            partes.append(catboost(tr, te, cols, vida, peso_regla=peso_regla))
     return pd.concat(partes)
 
 
@@ -111,7 +118,7 @@ def previa(d, sets, vida=None):
     from ensamble_24h_enero import origen5
     pv = origen5()
     pv["Predespacho"] = imar().reindex(pv.index).to_numpy()
-    trp = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag24h"])
+    trp = d.loc[INI_TR:pd.Timestamp("2024-07-01") - MARGEN].dropna(subset=["precio_bolsa", "pre_obj", "precio_lag96h"])
     tep = d.loc["2024-07-01":"2025-06-30 23:00"].dropna(subset=["pre_obj"])
     pv["Cat_prom"] = np.mean([catboost(trp, tep, cols, vida).reindex(pv.index) for cols in sets.values()], axis=0)
     return pv.dropna(subset=["Predespacho", "Cat_prom"])[["real", "Predespacho", "Cat_prom", "dia"]]
@@ -130,15 +137,21 @@ def main(nombre):
     extra = []
     if "curva" in conf:
         V = variables_curva(d, conf["curva"])
+        if conf.get("solo_regla"):
+            V["curva_ref"] = V["curva_ref"] * V["medida_101127"]
+            V["curva_log_vs_pre"] = V["curva_log_vs_pre"] * V["medida_101127"]
         d = d.join(V)
         extra = list(V.columns)
+    if conf.get("solo_indicador"):
+        d["medida_101127"] = ((d.index - pd.Timedelta(hours=1)).normalize() >= ACTIVACION).astype(int)
+        extra = ["medida_101127"]
     sets = {"Cat_RP": RP + extra, "Cat_RPFC": RP + F + C + extra, "Cat_RPE": RP + E + extra}
     fin = imar().index.max().normalize() + pd.Timedelta(days=1)
     idx = d.loc[INI:fin].dropna(subset=["pre_obj"]).index
     pan = pd.DataFrame(index=idx)
     pan["Predespacho"] = rc.alinear(idx, imar_con_respaldo(imar(), idx.max()))
     for k, cols in sets.items():
-        pan[k] = mensual(d, cols, idx.min(), fin, conf.get("vida")).reindex(idx)
+        pan[k] = mensual(d, cols, idx.min(), fin, conf.get("vida"), conf.get("peso_regla")).reindex(idx)
         print(f"  {nombre} {k} ({(time.time() - t0) / 60:.1f} min)", flush=True)
     pan["Cat_prom"] = pan[list(sets)].mean(axis=1)
     pan["real"] = d.loc[idx, "precio_bolsa"]
