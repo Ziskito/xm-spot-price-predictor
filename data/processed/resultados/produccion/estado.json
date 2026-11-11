@@ -1,17 +1,14 @@
 {
-  "actualizado": "2026-11-11 16:43",
+  "actualizado": "2026-11-11 18:01",
   "precio_real_hasta": "2026-11-08 23:00:00",
   "pronostico_24h_hasta": "2026-11-13 00:00:00",
   "pronostico_72h_ultimo_corte": "2026-11-12",
   "pronostico_72h_hasta": "2026-11-15 00:00:00",
   "fuentes": {
     "oni": "ok",
-    "serie_xm": {
-      "precio_bolsa": "2026-11-08 23:00:00",
-      "volumen_embalses": "2026-11-10 23:00:00"
-    },
+    "serie_xm": "ERROR: API de XM sin respuesta para PrecBolsNaci 2026-08-06 a 2026-09-02",
     "predespacho_ideal": "2026-11-12 23:00:00",
     "dmar_ddem": "2026-11-12 23:00:00",
-    "mc": "2026-10"
+    "mc": "ERROR: HTTPSConnectionPool(host='servapibi.xm.com.co', port=443): Max retries exceeded with url: /monthly (Caused by ConnectTimeoutError(<HTTPSConnection(host='servapibi.xm.com.co', port=443) at 0x79d4b776b1"
   }
 }
