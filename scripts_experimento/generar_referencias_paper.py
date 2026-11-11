@@ -129,10 +129,6 @@ SECCIONES = [
               "Process. Syst. 34 (NeurIPS 2021), 2021.",
          "arXiv:2106.00170",
          "Respaldo de la calibración conforme con ventana móvil de 60 días, que se adapta a cambios de distribución."),
-        ("L", "T. Gneiting y A. E. Raftery, \"Strictly proper scoring rules, prediction, and estimation,\" J. Am. Stat. "
-              "Assoc., vol. 102, no. 477, pp. 359–378, 2007.",
-         "doi: 10.1198/016214506000001437",
-         "Interval Score (Winkler) para comparar bandas."),
         ("S", "G. W. Brier, \"Verification of forecasts expressed in terms of probability,\" Mon. Weather Rev., vol. 78, "
               "no. 1, pp. 1–3, 1950.",
          "doi: 10.1175/1520-0493(1950)078<0001:VOFEIT>2.0.CO;2",
@@ -141,31 +137,19 @@ SECCIONES = [
               "coefficient,\" Mon. Weather Rev., vol. 116, no. 12, pp. 2417–2424, 1988.",
          "doi: 10.1175/1520-0493(1988)116<2417:SSBOTM>2.0.CO;2",
          "Descomposición del error por día (nivel, amplitud, fase) del diagnóstico de amortiguamiento."),
-        ("S", "H. Hewamalage, K. Ackermann y C. Bergmeir, \"Forecast evaluation for data scientists: Common pitfalls and "
+        ("C", "H. Hewamalage, K. Ackermann y C. Bergmeir, \"Forecast evaluation for data scientists: Common pitfalls and "
               "best practices,\" Data Min. Knowl. Discov., vol. 37, no. 2, pp. 788–832, 2023.",
          "doi: 10.1007/s10618-022-00894-5",
-         "No se leyó el original: respalda que los modelos complejos no siempre ganan de "
-         "forma significativa."),
+         "En el informe: usar datos que en la práctica llegan después es fuga de información (escenario realista). El "
+         "artículo también pide comparar siempre contra la referencia más simple y evaluar con origen móvil."),
         ("C", "S. M. Lundberg y S.-I. Lee, \"A unified approach to interpreting model predictions,\" en Adv. Neural Inf. "
               "Process. Syst. 30 (NIPS 2017), 2017.",
          "arXiv:1705.07874",
          "SHAP sobre XGBoost (notebook 06): coincide con la importancia por permutación en las tres variables principales "
          "(Spearman 0,811)."),
-        ("S", "J. H. Friedman, \"Greedy function approximation: A gradient boosting machine,\" Ann. Stat., vol. 29, no. 5, "
-              "pp. 1189–1232, 2001.",
-         "doi: 10.1214/aos/1013203451",
-         "Gráficas de dependencia parcial (PDP) del notebook 06 y base del gradient boosting."),
         ("C", "J. W. Tukey, Exploratory Data Analysis. Reading, MA: Addison-Wesley, 1977.",
          "—",
          "Rango intercuartílico: justifica los percentiles 25 y 75 como umbrales por defecto del motor."),
-        ("S", "C. W. J. Granger, \"Investigating causal relations by econometric models and cross-spectral methods,\" "
-              "Econometrica, vol. 37, no. 3, pp. 424–438, 1969.",
-         "doi: 10.2307/1912791",
-         "Causalidad de Granger de aportes y embalse sobre el precio (granger_hidrologia.py)."),
-        ("L", "T. Emre, \"The influence of hydroelectric power generation and water level variability on market clearing "
-              "prices: A case study of Türkiye,\" Int. J. Electr. Power Energy Syst., vol. 170, art. 110865, 2025.",
-         "doi: 10.1016/j.ijepes.2025.110865",
-         "Metodología que se siguió para la prueba de Granger sobre la serie diaria."),
     ]),
     ("3. Ventanas de calibración, cambio de distribución y decisión", [
         ("C", "G. Marcjasz, T. Serafin y R. Weron, \"Selection of calibration windows for day-ahead electricity price "
@@ -228,12 +212,6 @@ SECCIONES = [
          "Referencia noruega con LightGBM; comparación de sMAPE y R²."),
     ]),
     ("6. Antecedentes en Colombia", [
-        ("C", "J. D. Barceló Barraza y R. A. Dede Perdomo, \"Anexo 1 — Formulación del proyecto: Diseño de una plataforma "
-              "de procesamiento y analítica de datos para el pronóstico del precio de la energía y el apoyo en la toma de "
-              "decisiones,\" Depto. de Ingeniería Eléctrica y Electrónica, Universidad del Norte, Barranquilla, 2026.",
-         "docs/Anexo 1_Formulación del Proyecto - 2026_30.pdf (repositorio del proyecto)",
-         "Documento propio: objetivos, alcance, restricciones y cronograma. En el informe se cita como origen del alcance "
-         "(OE1 a OE4) y de las limitaciones declaradas."),
         ("C", "A. P. Agudelo, J. M. López-Lezama y E. Velilla, \"Predicción del precio de la electricidad en la bolsa "
               "mediante un modelo neuronal no-lineal autorregresivo con entradas exógenas,\" Inf. Tecnol., vol. 26, "
               "no. 6, pp. 99–108, 2015.",
@@ -280,24 +258,24 @@ SECCIONES = [
          "gestornormativo.creg.gov.co",
          "Cierre de ofertas a las 08:00 de D-1: el pronóstico con predespacho sirve para decisiones posteriores (compras en "
          "bolsa, coberturas), no para formular ofertas."),
-        ("L", "CREG, Resolución 024 de 1995 (modificada por la 011 de 2010) y Resolución 051 de 2009 (modificada por la "
+        ("C", "CREG, Resolución 024 de 1995 (modificada por la 011 de 2010) y Resolución 051 de 2009 (modificada por la "
               "101 028 de 2022): formación del precio de bolsa.",
          "gestornormativo.creg.gov.co", "Despacho ideal ex post, MPO del recurso marginal y ΔI."),
-        ("L", "CREG, Documento CREG 901 044 de 2023, \"Metodología para la determinación del precio de bolsa — propuesta "
+        ("C", "CREG, Documento CREG 901 044 de 2023, \"Metodología para la determinación del precio de bolsa — propuesta "
               "de ajuste temporal\" (soporte del Proyecto de Resolución 701 028 de 2023).",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/originales/Proyecto_Resoluci%C3%B3n_CREG_701_028_2023/",
          "Datos del planteamiento: 67 % de capacidad hidráulica, concentración, índice de Lerner."),
-        ("L", "CREG, Proyecto de Resolución 701 049 de 2024 y Documento 901 097 de 2024; SIC, Concepto 183210 de 2024.",
+        ("C", "CREG, Proyecto de Resolución 701 049 de 2024 y Documento 901 097 de 2024; SIC, Concepto 183210 de 2024.",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/originales/Proyecto_Resoluci%C3%B3n_CREG_701_049_2024/",
          "Ajuste del MPO hidráulico (no adoptado)."),
-        ("L", "CREG, Resoluciones 101 056 y 101 059 de 2024 (precio de oferta ajustado; modifican la CREG 026 de 2014).",
+        ("C", "CREG, Resoluciones 101 056 y 101 059 de 2024 (precio de oferta ajustado; modifican la CREG 026 de 2014).",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_101-59_2024.htm",
          "Cambios de regla dentro del periodo de entrenamiento (sep-oct 2024)."),
         ("C", "CREG, Resolución 101 127 de 2026 y Documento 901 431 de 2026, \"Medidas transitorias para asegurar el "
               "abastecimiento de energía ante el fenómeno de El Niño 2026-2027\".",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/originales/Resoluci%C3%B3n_CREG_101_127_2026/",
          "Cambió la formación del precio desde sep-2026; explica el mayor error de sep-oct 2026."),
-        ("L", "CREG, Resolución 157 de 2011 (modificada por la 211 de 2015) y Concepto 6762 de 2020: versiones de "
+        ("C", "CREG, Resolución 157 de 2011 (modificada por la 211 de 2015) y Concepto 6762 de 2020: versiones de "
               "liquidación TX1, TX2, TXR y TXF.",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/ee_2_9_2_3.htm",
          "Por qué el precio real llega con unos 3 días de rezago (corte del escenario realista)."),
@@ -320,7 +298,7 @@ SECCIONES = [
          "Componente G de la tarifa: el precio de bolsa promedio del mes anterior y el MC, costo promedio ponderado de los "
          "contratos del mercado regulado. En el informe (Motor de decisión): justifica la ventana de 30 días de los umbrales y "
          "el filtro de precio de contrato, que usa el MC de XM por defecto."),
-        ("L", "CREG, Resoluciones 071 de 2006 y 101 066 de 2024: precio de escasez y precio de transacciones en bolsa (PTB).",
+        ("C", "CREG, Resoluciones 071 de 2006 y 101 066 de 2024: precio de escasez y precio de transacciones en bolsa (PTB).",
          "gestornormativo.creg.gov.co/gestor/entorno/docs/resolucion_creg_0071_2006.htm",
          "Limitación: el PTB fue menor que el PBN en 360 horas de 2026."),
         ("C", "CREG, \"Resolución CREG 101 018 de 2022, por la cual se crea el Sistema de Información del Mercado de Energía "
@@ -362,20 +340,20 @@ SECCIONES = [
         ("L", "Paquete holidays (Python): festivos de Colombia.", "https://github.com/vacanza/holidays",
          "Variable de calendario (festivos)."),
     ]),
-    ("9. Referencias del Anexo 1 (formulación) que no usa el informe final", [
-        ("L", "Congreso de Colombia, \"Ley 23 de 1982, sobre derechos de autor,\" Diario Oficial n.º 35.949, 19 de febrero "
+    ("9. Referencias del Anexo 1 (formulación)", [
+        ("C", "Congreso de Colombia, \"Ley 23 de 1982, sobre derechos de autor,\" Diario Oficial n.º 35.949, 19 de febrero "
               "de 1982.",
          "normas.cra.gov.co/gestor/docs/ley_0023_1982.htm",
          "Anexo 1, restricciones del diseño: propiedad intelectual del código, los datos y los materiales de terceros."),
-        ("L", "Comunidad Andina, \"Decisión 351 de 1993: Régimen común sobre derecho de autor y derechos conexos,\" Lima, "
+        ("C", "Comunidad Andina, \"Decisión 351 de 1993: Régimen común sobre derecho de autor y derechos conexos,\" Lima, "
               "1993.",
          "https://www.comunidadandina.org/StaticFiles/DocOf/DEC351.pdf",
          "Anexo 1, restricciones del diseño, junto con la Ley 23 de 1982."),
-        ("L", "ABET, \"Criteria for Accrediting Engineering Programs, 2025–2026,\" Engineering Accreditation Commission, "
+        ("C", "ABET, \"Criteria for Accrediting Engineering Programs, 2025–2026,\" Engineering Accreditation Commission, "
               "Baltimore, MD, EE. UU.",
          "https://www.abet.org/accreditation/accreditation-criteria/criteria-for-accrediting-engineering-programs-2025-2026/",
          "Resultado SO2 (diseño en ingeniería): ítem 6 del Anexo 1 y estructura del informe final ABET."),
-        ("L", "P. Villegas y H. A. Gómez, \"Medidas regulatorias posteriores a los fenómenos de El Niño 2015-2016 y 2023-2024 "
+        ("C", "P. Villegas y H. A. Gómez, \"Medidas regulatorias posteriores a los fenómenos de El Niño 2015-2016 y 2023-2024 "
               "en Colombia, una mirada desde la confiabilidad,\" en XX ERIAC, CIGRE, Ciudad del Este, Paraguay, mayo de 2025.",
          "xm.com.co (Paper N.º 48, Comité C5)",
          "Fuente secundaria sobre los cambios al precio de escasez tras El Niño 2015-2016: en ese periodo el precio de "

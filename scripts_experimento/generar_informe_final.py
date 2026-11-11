@@ -375,15 +375,32 @@ p = P("Ninguno de los tres trabajos colombianos")
 reescribir(p, texto_de(p).strip() + " Además, ninguno aprovecha la información que el operador del mercado publica antes del día "
                                     "de despacho, como el predespacho ideal de XM [4].")
 
+p = P("El Mercado de Energía Mayorista (MEM) en Colombia")
+reescribir(p, texto_de(p).strip().replace(
+    "proviene de centrales hidroeléctricas [1],",
+    "proviene de centrales hidroeléctricas [1] y el 67 % de la capacidad instalada es hidráulica, en un mercado concentrado [53],", 1))
+p = P("Restricciones [2]")
+reescribir(p, "**Restricciones**" + texto_de(p).strip()[len("Restricciones"):].replace(
+    "legal (solo información pública; posibles intervenciones de la CREG)",
+    "legal (solo información pública; posibles intervenciones de la CREG; derechos de autor del código, los datos y los "
+    "materiales de terceros según la Ley 23 de 1982 [58] y la Decisión Andina 351 de 1993 [59])", 1))
+p = P("Decisiones de diseño.")
+reescribir(p, "**Decisiones de diseño.**" + texto_de(p).strip()[len("Decisiones de diseño."):].replace(
+    "(sección ABET)", "(sección ABET, que responde al resultado de diseño en ingeniería de los criterios de ABET [60])", 1))
+p = P("También se respeta la Ley 23 de 1982")
+reescribir(p, texto_de(p).strip().replace("Ley 23 de 1982 (derechos de autor)", "Ley 23 de 1982 [58] (derechos de autor)", 1))
+
 # ================================================================================================== 6.1 a 6.3
 p = P("El diseño resuelve esa ausencia")
 despues(p, p, (
     "La disponibilidad de los datos es parte del problema. A las 00:00 del día D, cuando se emite el pronóstico, la API pública "
-    "de XM solo tiene el precio, la demanda y la generación hasta las 23:00 de D-4 (unos tres días de rezago), los embalses y "
+    "de XM solo tiene el precio, la demanda y la generación hasta las 23:00 de D-4 (unos tres días de rezago, por los plazos de "
+    "la liquidación del mercado [56]), los embalses y "
     "aportes hasta D-2 y el ONI con unos dos meses de rezago. En cambio, el predespacho ideal del día D, que XM calcula con las "
-    "ofertas de los generadores, se publica hacia las 10:30 de D-1 en la biblioteca pública de su portal [4]. Un diseño que "
-    "suponga conocido el precio del día anterior no se puede operar con fuentes públicas; por eso el diseño definitivo se evaluó "
-    "en este escenario realista."))
+    "ofertas de los generadores según las reglas del despacho ideal [52], se publica hacia las 10:30 de D-1 en la biblioteca "
+    "pública de su portal [4]. Un diseño que suponga conocido el precio del día anterior no se puede operar con fuentes "
+    "públicas: usar datos que en la práctica llegan después es una fuga de información que hace ver mejor al modelo [51]. Por "
+    "eso el diseño definitivo se evaluó en este escenario realista."))
 t5 = tabla_tras(P("Tabla 5."))
 for tr in filas(t5)[1:]:
     c0 = texto_de(celdas(tr)[0])
@@ -507,7 +524,9 @@ llenar(t10, [
     ["Operativo", "XM no publica el predespacho de un día o cambia su portal.", "Media", "Alto",
      "Respaldo con el predespacho del día anterior; la falla de la actualización diaria queda visible en GitHub y el dashboard "
      "muestra la fecha de la última actualización."],
-    ["Regulatorio", "Intervención transitoria de la CREG en la formación del precio.", "Media", "Alto",
+    ["Regulatorio", "Intervención transitoria de la CREG en la formación del precio, como el precio de oferta ajustado de "
+                    "2024 [55], el ajuste propuesto al máximo precio ofertado hidráulico [54] o las medidas de El Niño de 2026 "
+                    "[50].", "Media", "Alto",
      "Reentrenamiento mensual automático; versión del modelo visible en cada imagen."],
     ["Técnico", "El pronóstico pierde precisión en El Niño.", "Alta", "Medio",
      "Bandas conformes por hora que se ensanchan; detector de picos y desplomes; filtro de confianza en el motor."],
@@ -538,7 +557,7 @@ reescribir(p, texto_de(p).strip() + (
 despues(p, p, (
     "**Ventana de datos.** Se usa enero de 2019 a agosto de 2026 por tres razones. Primero, durante El Niño 2015-2016 el mercado "
     "operó con medidas transitorias de escasez, entre ellas un piso al precio de escasez (Resolución CREG 178 de 2015 [42]), es "
-    "decir, con reglas de excepción. Segundo, desde el 1 de diciembre de 2017 rige el precio marginal de escasez (Resolución CREG "
+    "decir, con reglas de excepción; en ese periodo el precio de bolsa superó el precio de escasez el 61,4 % de los días [61]. Segundo, desde el 1 de diciembre de 2017 rige el precio marginal de escasez (Resolución CREG "
     "140 de 2017 [43]), que cambió la regla que activa la condición crítica y pone techo al precio que paga la demanda en bolsa; "
     "empezar en 2019 deja un año completo de operación con la regla vigente. Tercero, los datos lo confirman: 2017 y 2018 forman "
     "un régimen de precios más bajo y comprimido (medias de 106 y 116 COP/kWh, frente a 228 COP/kWh o más desde 2019), y "
@@ -1066,7 +1085,9 @@ R_("Lectura honesta de la robustez.", (
     "con el predespacho. Las variantes del diseño definitivo se eligieron observando 2026, pero la validación en los cinco años "
     "históricos lo confirma (Tabla 16). Persisten dos limitaciones: los desfases de nivel de días completos que comete el "
     "predespacho (por ejemplo, del 11 al 18 de junio de 2026) no se pueden anticipar con información pública, y el modelo hereda "
-    "la amplitud de los picos que el predespacho anticipa y no ocurren."))
+    "la amplitud de los picos que el predespacho anticipa y no ocurren. Además, Augur pronostica el precio de bolsa nacional, "
+    "que no siempre es el que se liquida: en 2026 el precio de transacciones en bolsa fue menor que el precio de bolsa nacional "
+    "en 360 horas [57]."))
 R_("Validación externa (Tabla 4).", (
     f"**Validación externa (Tabla 4).** El MAPE ({pc(K['MAPE'])}) es mayor que el del antecedente colombiano horario [15] (6,7 %), "
     "que evaluó 2000-2017 sin los eventos extremos de 2023-2026 y con un modelo univariado que supone conocido el precio del día "
@@ -1171,7 +1192,27 @@ for ref in (
         "boosting decision tree,\" en Adv. Neural Inf. Process. Syst. 30 (NIPS 2017), Long Beach, CA, EE. UU., 2017.",
         "[50]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 101 127 de 2026, por la cual se adoptan medidas "
         "transitorias para asegurar el abastecimiento de energía eléctrica ante el fenómeno de El Niño 2026-2027,\" Bogotá, "
-        "Colombia, 2026."):
+        "Colombia, 2026.",
+        "[51]\tH. Hewamalage, K. Ackermann y C. Bergmeir, \"Forecast evaluation for data scientists: Common pitfalls and best "
+        "practices,\" Data Min. Knowl. Discov., vol. 37, n.º 2, pp. 788–832, 2023, doi: 10.1007/s10618-022-00894-5.",
+        "[52]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 024 de 1995\" (modificada por la 011 de 2010) y \"Resolución CREG 051 de 2009\" "
+        "(modificada por la 101 028 de 2022), formación del precio de bolsa y despacho ideal, Bogotá, Colombia.",
+        "[53]\tComisión de Regulación de Energía y Gas (CREG), \"Documento CREG 901 044 de 2023: Metodología para la determinación del precio de bolsa, propuesta de "
+        "ajuste temporal,\" Bogotá, Colombia, 2023.",
+        "[54]\tComisión de Regulación de Energía y Gas (CREG), \"Proyecto de Resolución CREG 701 049 de 2024\" y \"Documento CREG 901 097 de 2024,\" ajuste del máximo "
+        "precio ofertado de las plantas hidráulicas, Bogotá, Colombia, 2024.",
+        "[55]\tComisión de Regulación de Energía y Gas (CREG), \"Resoluciones CREG 101 056 y 101 059 de 2024,\" precio de oferta ajustado (modifican la Resolución CREG "
+        "026 de 2014), Bogotá, Colombia, 2024.",
+        "[56]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 157 de 2011\" (modificada por la 211 de 2015), versiones de la liquidación del mercado, "
+        "Bogotá, Colombia.",
+        "[57]\tComisión de Regulación de Energía y Gas (CREG), \"Resolución CREG 071 de 2006\" y \"Resolución CREG 101 066 de 2024,\" precio de escasez y precio de "
+        "transacciones en bolsa, Bogotá, Colombia.",
+        "[58]\tCongreso de Colombia, \"Ley 23 de 1982, sobre derechos de autor,\" Diario Oficial n.º 35.949, 19 de febrero de 1982.",
+        "[59]\tComunidad Andina, \"Decisión 351 de 1993: Régimen común sobre derecho de autor y derechos conexos,\" Lima, Perú, 1993.",
+        "[60]\tABET, \"Criteria for Accrediting Engineering Programs, 2025–2026,\" Engineering Accreditation Commission, Baltimore, "
+        "MD, EE. UU., 2024.",
+        "[61]\tP. Villegas y H. A. Gómez, \"Medidas regulatorias posteriores a los fenómenos de El Niño 2015-2016 y 2023-2024 en "
+        "Colombia, una mirada desde la confiabilidad,\" en XX ERIAC, CIGRE, Ciudad del Este, Paraguay, mayo de 2025."):
     ultima = despues(ultima, ultima, ref)
 R_("[4]", "[4]\tXM S.A. E.S.P., \"API de datos del Sistema de Información del Mercado de Energía Mayorista,\" "
    "servapibi.xm.com.co, e \"Informes de despacho: predespacho ideal y despacho programado,\" biblioteca pública del portal "
@@ -1182,6 +1223,25 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "a docs/tabla_riesgos_proyecto.xlsx; el anexo 4, al manual de usuario (docs/Manual_Usuario_augur.pdf); el anexo 7, a la "
     "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto (youtu.be/aOOvyiJHD24, también al inicio de la vista Metodología del dashboard). El dashboard está "
     "publicado en augurpredictor.streamlit.app."))
+
+
+# ================================================================================================== sin la cita al Anexo 1
+def quitar_cita(documento, numero):
+    """El Anexo 1 (formulacion) es un anexo del propio informe: se nombra como «Anexo 1» y no se cita como referencia
+    (decision de Juan, 10-nov-2026). Quita [numero] del texto y su entrada de la bibliografia."""
+    for p in list(documento.element.body.iter(qn("w:p"))):
+        txt = "".join(t.text or "" for t in p.iter(qn("w:t")))
+        if re.match(rf"\s*\[{numero}\]", txt):
+            p.getparent().remove(p)
+            continue
+        for t in p.iter(qn("w:t")):
+            if t.text and f"[{numero}]" in t.text:
+                t.text = re.sub(rf" ?\[{numero}\]", "", t.text)
+    resto = [p for p in documento.element.body.iter(qn("w:p")) if f"[{numero}]" in "".join(t.text or "" for t in p.iter(qn("w:t")))]
+    assert not resto, f"quedan citas [{numero}] partidas entre runs"
+
+
+quitar_cita(doc, 2)
 
 
 # ================================================================================================== numeracion IEEE
@@ -1195,13 +1255,14 @@ def renumerar_citas(documento):
         return "".join((x.text or "") if x.tag == qn("w:t") else "\t" for x in p.iter() if x.tag in (qn("w:t"), qn("w:tab")))
     es_ref = {id(p) for p in parrafos if re.match(r"\s*\[\d+\]\t", con_tab(p))}
     refs = [p for p in parrafos if id(p) in es_ref]
+    numeros = {int(re.match(r"\s*\[(\d+)\]", texto(p)).group(1)) for p in refs}
     orden = []
     for p in parrafos:
         if id(p) not in es_ref:
             for n in re.findall(r"\[(\d+)\]", texto(p)):
-                if int(n) not in orden and int(n) <= len(refs):
+                if int(n) not in orden and int(n) in numeros:
                     orden.append(int(n))
-    assert sorted(orden) == list(range(1, len(refs) + 1)), "hay referencias sin citar o citas sin referencia"
+    assert sorted(orden) == sorted(numeros), "hay referencias sin citar o citas sin referencia"
     nuevo = {viejo: i + 1 for i, viejo in enumerate(orden)}
     for p in parrafos:
         for t in p.iter(qn("w:t")):
