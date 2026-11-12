@@ -264,13 +264,19 @@ tabla(["Variación", "Resultado", "Decisión"], [
      f"(p = {n(c.loc['R+P+A', 'DM_p'], 2)})", "No"],
     ["Aportes acumulados de 180 días (B)", f"→ {n(c.loc['R+P+B', 'MAE'], 2)} (p = {n(c.loc['R+P+B', 'DM_p'], 2)})", "No"],
     ["ONI con 3 y 8 meses más de rezago (C)", f"→ {n(c.loc['R+P+C', 'MAE'], 2)} (p = {n(c.loc['R+P+C', 'DM_p'], 2)})", "No"],
+    ["SOI (índice de oscilación del sur, NOAA), solo y con 3 y 8 meses más de rezago", "2026: 36,94 → 36,56 (p = 0,59); "
+     "operación ago-oct: 51,40 → 52,10 (p = 0,41); con rezagos empeora en ene-abr (p = 0,015)", "No"],
+    ["Otras formas del ENSO: Niño 3.4 semanal y mensual (más frescos que el ONI), Niño 1+2, tendencia y acumulado de 12 "
+     "meses, fase y duración; y sin ENSO", "Ninguna significativa (p de 0,15 a 0,86 en 2026 y en la operación ago-oct)",
+     "No: se mantiene el ONI"],
     ["Ablación por grupos (3 semillas)", "Solo el precio pasado (+125,8) y el calendario (+2,9) aportan; ONI, hidrología, "
      "demanda y festivos quedan dentro del ruido", "ENSO e hidrología se usan para leer la confianza, no como predictores"],
     ["Demanda incompleta del último día publicado (XM publica ~26 %)", "CatBoost 36,76 → 37,97 (p < 0,001); el arreglo "
      "(completar con la generación) lo devuelve a 36,76", "Arreglo adoptado (5-nov)"],
-], [6.5, 6.2, 3.8], "Tabla 5. Variables (CatBoost R+P, 15-ene a 5-ago-2026)",
+], [6.5, 6.2, 3.8], "Tabla 5. Variables (CatBoost R+P, 15-ene a 5-ago-2026; SOI y ENSO también en la operación)",
     "Fuente: forma_metricas.csv, programado_metricas.csv, errorpre_metricas.csv, disponibilidad_metricas.csv, "
-    "caracterizacion_metricas.csv, ablacion_logo_multisemilla.csv, demanda_parcial_metricas.csv.")
+    "caracterizacion_metricas.csv, ablacion_logo_multisemilla.csv, demanda_parcial_metricas.csv, soi_metricas.csv, "
+    "oni_variantes/metricas.csv.")
 
 doc.add_heading("2.4 Combinación y corrección del pronóstico", 2)
 k = pd.read_csv(MEJ / "kalman_metricas.csv")
@@ -290,8 +296,14 @@ tabla(["Variación", "Resultado", "Decisión"], [
      "empeoran (persiguen ruido)", "No"],
     ["Adaptaciones a la CREG 101 127 (sep-2026): más peso a lo reciente; curva de referencia de ofertas hidráulicas",
      "La primera empeora; la segunda mejora en 2026 pero gana en 2 de 5 años históricos y pierde en 2024-25", "No"],
+    ["Curva de la CREG 101 127 solo con la regla (vale 0 antes del 10-sep-2026): embalse agregado con X = 50 %, planta por "
+     "planta (X = NEP de cada planta, tercer punto en su NPV) y las dos juntas",
+     "Octubre, 24 h: 64,98 → 63,88 (p < 0,001) / 64,23 (p = 0,03) / 63,81 (p = 0,03). 72 h, día 3: 109,5 → 110,9 / 108,9 / "
+     "108,7 (no significativos). Bandas y motor sin daño",
+     "Pendiente: se repite en diciembre con más semanas de la regla"],
 ], [6.5, 6.2, 3.8], "Tabla 6. Combinación y corrección",
-    "Fuente: combinador_metricas.csv, kalman_metricas.csv (realista_exp_kalman.py), bitácora del README.")
+    "Fuente: combinador_metricas.csv, kalman_metricas.csv (realista_exp_kalman.py), regimen_2026/ "
+    "(realista_exp_regimen_2026.py, realista_exp_regla_72h.py), bitácora del README.")
 
 doc.add_heading("2.5 Motor de decisión", 2)
 u = pd.read_csv(MEJ / "motor_umbrales_alternativos.csv")

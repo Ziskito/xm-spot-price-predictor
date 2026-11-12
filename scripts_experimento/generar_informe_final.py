@@ -1225,6 +1225,79 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "publicado en augurpredictor.streamlit.app."))
 
 
+# ================================================================================================== caracterizacion (OE1)
+# 12-nov-2026: figuras del notebook 03 con el periodo oficial (informe_final_caracterizacion.py). Entran despues del
+# periodograma (Figura 7) como Figuras 8 a 12, y las Figuras 8 a 10 del motor pasan a ser 13 a 15.
+CC = json.loads((FIG / "cifras_caracterizacion.json").read_text(encoding="utf-8"))
+for t in body.iter(qn("w:t")):
+    if t.text and "Figura" in t.text:
+        t.text = re.sub(r"Figura (8|9|10)\b", lambda m: f"Figura {int(m.group(1)) + 5}", t.text)
+MESES_ = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre",
+          "diciembre"]
+ci, ca, ce, co = CC["ciclo"], CC["calor"], CC["espectro"], CC["corr"]
+p_oe1 = P("OE1 — Datos y caracterización.")
+reescribir(p_oe1, Paragraph(p_oe1, doc._body).text.replace("ONI (0,387)", f"ONI ({n(co['horaria']['ONI'], 3)})", 1)
+           .replace("OE1 — Datos y caracterización.", "**OE1 — Datos y caracterización.**", 1))
+NUEVAS = [
+    ("**Ciclo diario.** En días laborales el precio y la demanda tienen su máximo a las "
+     f"{ci['h_max_p']} h ({n(ci['p_max'], 0)} COP/kWh en promedio) y el precio su mínimo a las {ci['h_min_p']} h "
+     f"({n(ci['p_min'], 0)}); los dos perfiles horarios tienen una correlación de {n(ci['corr'], 2)} (Figura 8). El sábado "
+     f"la demanda baja {pc(-ci['Sábado_demanda'] * 100)} y el precio {pc(-ci['Sábado_precio_bolsa'] * 100)}; el domingo, "
+     f"{pc(-ci['Domingo_demanda'] * 100)} y {pc(-ci['Domingo_precio_bolsa'] * 100)}. Esto respalda las variables de hora, "
+     "día de la semana y festivos del modelo, y explica por qué el motor suele recomendar vender al final de la tarde y "
+     "retener en la madrugada.",
+     "carac_ciclo_diario.png",
+     "**Figura 8.** Ciclo diario del precio de bolsa (mediana y percentiles 25 a 75) y de la demanda (promedio) por tipo de "
+     "día, 1-ene-2019 a 5-ago-2026. Fuente: elaboración propia con datos de XM [4]."),
+    ("**Ciclo anual y régimen.** El nivel del precio cambia más entre años que dentro de cada año (Figura 9): el promedio "
+     f"anual va de {n(ca['anual']['2021'], 0)} COP/kWh en 2021 a {n(ca['anual']['2024'], 0)} en 2024. El mes más caro, "
+     f"{MESES_[ca['max_mes'] - 1]} de {ca['max_anio']} ({n(ca['max'], 0)} COP/kWh), llegó con el ONI ya neutral, cuando los "
+     "embalses seguían bajos tras El Niño 2023-2024; el más barato fue "
+     f"{MESES_[ca['min_mes'] - 1]} de {ca['min_anio']} ({n(ca['min'], 0)}), en La Niña. El estado hidrológico pesa tanto como "
+     "el índice climático, y por eso el modelo usa el ONI junto con embalses y aportes.",
+     "carac_calor_mes.png",
+     "**Figura 9.** Precio de bolsa promedio por año y mes (COP/kWh); agosto de 2026 queda vacío porque el periodo termina el "
+     "día 5. Colores del mapa de calor del precio de bolsa de XM: azul en el mínimo, crema en el promedio de la tabla "
+     f"({n(ca['media'], 0)} COP/kWh) y naranja-rojo en el máximo. Fuente: elaboración propia con datos de XM [4]."),
+    ("**El ciclo diario cambia con el régimen.** El periodograma promedia todo el periodo; el espectrograma (Figura 10) "
+     "muestra que la amplitud del ciclo de 24 h no es constante: promedia "
+     f"{n(ce['nino'], 0)} COP/kWh durante El Niño, {n(ce['neutral'], 0)} en meses neutrales y {n(ce['nina'], 0)} en La Niña, "
+     f"y llegó a {n(ce['max'], 0)} COP/kWh a finales de octubre de 2024. En épocas de escasez no solo sube el nivel: también "
+     "se amplía la diferencia entre el día y la noche, que es lo que aprovecha el motor de decisión.",
+     "carac_espectrograma.png",
+     "**Figura 10.** Espectrograma del precio sin tendencia (transformada de Fourier en ventanas de 4 semanas que avanzan una "
+     "semana) y amplitud de los ciclos de 24 y 12 h. Franjas naranja: El Niño (ONI ≥ 0,5); franjas azules: La Niña "
+     "(ONI ≤ −0,5). Fuente: elaboración propia con datos de XM [4] y NOAA [9]."),
+    ("**Filtro de tendencia.** La Figura 11 muestra la subida de El Niño 2023-2024 con tres filtros de ventana equivalente "
+     "(unos 30 días): el promedio móvil se atrasa y aplana los cambios, mientras que Savitzky-Golay y Butterworth de fase cero "
+     "siguen de cerca la subida y la caída de octubre-noviembre de 2023.",
+     "carac_filtros.png",
+     "**Figura 11.** Tendencia del precio de bolsa durante El Niño 2023-2024 con tres filtros fuera de línea (Savitzky-Golay "
+     "de 721 h y orden 3, promedio móvil centrado de 720 h y Butterworth de fase cero de orden 2 con periodo de corte de 720 h)."),
+    ("**Relación con las demás variables.** La Figura 12 resume las correlaciones horarias citadas y agrega la correlación "
+     "cruzada en promedios diarios: los aportes llegan al precio en pocos días, con la correlación más fuerte a "
+     f"{co['aportes_min_lag']} días de rezago ({n(co['aportes_min'], 2)}) y más débil después, mientras que la de los embalses "
+     f"decae desde el mismo día ({n(co['embalses_0'], 2)}) hasta {n(co['embalses_30'], 2)} a 30 días. La demanda y la "
+     "generación están casi perfectamente correlacionadas entre sí, así que aportan la misma información.",
+     "carac_correlacion.png",
+     "**Figura 12.** Correlación horaria entre las variables (1-ene-2019 a 5-ago-2026) y correlación cruzada del precio con "
+     "los aportes y los embalses en promedios diarios (un rezago de k días compara la hidrología de hace k días con el precio "
+     "de hoy)."),
+]
+cap7 = P("Figura 7.")
+img7 = cap7.getprevious()
+ancla = cap7
+for texto, archivo, leyenda in NUEVAS:
+    p_txt = despues(ancla, p_oe1, texto)
+    img = copy.deepcopy(img7)
+    p_txt.addnext(img)
+    for ch in list(img):
+        if ch.tag != qn("w:pPr"):
+            img.remove(ch)
+    Paragraph(img, doc._body).add_run().add_picture(str(FIG / archivo), width=Inches(6.3))
+    ancla = despues(img, cap7, leyenda)
+
+
 # ================================================================================================== sin la cita al Anexo 1
 def quitar_cita(documento, numero):
     """El Anexo 1 (formulacion) es un anexo del propio informe: se nombra como «Anexo 1» y no se cita como referencia
