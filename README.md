@@ -340,6 +340,46 @@ La variable de entorno CMDSTAN debe apuntar a la carpeta resultante, por ejemplo
 
 En este equipo quedó fijada de forma permanente. En un equipo nuevo, hay que repetir la instalación de conda y volver a fijar esa variable.
 
+## Presentación final: figuras y diferencias de cifras
+
+Las figuras de la sustentación final se generan con `scripts_experimento/presentacion_final_caracterizacion.py`
+y quedan en `scripts_experimento/presentacion_final_assets/` (F1 a F7, A1, A2 y `cifras_caracterizacion.json`).
+Son el mismo análisis de los notebooks `03`/`03b` y del informe final: solo cambian los colores, la tipografía y el
+tamaño, para que coincidan con la identidad de la página web (Lexend, IBM Plex Sans y los colores de
+`.streamlit/config.toml`) y se lean proyectadas.
+
+**El periodo es el mismo del informe final** (1-ene-2019 a 5-ago-2026, dataset maestro, 66.576 h), igual que
+`informe_final_caracterizacion.py`. Con eso coinciden exactamente: la hora del máximo (19 h, 454 COP/kWh) y la del
+mínimo (3 h, 278), la correlación entre los perfiles horarios de precio y demanda (0,91), la caída del domingo
+(−11,9 % en precio y −12,0 % en demanda), la amplitud del ciclo diario por régimen (67 / 65 / 32 COP/kWh, con un
+máximo de 410) y la correlación cruzada con los aportes (−0,34 a 4 días de rezago).
+
+### Diferencias que quedan con el informe final
+
+Son deliberadas y están justificadas, pero hay que conocerlas antes de citar una cifra en la sustentación:
+
+1. **Las correlaciones de la figura F6 son diarias; las del informe son horarias.** F6 usa promedios diarios y el
+   informe (Figura 12 y el texto de OE1) usa datos horarios. Por eso: ONI **0,41** en F6 frente a **0,39** en el
+   informe; demanda **0,36** frente a **0,33**; generación **0,35** frente a **0,32**; embalses **−0,17** frente a
+   **−0,16**; aportes **−0,30** frente a **−0,29**. No es un error: son dos resoluciones de la misma relación. F6 es
+   figura de respaldo y no va en las diapositivas.
+2. **F2 es un espectro de Welch; la Figura 7 del informe es un periodograma.** Las dos llegan a lo mismo (domina el
+   ciclo de 24 h, con armónicos de 12, 8 y 6 h y el semanal de 168 h), pero los porcentajes no son comparables: el
+   informe dice que el pico de 24 h concentra el 6,8 % de la potencia entre 2 y 2.000 h, mientras que en F2 los picos
+   se comparan entre sí (12 h = 19 % del diario; 168 h = 15 %). Se eligió Welch para la diapositiva porque el
+   periodograma, proyectado, es ilegible.
+3. **Las cifras en vivo del dashboard no son las de ningún documento.** El acierto del motor (98 % y 96 %) y la
+   cobertura de la banda se recalculan cada día con la serie de operación. Hay que revisarlas el día de la
+   sustentación.
+
+### El informe que está en el repositorio todavía no es el definitivo
+
+`docs/Informe_Final_ABET_Barcelo_Dede.docx` y su PDF **no son aún la versión final**. Queda pendiente al menos la
+validación con usuarios del OE4, que sigue marcada como no iniciada en este mismo README y de la que dependen el
+párrafo de conclusiones del OE4 y la tabla de resultados correspondiente. En la presentación y en el póster esos
+puntos están marcados como `[COMPLETAR]`. Antes de entregar, cualquier cifra citada debe reverificarse contra la
+última versión del informe.
+
 ## Bitácora de avances
 
 Cada vez que se complete un avance real (notebook ejecutado, corrección aplicada, resultado nuevo), se agrega una entrada aquí con fecha y hora.

@@ -1,0 +1,95 @@
+{
+  "corte": "05/08/2026 23:00",
+  "horas": 66576,
+  "faltantes": 0,
+  "duplicadas": 0,
+  "F1": {
+    "hora_max_precio": 19,
+    "precio_max": 454,
+    "hora_min_precio": 3,
+    "precio_min": 278,
+    "hora_max_demanda": 19,
+    "corr_perfiles": 0.91,
+    "domingo_precio_%": -11.9,
+    "domingo_demanda_%": -12.0
+  },
+  "F2": {
+    "picos": [
+      {
+        "periodo_h": 24.0,
+        "relativa_al_diario_%": 100.0
+      },
+      {
+        "periodo_h": 12.0,
+        "relativa_al_diario_%": 18.0
+      },
+      {
+        "periodo_h": 168.0,
+        "relativa_al_diario_%": 16.0
+      },
+      {
+        "periodo_h": 116.9,
+        "relativa_al_diario_%": 6.7
+      },
+      {
+        "periodo_h": 84.0,
+        "relativa_al_diario_%": 6.7
+      }
+    ]
+  },
+  "F3": {
+    "amplitud_nino": 67,
+    "amplitud_neutral": 65,
+    "amplitud_nina": 32,
+    "maxima": 410,
+    "maxima_fecha": "11/2024"
+  },
+  "F5": {
+    "aportes": {
+      "mejor_rezago_meses": 6,
+      "correlacion": -0.34
+    },
+    "embalses": {
+      "mejor_rezago_meses": 9,
+      "correlacion": -0.62
+    },
+    "precio": {
+      "mejor_rezago_meses": 0,
+      "correlacion": 0.44
+    }
+  },
+  "F6": {
+    "oni": {
+      "rezago_0": 0.41,
+      "mejor_rezago_dias": 4,
+      "correlacion": 0.41
+    },
+    "demanda": {
+      "rezago_0": 0.36,
+      "mejor_rezago_dias": 7,
+      "correlacion": 0.37
+    },
+    "generacion": {
+      "rezago_0": 0.35,
+      "mejor_rezago_dias": 7,
+      "correlacion": 0.36
+    },
+    "embalses": {
+      "rezago_0": -0.17,
+      "mejor_rezago_dias": 0,
+      "correlacion": -0.17
+    },
+    "aportes": {
+      "rezago_0": -0.3,
+      "mejor_rezago_dias": 4,
+      "correlacion": -0.34
+    }
+  },
+  "F7": {
+    "El Niño": 474,
+    "La Niña": 212,
+    "Neutral": 333,
+    "maximo_diario": 2499,
+    "maximo_fecha": "30/09/2024"
+  }
+}
