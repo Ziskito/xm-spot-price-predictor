@@ -366,7 +366,7 @@ Son deliberadas y están justificadas, pero hay que conocerlas antes de citar un
 2. **F2 es un espectro de Welch; la Figura 7 del informe es un periodograma.** Las dos llegan a lo mismo (domina el
    ciclo de 24 h, con armónicos de 12, 8 y 6 h y el semanal de 168 h), pero los porcentajes no son comparables: el
    informe dice que el pico de 24 h concentra el 6,8 % de la potencia entre 2 y 2.000 h, mientras que en F2 los picos
-   se comparan entre sí (12 h = 19 % del diario; 168 h = 15 %). Se eligió Welch para la diapositiva porque el
+   se comparan entre sí (12 h = 18 % del diario; 168 h = 16 %). Se eligió Welch para la diapositiva porque el
    periodograma, proyectado, es ilegible.
 3. **Las cifras en vivo del dashboard no son las de ningún documento.** El acierto del motor (98 % y 96 %) y la
    cobertura de la banda se recalculan cada día con la serie de operación. Hay que revisarlas el día de la

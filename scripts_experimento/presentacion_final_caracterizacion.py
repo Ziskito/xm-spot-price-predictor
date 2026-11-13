@@ -111,6 +111,22 @@ for ax in axs:
     ax.legend()
 guardar(fig, "F1_ciclo_diario")
 
+# F1b: solo el panel del precio, con la misma proporcion que F2 para ponerlas lado a lado en una diapositiva
+fig, ax = plt.subplots(figsize=(7.6, 4.3))
+for nombre, color in colores.items():
+    sub = df[tipo == nombre]
+    g = sub.groupby(sub.index.hour)
+    ax.plot(range(24), g["precio_bolsa"].median(), color=color, lw=2.4, label=nombre, zorder=3)
+    if nombre == "Laboral":
+        ax.fill_between(range(24), g["precio_bolsa"].quantile(.25), g["precio_bolsa"].quantile(.75),
+                        color=INK, alpha=.09, lw=0, label="Laboral: percentiles 25-75")
+ax.set_xticks(range(0, 24, 3))
+ax.set_xlabel("Hora del día")
+ax.set_ylabel("COP/kWh")
+ax.set_title("El precio hora por hora (mediana)")
+ax.legend(loc="upper left")
+guardar(fig, "F1b_ciclo_precio")
+
 lab = df[tipo == "Laboral"]
 pp, pd_ = lab.groupby(lab.index.hour)["precio_bolsa"].mean(), lab.groupby(lab.index.hour)["demanda"].mean()
 med = df.groupby(tipo)[["precio_bolsa", "demanda"]].mean()
@@ -203,9 +219,9 @@ fig, ax = plt.subplots(figsize=(7.6, 4.3))
 z = ZOOMS["El Niño 2023-2024 (subida rápida)"]
 sub = p.loc[z]
 ax.plot(sub.index, sub.rolling(24, center=True).mean(), color=LINE, lw=1.0, label="Precio (media de 24 h)")
-ax.plot(sub.index, mm.loc[z], color=GRAY, lw=2.0, label="Promedio móvil (837 h)")
-ax.plot(sub.index, bw.loc[z], color=GREEN, lw=2.0, label="Butterworth (388 h)")
-ax.plot(sub.index, sg.loc[z], color=AMBER, lw=2.6, label="Savitzky-Golay (348 h)")
+ax.plot(sub.index, mm.loc[z], color=GRAY, lw=2.0, label="Promedio móvil de 720 h")
+ax.plot(sub.index, bw.loc[z], color=GREEN, lw=2.0, label="Butterworth de fase cero")
+ax.plot(sub.index, sg.loc[z], color=AMBER, lw=2.6, label="Savitzky-Golay de 721 h")
 ax.set_ylabel("COP/kWh")
 ax.set_title("Cuál detecta antes la subida de El Niño 2023-2024")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%y"))
