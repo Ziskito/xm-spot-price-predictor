@@ -2606,7 +2606,7 @@ def grafico_error_diario(d, tk):
     return fig
 
 
-VIDEO_AUGUR = "https://youtu.be/aOOvyiJHD24"   # video explicativo largo (3:58), no listado en YouTube
+VIDEO_AUGUR = "https://youtu.be/_N-HcAQXvl0"   # video explicativo largo (4:32, 13-nov-2026: con la escena del contrato)
 
 
 def vista_metodologia():

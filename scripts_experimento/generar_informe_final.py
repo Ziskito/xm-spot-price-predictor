@@ -1221,7 +1221,7 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Ziskito/xm-spot-price-predictor): formulación en docs/, "
     "código fuente en notebooks/, src/, dashboard/ y scripts_experimento/, y datos y predicciones en data/. El anexo 2 corresponde "
     "a docs/tabla_riesgos_proyecto.xlsx; el anexo 4, al manual de usuario (docs/Manual_Usuario_augur.pdf); el anexo 7, a la "
-    "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto (youtu.be/aOOvyiJHD24, también al inicio de la vista Metodología del dashboard). El dashboard está "
+    "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto (youtu.be/_N-HcAQXvl0, también al inicio de la vista Metodología del dashboard). El dashboard está "
     "publicado en augurpredictor.streamlit.app."))
 
 
