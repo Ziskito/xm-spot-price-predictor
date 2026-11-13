@@ -114,6 +114,11 @@ def vineta(prefijo, texto):
     for el in body.iterchildren():
         t = Paragraph(el, doc._body).text if el.tag == qn("w:p") else ""      # incluye las tabulaciones (w:tab)
         if "\t" in t and t.split("\t", 1)[1].startswith(prefijo):
+            # el segundo run trae la tabulacion Y el comienzo del texto («Dashboard (»): se deja solo la tabulacion,
+            # si no el comienzo queda repetido («Dashboard (Dashboard (…», corregido el 13-nov-2026)
+            r2 = el.findall(qn("w:r"))[1]
+            for x in r2.findall(qn("w:t")):
+                r2.remove(x)
             return reescribir(el, texto, conservar=2)
     raise LookupError(f"No encontre la vineta: {prefijo!r}")
 
@@ -355,7 +360,7 @@ for pre, txt in (
         ("Informe final – Semana", "Informe final – entrega el 20 de noviembre de 2026 (este documento), con el resumen y el abstract de la Sección 1.2 para la biblioteca (Manglar/DSpace)."),
         ("Póster", "Póster – entrega el 20 de noviembre; exposición abierta al público en el coliseo el 27 de noviembre ([[completar]])."),
         ("Presentación final", "Presentación final – entrega el 20 de noviembre; sustentación ante el jurado el 24 de noviembre ([[completar]])."),
-        ("Video", "Video de 2 minutos con el funcionamiento del sistema – entrega el 20 de noviembre ([[completar]]).")):
+        ("Video", "Video de 2 minutos con el funcionamiento del sistema – entrega el 20 de noviembre: versión de presentación final, youtu.be/D3X6VozGjP4 (Anexo 8).")):
     vineta(pre, txt)
 
 # ================================================================================================== 5 revision bibliografica
@@ -1221,7 +1226,8 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "Los anexos 1, 3 y 5 están en el repositorio del proyecto (github.com/Ziskito/xm-spot-price-predictor): formulación en docs/, "
     "código fuente en notebooks/, src/, dashboard/ y scripts_experimento/, y datos y predicciones en data/. El anexo 2 corresponde "
     "a docs/tabla_riesgos_proyecto.xlsx; el anexo 4, al manual de usuario (docs/Manual_Usuario_augur.pdf); el anexo 7, a la "
-    "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto (youtu.be/_N-HcAQXvl0, también al inicio de la vista Metodología del dashboard). El dashboard está "
+    "bitácora del README y al historial de commits; y el anexo 8, al video del proyecto en dos versiones: versión de presentación final (2 min, youtu.be/D3X6VozGjP4) y versión "
+    "extendida (4 min 32 s, youtu.be/_N-HcAQXvl0, también al inicio de la vista Metodología del dashboard). El dashboard está "
     "publicado en augurpredictor.streamlit.app."))
 
 
