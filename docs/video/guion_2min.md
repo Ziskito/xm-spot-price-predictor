@@ -1,6 +1,6 @@
 # Guion: Augur en 2 minutos (presentación final)
 
-Duración: 1 min 55 s. Voz: Gemini TTS, voz masculina Charon. Créditos al inicio: autores Juan David Barceló Barraza y Rafael Andrés Dede Perdomo; asesores José Daniel Soto Ortiz y Daniela María Charris Stand. Los subtítulos están en scripts/segmentos.json (campo lineas).
+Duración: 1 min 55 s. Voz: Gemini TTS, voz masculina Charon. Créditos al inicio: autores Juan David Barceló Barraza y Rafael Andrés Dede Perdomo; asesores Daniela María Charris Stand y José Daniel Soto Ortiz. Los subtítulos están en scripts/segmentos.json (campo lineas).
 
 | # | Escena | Narración |
 |---|---|---|

@@ -19,7 +19,7 @@ voz las pronuncie bien; los subtítulos mostrarán la transcripción de Whisper.
 | 10 | `metodologia` | Tarjetas de desempeño, cambio a «Todo 2026», error diario, Cómo funciona, Fórmulas y validación | La vista Metodología muestra qué tan bien le ha ido al pronóstico en vivo: su error, la mejora frente al predespacho de XM, cuántas veces el precio real quedó dentro de la banda y el acierto de las recomendaciones, en los últimos treinta días o en todo el año. Después explica cómo funciona, con las fórmulas y el protocolo de validación. |
 | 11 | `oscuro` | Clic en Modo oscuro | Y si se prefiere, el modo oscuro cambia toda la interfaz con un clic. |
 | 12 | Cierre | Resumen en tres rótulos y logo final con la dirección augurpredictor.streamlit.app | Augur: pronóstico hora a hora, incertidumbre medida y una recomendación clara, en una página que se actualiza sola todos los días. Proyecto final de Ingeniería Electrónica de la Universidad del Norte. |
-| 13 | Créditos (sin voz, 6 s) | «Autores: Juan David Barceló Barraza, Rafael Andrés Dede Perdomo · Asesores: José Daniel Soto Ortiz, Daniela María Charris Stand · Proyecto final · Ingeniería Electrónica · Universidad del Norte · 2026» | — |
+| 13 | Créditos (sin voz, 6 s) | «Autores: Juan David Barceló Barraza, Rafael Andrés Dede Perdomo · Asesores: Daniela María Charris Stand, José Daniel Soto Ortiz · Proyecto final · Ingeniería Electrónica · Universidad del Norte · 2026» | — |
 
 ## Notas de sincronía
 

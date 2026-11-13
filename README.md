@@ -5,7 +5,7 @@ Plataforma de procesamiento y analítica de datos para el pronóstico del precio
 Proyecto final — Depto. de Ingeniería Eléctrica y Electrónica, Universidad del Norte.
 
 **Equipo:** Juan David Barceló Barraza, Rafael Andrés Dede Perdomo
-**Asesores:** José Daniel Soto Ortiz, Daniela María Charris Stand
+**Asesores:** Daniela María Charris Stand, José Daniel Soto Ortiz
 
 ## Descripción
 

@@ -1225,6 +1225,13 @@ R_("Los anexos 1, 3 y 5 están en el repositorio", (
     "publicado en augurpredictor.streamlit.app."))
 
 
+# ================================================================================================== orden de los asesores
+# 13-nov-2026: el profesor Soto pidio que primero aparezca la profesora Charris y luego el
+_asesores = [t for t in body.iter(qn("w:t")) if t.text and "José Daniel Soto Ortiz · Daniela María Charris Stand" in t.text]
+assert len(_asesores) == 1, len(_asesores)
+_asesores[0].text = _asesores[0].text.replace("José Daniel Soto Ortiz · Daniela María Charris Stand",
+                                              "Daniela María Charris Stand · José Daniel Soto Ortiz")
+
 # ================================================================================================== caracterizacion (OE1)
 # 12-nov-2026: figuras del notebook 03 con el periodo oficial (informe_final_caracterizacion.py). Entran despues del
 # periodograma (Figura 7) como Figuras 8 a 12, y las Figuras 8 a 10 del motor pasan a ser 13 a 15.
