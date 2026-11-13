@@ -107,137 +107,169 @@ Se puede acercar con Control y la rueda del ratón,
 volver a la vista completa con Centrar, o abrirla en grande con Ampliar.
 
 28
-00:01:32,640 --> 00:01:37,050
+00:01:32,617 --> 00:01:37,027
 Más abajo, la franja del día resume las veinticuatro horas:
 
 29
-00:01:37,090 --> 00:01:39,540
+00:01:37,067 --> 00:01:39,517
 el precio y la acción de cada una.
 
 30
-00:01:39,580 --> 00:01:44,600
+00:01:39,557 --> 00:01:44,577
 Un clic en cualquier hora la lleva a la tarjeta de recomendación.
 
 31
-00:01:45,060 --> 00:01:50,510
+00:01:45,037 --> 00:01:50,487
 El mapa de calor muestra varios días a la vez, coloreado por la señal del motor o
 
 32
-00:01:50,550 --> 00:01:55,580
+00:01:50,527 --> 00:01:55,557
 por el precio esperado, para ver de un vistazo qué horas suelen convenir.
 
 33
-00:01:55,960 --> 00:02:01,270
+00:01:55,937 --> 00:02:01,247
 Y la gráfica de la semana compara el precio real que publica XM con lo que Augur
 
 34
-00:02:01,310 --> 00:02:06,420
+00:02:01,287 --> 00:02:06,397
 había pronosticado, junto con las horas en que el motor recomendó actuar.
 
 35
-00:02:07,210 --> 00:02:09,810
+00:02:07,187 --> 00:02:09,787
 En la barra lateral se elige el rol.
 
 36
-00:02:09,850 --> 00:02:14,010
+00:02:09,827 --> 00:02:13,987
 Para un generador, las siete de la noche son hora de vender;
 
 37
-00:02:14,050 --> 00:02:19,200
+00:02:14,027 --> 00:02:19,177
 para un comercializador, esa misma hora es para evitar comprar en bolsa.
 
 38
-00:02:19,240 --> 00:02:23,250
+00:02:19,217 --> 00:02:23,227
 El horizonte de setenta y dos horas extiende el pronóstico a los dos días
 
 39
-00:02:23,290 --> 00:02:24,510
+00:02:23,267 --> 00:02:24,487
 siguientes.
 
 40
-00:02:24,550 --> 00:02:26,720
+00:02:24,527 --> 00:02:26,697
 Para esos días solo se estima la posibilidad
 
 41
-00:02:26,760 --> 00:02:29,860
+00:02:26,737 --> 00:02:29,837
 de pico, que es menos confiable que la del primer día.
 
 42
-00:02:30,910 --> 00:02:34,670
-La vista Analista sirve para evaluar las reglas del motor.
+00:02:30,697 --> 00:02:35,397
+En la barra lateral también se elige con qué periodo se comparan los precios,
 
 43
-00:02:34,710 --> 00:02:39,000
-Las tarjetas muestran la ventaja económica de actuar en las horas señaladas y con
+00:02:35,437 --> 00:02:39,417
+de siete a trescientos sesenta y cinco días, y el precio de contrato.
 
 44
-00:02:39,040 --> 00:02:43,670
-qué frecuencia se actúa, y la tabla compara los cuatro métodos de umbral.
+00:02:39,457 --> 00:02:43,837
+Con este filtro activo, el motor solo recomienda comprar en bolsa si el precio
 
 45
-00:02:43,710 --> 00:02:46,770
-En la barra lateral se ajustan los percentiles,
+00:02:43,877 --> 00:02:47,947
+esperado está por debajo del contrato, y vender en bolsa si está por encima;
 
 46
-00:02:46,810 --> 00:02:50,680
-el rango de fechas, el filtro intradía y el método.
+00:02:47,987 --> 00:02:50,677
+si no, conviene más el contrato.
 
 47
-00:02:50,720 --> 00:02:53,670
-La gráfica muestra el resultado con datos reales:
+00:02:50,717 --> 00:02:55,397
+Por defecto usa el MC de XM, el costo promedio de los contratos del mercado
 
 48
-00:02:53,710 --> 00:02:55,670
-precio, pronóstico y señales.
+00:02:55,437 --> 00:02:58,557
+regulado, y cada usuario puede poner el suyo.
 
 49
-00:02:55,710 --> 00:02:59,440
-Y en la sección Ver datos filtrados está la tabla hora a hora,
+00:02:58,597 --> 00:03:02,377
+Cuando el filtro cambia una recomendación, la tarjeta lo explica.
 
 50
-00:02:59,480 --> 00:03:02,240
-que se puede filtrar y descargar.
+00:03:03,267 --> 00:03:07,027
+La vista Analista sirve para evaluar las reglas del motor.
 
 51
-00:03:02,980 --> 00:03:08,840
-La vista Metodología muestra qué tan bien le ha ido al pronóstico en vivo:
+00:03:07,067 --> 00:03:11,357
+Las tarjetas muestran la ventaja económica de actuar en las horas señaladas y con
 
 52
-00:03:08,880 --> 00:03:12,840
-su error, la mejora frente al predespacho de XM,
+00:03:11,397 --> 00:03:16,027
+qué frecuencia se actúa, y la tabla compara los cuatro métodos de umbral.
 
 53
-00:03:12,880 --> 00:03:17,200
-cuántas veces el precio real quedó dentro de la banda y el acierto de las
+00:03:16,067 --> 00:03:19,127
+En la barra lateral se ajustan los percentiles,
 
 54
-00:03:17,240 --> 00:03:21,980
-recomendaciones, en los últimos treinta días o en todo el año.
+00:03:19,167 --> 00:03:23,037
+el rango de fechas, el filtro intradía y el método.
 
 55
-00:03:22,020 --> 00:03:26,600
-Después explica cómo funciona, con las fórmulas y el protocolo de validación.
+00:03:23,077 --> 00:03:26,027
+La gráfica muestra el resultado con datos reales:
 
 56
-00:03:27,723 --> 00:03:33,243
-Y si se prefiere, el modo oscuro cambia toda la interfaz con un clic.
+00:03:26,067 --> 00:03:28,027
+precio, pronóstico y señales.
 
 57
-00:03:34,293 --> 00:03:35,223
-Augur:
+00:03:28,067 --> 00:03:31,797
+Y en la sección Ver datos filtrados está la tabla hora a hora,
 
 58
-00:03:35,263 --> 00:03:41,173
-pronóstico hora a hora, incertidumbre medida y una recomendación clara,
+00:03:31,837 --> 00:03:34,597
+que se puede filtrar y descargar.
 
 59
-00:03:41,213 --> 00:03:44,903
-en una página que se actualiza sola todos los días.
+00:03:35,337 --> 00:03:41,197
+La vista Metodología muestra qué tan bien le ha ido al pronóstico en vivo:
 
 60
-00:03:44,943 --> 00:03:48,433
-Proyecto final de Ingeniería Electrónica de la
+00:03:41,237 --> 00:03:45,197
+su error, la mejora frente al predespacho de XM,
 
 61
-00:03:48,473 --> 00:03:50,463
+00:03:45,237 --> 00:03:49,557
+cuántas veces el precio real quedó dentro de la banda y el acierto de las
+
+62
+00:03:49,597 --> 00:03:54,337
+recomendaciones, en los últimos treinta días o en todo el año.
+
+63
+00:03:54,377 --> 00:03:58,957
+Después explica cómo funciona, con las fórmulas y el protocolo de validación.
+
+64
+00:04:01,204 --> 00:04:06,724
+Y si se prefiere, el modo oscuro cambia toda la interfaz con un clic.
+
+65
+00:04:07,774 --> 00:04:08,704
+Augur:
+
+66
+00:04:08,744 --> 00:04:14,654
+pronóstico hora a hora, incertidumbre medida y una recomendación clara,
+
+67
+00:04:14,694 --> 00:04:18,384
+en una página que se actualiza sola todos los días.
+
+68
+00:04:18,424 --> 00:04:21,914
+Proyecto final de Ingeniería Electrónica de la
+
+69
+00:04:21,954 --> 00:04:23,944
 Universidad del Norte.
