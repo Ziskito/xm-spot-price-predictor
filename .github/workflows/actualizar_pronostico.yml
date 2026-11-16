@@ -62,7 +62,14 @@ jobs:
           fi
           git commit -m "Actualizacion diaria del pronostico ($(TZ=America/Bogota date +'%Y-%m-%d %H:%M'))"
           for i in 1 2 3; do
-            git pull --rebase && git push && exit 0
+            if ! git pull --rebase; then
+              # conflicto: otra corrida acaba de publicar el pronostico con datos igual de recientes (15-nov-2026,
+              # se cruzaron la corrida programada y la lanzada desde afuera). Se descarta esta y se termina bien.
+              git rebase --abort || true
+              echo "Otra corrida ya publico el pronostico; esta se omite"
+              exit 0
+            fi
+            git push && exit 0
             sleep 15
           done
           exit 1
