@@ -1738,13 +1738,16 @@ def rango_y(*series):
     return [lo - pad, hi + pad]
 
 
-def metadatos_html(periodo, contenido):
+def metadatos_html(periodo, contenido, horiz=None):
     """Pie de cada imagen de decision con los metadatos que exige el Anexo 1 (unidad, periodo,
-    confianza y version del modelo)."""
-    cob = es(meta.get("cobertura_medida_pct", "n/d"), 1)
+    confianza y version del modelo). `horiz` fija el horizonte de la grafica cuando no es el de la barra lateral
+    (19-nov-2026: el desempeno en vivo de Metodologia es siempre de 24 h y con 72 h elegido mostraba el modelo y la
+    cobertura de 72 h; lo reporto un experto en la validacion con usuarios)."""
+    m, h = (meta, horizonte) if horiz is None else (cargar_bandas(horiz)[1], horiz)
+    cob = es(m.get("cobertura_medida_pct", "n/d"), 1)
     return (f'<div class="meta"><b>{contenido}</b> &middot; Unidad: COP/kWh &middot; Periodo: {periodo} '
-            f'&middot; Confianza: banda [q10, q90], cobertura medida {cob} % &middot; Modelo de {horizonte}, '
-            f'versión {meta.get("generado", "n/d")}</div>')
+            f'&middot; Confianza: banda [q10, q90], cobertura medida {cob} % &middot; Modelo de {h}, '
+            f'versión {m.get("generado", "n/d")}</div>')
 
 
 CODIGO_SENAL = {"evitar_compra": 0, "retener": 0, "esperar": 1, "comprar": 2, "vender": 2}
@@ -1937,6 +1940,18 @@ with st.sidebar:
                                 help=("Déjelo en 0 para usar el MC de XM: el costo promedio de los contratos del "
                                       "mercado regulado, el del mes anterior (publicado hacia el día 10)."))
     CONTRATO = None if not usar_contrato else ("mc" if mi_precio <= 0 else float(mi_precio))
+    # 19-nov-2026 (validacion con usuarios): con 0 el campo no decia que valor usaba el motor (el MC de XM, 332 en
+    # noviembre); ahora se muestra el precio de contrato que se aplica hoy
+    if CONTRATO == "mc":
+        _hoy = pd.Timestamp.now(tz="America/Bogota").tz_localize(None).floor("h") + pd.Timedelta(hours=1)
+        _mc_hoy = precio_contrato([_hoy], "mc")[0]
+        _mc = cargar_mc()
+        if _mc is not None and not np.isnan(_mc_hoy):
+            _d = _hoy - pd.Timedelta(hours=1)
+            _mes = min(_d.to_period("M") - (1 if _d.day >= 10 else 2), _mc.index.max())
+            st.caption(f"Se aplica el MC de XM: {es(_mc_hoy, 1)} COP/kWh ({MESES[_mes.month]} de {_mes.year}).")
+    elif CONTRATO is not None:
+        st.caption(f"Se aplica su precio de contrato: {es(CONTRATO, 1)} COP/kWh.")
 
 bandas, meta = cargar_bandas(horizonte)
 if bandas is None:
@@ -2662,7 +2677,7 @@ def vista_metodologia():
                      config=CONF_GRAF, key="graf_error_diario")
     st.markdown(metadatos_html(f"{df['fecha_hora'].min():%d/%m/%Y} a {df['fecha_hora'].max():%d/%m/%Y} "
                                f"({es(len(df))} horas con precio real)",
-                               f"Desempeño del pronóstico de 24 h y del método «{metodo}» para el {rol}"),
+                               f"Desempeño del pronóstico de 24 h y del método «{metodo}» para el {rol}", horiz="24h"),
                 unsafe_allow_html=True)
 
     # ---------------------------------------------------------------- como funciona
