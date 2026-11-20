@@ -1,10 +1,10 @@
-k=1 (pasos 25-48): MAE q50 64.63 | referencia (predespacho de D) 70.37 | promedio CatBoost 64.87 | cobertura 80.6 % | 7655 h con precio real, 24 calculadas
-k=2 (pasos 49-72): MAE q50 82.98 | referencia (predespacho de D) 90.07 | promedio CatBoost 84.67 | cobertura 80.5 % | 7631 h con precio real, 24 calculadas
-Contrato (cortes cada 3 dias): 109 cortes, 7800 h (7655 con precio real), cobertura 81.5 %, ancho medio 237, ultimo corte 2026-11-20
+k=1 (pasos 25-48): MAE q50 64.89 | referencia (predespacho de D) 70.79 | promedio CatBoost 65.10 | cobertura 80.6 % | 7679 h con precio real, 24 calculadas
+k=2 (pasos 49-72): MAE q50 83.35 | referencia (predespacho de D) 90.64 | promedio CatBoost 84.96 | cobertura 80.5 % | 7655 h con precio real, 24 calculadas
+Contrato (cortes cada 3 dias): 109 cortes, 7824 h (7679 con precio real), cobertura 81.5 %, ancho medio 238, ultimo corte 2026-11-21
   pasos 1-24: MAE realista 33.15 | optimista anterior 38.48 (DM t = -1.99, p = 0.046)
   pasos 25-48: MAE realista 50.17 | optimista anterior 59.85 (DM t = -4.04, p = 0.000)
   pasos 49-72: MAE realista 73.15 | optimista anterior 75.23 (DM t = -0.71, p = 0.476)
   pasos 1-72: MAE realista 52.16 | optimista anterior 57.85 (DM t = -3.37, p = 0.001)
-  cortes diarios, pasos 1-24: MAE 39.72, 7679 h
-  cortes diarios, pasos 25-48: MAE 64.63, 7655 h
-  cortes diarios, pasos 49-72: MAE 82.98, 7631 h
+  cortes diarios, pasos 1-24: MAE 39.88, 7703 h
+  cortes diarios, pasos 25-48: MAE 64.89, 7679 h
+  cortes diarios, pasos 49-72: MAE 83.35, 7655 h
