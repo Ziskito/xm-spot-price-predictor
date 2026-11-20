@@ -1,8 +1,6 @@
 # Guía del motor de decisión y el dashboard (OE3)
 
-Esta guía es para quien vaya a **usar, mantener o extender** el motor de decisión — no repite el
-detalle metodológico que ya está en el README (eso vive en la bitácora del 2026-09-10 y en la nota
-para Rafael). Aquí está: qué archivos existen, cómo se conectan, cómo correrlos, y sobre todo **cómo
+Esta guía es para quien vaya a **usar, mantener o extender** el motor de decisión. Aquí está: qué archivos existen, cómo se conectan, cómo correrlos, y sobre todo **cómo
 cambiar qué modelo alimenta cada horizonte sin tocar código**.
 
 ## 1. Arquitectura, en un diagrama de texto
@@ -199,7 +197,7 @@ Todos parten de dos percentiles del precio (por defecto p25/p75) y comparan `q50
 - **`rodante`**: percentiles con ventana móvil **causal** de 30 días por defecto (usa solo información pasada,
   `shift(1)` antes de la ventana para no incluir la propia hora) — se adapta al régimen reciente. La ventana es el
   parámetro `ventana_dias` de `generar_senales()`; en el dashboard la elige el usuario con los botones «Comparar con
-  los últimos» (7, 14, 30, 60, 90, 180 o 365 días; 30 es la validada, ver la bitácora del README del 6 y el 9-nov).
+  los últimos» (7, 14, 30, 60, 90, 180 o 365 días; 30 es la validada).
 - **`banda`**: igual que `fijo`, pero fuerza la señal a `esperar` cuando el ancho de la banda
   `[q10,q90]` está en el percentil 75 o más alto de anchos históricos — es decir, cuando el
   pronóstico tiene poca confianza, el motor prefiere no actuar en vez de arriesgarse.
@@ -237,9 +235,8 @@ Validación: `scripts_experimento/realista_motor_umbrales_alternativos.py`.
 - **El backtest no es una simulación de portafolio.** Es "precio promedio en horas de acción vs.
   promedio general" — no modela capacidad de almacenamiento, contratos ya firmados, costos de
   transacción, ni la secuencia de decisiones a lo largo del tiempo.
-- **El motor decide solo con el nivel de `q50`**, no con la forma completa del día. La nota para
-  Rafael en el README (sección "cómo evaluar modelos para el motor de decisión") documenta que
-  Corr-f/MHD/MPD (`scripts_experimento/metricas_decision.py`) correlacionan mucho mejor con la
+- **El motor decide solo con el nivel de `q50`**, no con la forma completa del día. Las métricas de
+  forma Corr-f/MHD/MPD (`scripts_experimento/metricas_decision.py`) correlacionan mucho mejor con la
   ganancia real de arbitraje que el nivel puntual — integrarlas es el siguiente paso natural, no
   está hecho todavía.
 - **Cuantiles cruzados**: ver sección 2. Monitorear si crece en modelos nuevos.

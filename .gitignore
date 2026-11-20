@@ -248,3 +248,15 @@ data/processed/resultados/escenario_realista/mejoras/pre_oni_14oct/
 /video/
 /video_2min/
 /video_corto/
+
+# 20-nov-2026: documentos internos y de trabajo que no van en el repositorio publico (quedan en el equipo local)
+docs/_interno/
+docs/Informe_Final_ABET_Barcelo_Dede*
+docs/Notas_Personales_Rafa.md
+docs/Metodologia_y_variaciones_Augur.*
+docs/Resumen_resultados_Augur.*
+docs/Funcionamiento_Augur.*
+docs/Informe_Diseno_Motor_Decision_Dashboard_v2.docx
+docs/presentacion_avance/Guion_Presentacion_Avance.md
+docs/ANEXO_1_formulacion_proyecto.md
+dashboard/mockups/
