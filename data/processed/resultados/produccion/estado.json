@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-24 18:00",
+  "actualizado": "2026-11-24 18:43",
   "precio_real_hasta": "2026-11-21 23:00:00",
   "pronostico_24h_hasta": "2026-11-26 00:00:00",
   "pronostico_72h_ultimo_corte": "2026-11-25",
@@ -10,8 +10,8 @@
       "precio_bolsa": "2026-11-21 23:00:00",
       "volumen_embalses": "2026-11-23 23:00:00"
     },
-    "predespacho_ideal": "ERROR: descarga",
-    "dmar_ddem": "ERROR: descarga",
+    "predespacho_ideal": "2026-11-25 23:00:00",
+    "dmar_ddem": "2026-11-25 23:00:00",
     "mc": "2026-10"
   }
 }
