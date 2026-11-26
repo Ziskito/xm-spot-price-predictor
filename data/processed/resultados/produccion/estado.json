@@ -1,14 +1,17 @@
 {
-  "actualizado": "2026-11-26 14:50",
+  "actualizado": "2026-11-26 18:01",
   "precio_real_hasta": "2026-11-23 23:00:00",
-  "pronostico_24h_hasta": "2026-11-27 00:00:00",
-  "pronostico_72h_ultimo_corte": "2026-11-26",
-  "pronostico_72h_hasta": "2026-11-29 00:00:00",
+  "pronostico_24h_hasta": "2026-11-28 00:00:00",
+  "pronostico_72h_ultimo_corte": "2026-11-27",
+  "pronostico_72h_hasta": "2026-11-30 00:00:00",
   "fuentes": {
     "oni": "ok",
-    "serie_xm": "ERROR: API de XM sin respuesta para PrecBolsNaci 2026-08-06 a 2026-09-02",
-    "predespacho_ideal": "ERROR: /M:/InformacionAgentes/Usuarios/Publico/PredespachoIdeal/2026-11",
-    "dmar_ddem": "2026-11-26 23:00:00",
-    "mc": "ERROR: HTTPSConnectionPool(host='servapibi.xm.com.co', port=443): Max retries exceeded with url: /monthly (Caused by ConnectTimeoutError(<HTTPSConnection(host='servapibi.xm.com.co', port=443) at 0x784742341c"
+    "serie_xm": {
+      "precio_bolsa": "2026-11-23 23:00:00",
+      "volumen_embalses": "2026-11-25 23:00:00"
+    },
+    "predespacho_ideal": "2026-11-27 23:00:00",
+    "dmar_ddem": "2026-11-27 23:00:00",
+    "mc": "2026-10"
   }
 }
